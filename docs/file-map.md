@@ -107,7 +107,7 @@ Each type tab has `setting-pages/*-page-content.php`.
 
 | File | Role |
 |---|---|
-| `inc/dashboard/class--dashboard.php` | `TPFW_Dashboard` — shared list table, resend/reset/cancel/manual check-in |
+| `inc/dashboard/class--dashboard.php` | `TPFW_Dashboard` — shared list table, check-in/resend/download/reset/cancel/transfer |
 | `inc/dashboard/js/dashboard.js` | Row actions |
 | `inc/dashboard/css/dashboard.css` + `template/page-content.php` | Shell |
 | `inc/ticket-dashboard/class--ticket-dashboard.php` | Tickets list |

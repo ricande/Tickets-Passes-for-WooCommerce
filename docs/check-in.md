@@ -10,7 +10,7 @@ Generated in `TPFW_Functions` as:
 
 `{get_rest_url()}tpfw/v1/scanner/checkin/{nano_id}`
 
-Guest passes append `/guest`. This is **not** a page. Opening it in Safari without auth returns 401.
+Guest passes append `/guest`. This is **not** a page. Opening it in a browser without credentials returns **401** (the permission callback runs first). An authenticated GET returns **405** and does not write a stats row.
 
 ## Scanner page (`/check-in/`)
 
@@ -48,7 +48,7 @@ Either path still requires `user_can_scan()`. The resolved user is `wp_set_curre
 
 ## Lookup
 
-`POST /scanner/checkin/{nano_id}` probes, in order: `tpfw_pass`, `tpfw_timeslot_tickets`, `tpfw_tickets` (`TPFW_API::CHECKIN_TABLES`). Soft-deleted rows are ignored. The same path registered as GET calls `scanner_checkin_not_allowed()` and returns **405** with `Allow: POST` — no stats row.
+`POST /scanner/checkin/{nano_id}` probes, in order: `tpfw_pass`, `tpfw_timeslot_tickets`, `tpfw_tickets` (`TPFW_API::CHECKIN_TABLES`). Soft-deleted rows are ignored. The same path registered as GET still requires scanner auth, then calls `scanner_checkin_not_allowed()` and returns **405** with `Allow: POST` — no stats row.
 
 A pass row with `parent_nano_id_fk` is treated as `guestpass` even on the plain route (so dropping `/guest` cannot skip the parent-alive check or apply the wrong cooldown). `/scanner/checkin/{id}/guest` requires a guest row **and** a live parent.
 
@@ -74,7 +74,7 @@ HTTP meaning, as the API settings screen documents:
 | 200 | Valid, use recorded |
 | 202 | Refused for a reason door staff must read (window, uses, cooldown, lock, guest not yet activated) |
 | 401 | Does not add up (missing code, wrong type, insert failed, auth denied, guest with no live parent) |
-| 405 | GET on a check-in route — nothing written |
+| 405 | Authenticated GET on a check-in route — nothing written. Unauthenticated GET is 401. |
 
 Colours `status_200` / `status_202` / `status_406` come from `tpfw_api_settings_options`.
 

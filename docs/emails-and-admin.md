@@ -32,9 +32,9 @@ Endpoints are registered from `init` (the classes are constructed on `init`, so 
 | `/tpfw-tickets` | `TPFW_Ticket_WC_MyAccount` | Ticket **and** timeslot ticket rows for the logged-in user: QR, status pill, uses left, PDF, Add to Calendar (`.ics`) |
 | `/tpfw-pass` | `TPFW_Pass_WC_MyAccount` | Passes, guest-pass hand-out, photo upload |
 
-Queries are scoped to `user_id = get_current_user_id()` in SQL. PDF/QR links on these pages are **unsigned**; `TPFW_File_Access` checks the session, so a forwarded URL is useless.
+Queries are scoped to `user_id = get_current_user_id()` in SQL. QR and guest images on these pages are **signed** (`get_file_url(..., true)`), because `qr` / `guest` are HMAC-only. PDF download is AJAX that returns an unsigned `pdf` URL; `TPFW_File_Access` then checks the session. Profile photos are unsigned and likewise session-gated. A forwarded PDF/photo URL is useless; a forwarded QR URL still works until the signature expires (`exp = 0` never expires).
 
-Manual check-in from My Account calls the same `ajax_checkin_*` as the dashboard, with `$bManual` so the holder can check themselves in outside the validity window only if they **manage** the plugin — a customer checking their own code still has the window enforced (`TPFW_Product_Type::ajax_checkin_callback()`).
+There is no check-in button on My Account. Manual check-in is the dashboard row action.
 
 ## Dashboards
 
@@ -44,18 +44,20 @@ Manual check-in from My Account calls the same `ajax_checkin_*` as the dashboard
 - `TPFW_Timeslot_Ticket_Dashboard`
 - `TPFW_Pass_Dashboard` (extra: guest passes, photos)
 
-Row actions (all AJAX, `manage_woocommerce`):
+Row actions (`manage_woocommerce`):
 
-- **Resend** — sends the resend template with a signed QR URL
-- **Reset** — clears `deleted` on the row and deletes its stats (code usable again)
-- **Cancel** — soft-deletes the row and its stats
-- **Check in** — `checkin(..., $bManual = true)`
+- **Checkin** — `checkin(..., $bManual = true)` (AJAX)
+- **Resend** — sends the resend template with a signed QR URL (AJAX)
+- **Download** — printable PDF (same as My Account); omitted when no QR file exists
+- **Reset** — clears `deleted` on the row and deletes its stats (AJAX)
+- **Cancel** — soft-deletes the row and its stats (AJAX)
+- **Transfer** — ticket and timeslot dashboards only: move the row to another customer
 
-Analytics (`TPFW_Analytics_Dashboard`) reads `*_stats` joined to row tables (door activity, not sales). Guest-pass rows are excluded from per-product pass counts. CSV export is on that screen. Gated by `bEnableAnalytics`.
+Each list also has **Download CSV** for the current search and status filter (all matching rows, not just the page). Analytics (`TPFW_Analytics_Dashboard`) reads `*_stats` joined to row tables (door activity, not sales). Guest-pass rows are excluded from per-product pass counts. CSV export is on that screen too. Gated by `bEnableAnalytics`.
 
 ## Order metabox (`inc/admin`)
 
-On an order that contains a TPFW product: **force issue** (`order_completed()`) or **force cancel** without moving WooCommerce order status. Processing now mints on its own; the metabox is for a stuck 1.2.3 order, a missed issue, or cancelling codes without changing WooCommerce status.
+On an order that contains a TPFW product: **Create** (`order_completed()`) or **Cancel** without moving WooCommerce order status. Processing now mints on its own; Create is for a stuck 1.2.3 order, a missed issue, or a re-issue. Cancel drops the codes without changing the order.
 
 ## Settings load order
 

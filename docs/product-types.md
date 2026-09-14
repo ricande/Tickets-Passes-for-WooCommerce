@@ -41,7 +41,7 @@ Class: `TPFW_Timeslot_Ticket_WC_Product`. Cart, reservation and checkout hooks l
 2. Quantity in the cart is locked (`is_sold_individually` + classic quantity filter). Buying two seats is two cart lines / two add-to-carts.
 3. Expired holds are swept on cart update, checkout init, `woocommerce_check_cart_items`, and the minutely cron. Removing a cart item releases its reservation immediately.
 4. Creating an order (classic `woocommerce_checkout_order_created` or blocks `woocommerce_store_api_checkout_order_processed`) extends the hold onto the order.
-5. A processing or completed order issues `tpfw_timeslot_tickets` for the reserved slot, again under the capacity lock. If the seat no longer fits, issue fails visibly (order note) and no extra row is written. Cancelled/refunded/failed revokes the ticket and frees capacity.
+5. A processing or completed order issues `tpfw_timeslot_tickets` for the reserved slot, again under the capacity lock. `valid_from` is the slot start minus `_tpfw_timeslot_ticket_before_checkin_duration` seconds (how early the door may scan); `valid_to` is the slot end. If the seat no longer fits, issue fails visibly (order note) and no extra row is written. Cancelled/refunded/failed revokes the ticket and frees capacity.
 
 `.ics` export: `GET /tpfw/v1/timeslot-ticket/ics/{nano_id}` — open route; the nano id is the secret.
 
@@ -49,12 +49,14 @@ Class: `TPFW_Timeslot_Ticket_WC_Product`. Cart, reservation and checkout hooks l
 
 Class: `TPFW_Pass_WC_Product`. Table: `tpfw_pass` (holders and guests in one table).
 
+**How many may be sold** is WooCommerce stock, same as Ticket (`show_if_tpfw-pass` on the Inventory tab).
+
 The product page collects **one person per pass**. Add-to-cart splits into one cart line per person (`bSplittingCart` prevents the inner adds from recursing). Quantity is expressed as number of people, not a quantity field.
 
 Each issued row has `user_id` (holder) and `user_payer_id` (buyer). Gifting: the line’s `tpfw_email` is someone else — an account is created if needed and a gifted-pass email is sent. Failure to send that email does not roll back the pass.
 
 **Guest passes** (`parent_nano_id_fk` set): quantity and duration come from `_tpfw_pass_guest_pass_*`. Minting assigns `guest_slot` `1…N` (`TPFW_Guest_Pass_Issuer`); `UNIQUE(parent_nano_id_fk, guest_slot)` is what enforces the quota under concurrent AJAX. Their `valid_from` / `valid_to` stay empty until the **parent pass’s first successful check-in**, which runs `activate_guest_passes()` inside the parent’s check-in lock so a guest cannot walk in ahead of the holder. Guests already dated on 1.2.3 keep those dates.
 
-**Photo**: optional upload on My Account (`_tpfw_pass_profile_image_upload_*`). The scanner shows `sPhotoURL` on a successful pass/guest check-in.
+**Photo**: optional upload on My Account (`_tpfw_pass_profile_image_upload_*`). Dimensions are refused before decode if a side is over 8000 px or width×height over 20 million (`TPFW_Image_Limits`). The scanner shows `sPhotoURL` on a successful pass/guest check-in.
 
 Validity start follows the same three modes as Ticket. Cooldown meta for guests is `_tpfw_guestpass_cooldown_sec`, not the parent pass cooldown.

@@ -37,7 +37,7 @@ Built for venues, attractions, museums, escape rooms, festivals, clubs and anyon
 
 = Running it from wp-admin =
 
-* **A dashboard per product type** - Tickets, Timeslot Tickets and Passes - each with search, manual check-in, resend, reset and cancel.
+* **A dashboard per product type** - Tickets, Timeslot Tickets and Passes - each with search, manual check-in, download PDF, resend, reset, cancel, and (on tickets and timeslot tickets) transfer to another customer.
 * **Manual check-in** for when there is no phone at the door.
 * **Analytics** charting check-in activity by day and by hour, with a CSV export.
 * **Per-type colours and hint text**, so a ticket looks like part of your site rather than part of a plugin.
@@ -105,7 +105,7 @@ Edit the user under **Users** and set their role to **Scanner**. They can then o
 
 Replace the plugin folder (or upload the 1.3.0 zip over 1.2.3). Leave the plugin active. The first page load migrates the database. Existing tickets, QR codes and upload files keep working.
 
-Check-in is now POST only. The built-in scanner already uses POST. If you have a separate scanner app that still uses GET, change it to POST or it will get HTTP 405 and will not check anyone in. New guest passes stay inactive until the holder is scanned. Orders that reach Processing (for example cash on delivery) now receive QR codes when they are paid.
+Check-in is now POST only. The built-in scanner already uses POST. If you have a separate scanner app that still uses GET, change it to POST or it will not check anyone in (HTTP 405 when the app is authenticated). New guest passes stay inactive until the holder is scanned. Orders that reach Processing (for example cash on delivery) now receive QR codes when they are paid.
 
 = Settings at a glance =
 

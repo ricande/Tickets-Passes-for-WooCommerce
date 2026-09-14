@@ -12,7 +12,7 @@ Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db
 |---|---|
 | `tpfw_tickets` | Issued ticket. Key: `nano_id`. Validity, `max_uses`, product/order/customer |
 | `tpfw_tickets_stats` | One row per check-in (`nano_id_fk`) |
-| `tpfw_timeslot_tickets` | Issued timeslot ticket + `timeslot_id` |
+| `tpfw_timeslot_tickets` | Issued timeslot ticket + `timeslot_id`. `before_checkin_duration` (seconds) is copied from the product; `valid_from` is slot start minus that. |
 | `tpfw_timeslot_tickets_stats` | Check-ins for timeslot tickets |
 | `tpfw_timeslots` | Concrete slots (`id`, start/end, `available_slots`) |
 | `tpfw_timeslots_recurring` | Templates that cron rolls out into `tpfw_timeslots` |
@@ -52,7 +52,7 @@ Prefix `_tpfw_ticket_`, `_tpfw_pass_` or `_tpfw_timeslot_ticket_` / `_tpfw_times
 | `user_start_date_enable` / `user_start_date_min` / `user_start_date_max` | Customer-picked start |
 | `sales_timespan_enable` / `sales_timespan_start` / `sales_timespan_end` | Purchase window |
 
-QR colours use `_tpfw_{ticket|timeslot|pass}_qr_*`. Pass extras: `_tpfw_pass_guest_pass_*`, `_tpfw_pass_profile_image_upload_*`. Timeslot extras: `_tpfw_timeslot_ticket_recurring_enable`, `_tpfw_timeslot_ticket_recurring_future`.
+QR colours use `_tpfw_{ticket|timeslot|pass}_qr_*`. Pass extras: `_tpfw_pass_guest_pass_*`, `_tpfw_pass_profile_image_upload_*`. Timeslot extras: `_tpfw_timeslot_ticket_recurring_enable`, `_tpfw_timeslot_ticket_recurring_future`, `_tpfw_timeslot_ticket_before_checkin_duration`, `_tpfw_timeslot_ticket_max_usage`.
 
 ### Order / cart item meta
 
@@ -72,16 +72,16 @@ Base: `wp-content/uploads/tpfw-{slug}/` where `{slug}` is the 10-character hex i
 | `pdf` | `qr-pdf/` | Printable PDF |
 | `profile` | `profile-images/` | Pass photo |
 
-All are fetched through `TPFW_File_Access` (`?tpfw_file=`), not as a direct URL. Allowed extensions: webp, png, jpg, gif, pdf.
+All are fetched through `TPFW_File_Access` (`?tpfw_file=`), not as a direct URL. Allowed extensions: webp, png, jpg, jpeg, gif, pdf.
 
 ## REST (`tpfw/v1`)
 
 | Route | Method | Auth | Purpose |
 |---|---|---|---|
 | `/scanner/checkin/{nano_id}` | POST | scanner role, cookie+nonce, Basic Auth, or `X-TPFW-Scanner-Token` | Check-in |
-| `/scanner/checkin/{nano_id}` | GET | same (then refused) | **405**, `Allow: POST` — does not check anyone in |
+| `/scanner/checkin/{nano_id}` | GET | same (then refused) | **405** after auth; **401** with no credentials |
 | `/scanner/checkin/{nano_id}/guest` | POST | same as check-in | Guest-pass check-in |
-| `/scanner/checkin/{nano_id}/guest` | GET | same (then refused) | **405** |
+| `/scanner/checkin/{nano_id}/guest` | GET | same (then refused) | **405** after auth; **401** with no credentials |
 | `/scanner/history` | GET | same | Recent scans |
 | `/timeslot-ticket/ics/{nano_id}` | GET | open (`nano_id` is the secret) | Calendar file |
 

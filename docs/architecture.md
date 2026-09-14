@@ -68,9 +68,10 @@ The scanner at `/check-in/` does **not** open that URL in the browser. It extrac
 
 The same `checkin()` is used by:
 
-- the door scanner
-- manual check-in on the admin dashboard
-- optional check-in from My Account
+- the door scanner (REST POST)
+- manual check-in on the admin dashboards (AJAX)
+
+The AJAX callback will also accept a logged-in holder of that row, with the validity window still enforced, but My Account has no check-in button.
 
 Permission: the `tpfw_scanner` role, or `manage_woocommerce`.
 
@@ -78,4 +79,4 @@ Guest passes have their own route: `/scanner/checkin/{nano_id}/guest`.
 
 ## Files
 
-Generated files live under `uploads/tpfw-{random}/` and are **never** served as static URLs. Every link goes through `TPFW_File_Access`, which requires the signed-in owner or a signed link.
+Generated files live under `uploads/tpfw-{random}/` and are **never** served as static URLs. Every link goes through `TPFW_File_Access`. QR and guest images require a signed HMAC; PDFs and profile photos accept the owner’s session, `manage_woocommerce`, or HMAC.

@@ -39,7 +39,7 @@ Existing tickets, passes, QR codes, PDFs and `tpfw_upload_slug` keep working. Gu
 
 Behaviour changes the shop should know:
 
-- Check-in is **POST only**. GET answers **405** and does not write a stats row. The built-in scanner already POSTs. An external app that still GETs must switch.
+- Check-in is **POST only**. An authenticated GET answers **405** and does not write a stats row. The built-in scanner already POSTs. An external app that still GETs must switch.
 - Orders that reach **Processing** (cash on delivery, most virtual checkouts) now mint QR codes. Orders that sat in Processing under 1.2.3 without rows are not backfilled; change status or use the order metabox **Create**.
 - External apps may send `X-TPFW-Scanner-Token` instead of a WordPress password. WordPress Basic Auth still works unless `tpfw_scanner_tokens_required` is set.
 
