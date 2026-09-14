@@ -1,0 +1,399 @@
+/*
+ * The per-person block on a Pass product page - "roster" layout.
+ *
+ * One card holding one row per person, rather than N free standing cards in a grid:
+ * a party of eight is then a list you scan instead of a wall you climb. The card shell
+ * (radius, hairline, shadow) is the one front-product.css gives the start date picker,
+ * so the two blocks sitting inches apart on the same page read as one system.
+ *
+ * Radius scale, shared with front-product.css: card 14px, control 10px, pill 999px.
+ *
+ * .season-passes is kept on the same element as .tpfw-roster: it is what the server side
+ * markup, the person-label data attribute and pass.front.js have always keyed off.
+ */
+.season-passes {
+    --tpfw-accent: #a8752c;
+    --tpfw-accent-fg: #ffffff;
+    --tpfw-ink: #1d2327;
+    --tpfw-border: #dcdcde;
+    --tpfw-bg: #fff;
+    --tpfw-hint: #646970;
+    --tpfw-error: #c0362c;
+    // Not shop-configurable, same two tones front-product.css uses: a sunk strip and a soft
+    // error wash. Mixed from the shop's own background so they sink on a dark card as well
+    // as a light one, instead of showing as a pale strip on a dark theme.
+    --tpfw-sunk: color-mix(in srgb, var(--tpfw-bg) 94%, var(--tpfw-ink));
+    --tpfw-danger-soft: color-mix(in srgb, var(--tpfw-bg) 88%, var(--tpfw-error));
+
+    width: 100%;
+    max-width: 620px;
+    margin: 24px 0;
+    background: var(--tpfw-bg);
+    color: var(--tpfw-ink);
+    border: 1px solid var(--tpfw-border);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(24, 38, 28, 0.05), 0 8px 20px rgba(24, 38, 28, 0.05);
+}
+
+.tpfw-roster-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 18px 14px;
+
+    label {
+        display: block;
+        // Themes commonly give every label a bottom margin; the hint below sets its own.
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 650;
+        line-height: 1.3;
+        color: var(--tpfw-ink);
+    }
+}
+
+.tpfw-roster-hint {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--tpfw-hint);
+    max-width: 42ch;
+}
+
+/* The party size control, lifted out of the WooCommerce quantity box up into the block
+   it actually drives. The Woo input stays in the DOM and in sync, so nothing about the
+   add-to-cart contract changes - see pass.front.js. */
+.tpfw-stepper {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--tpfw-border);
+    border-radius: 999px;
+    background: var(--tpfw-sunk);
+
+    button {
+        width: 28px;
+        height: 28px;
+        // Themes style every <button> with their own padding, shadow and transform.
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 999px;
+        background: transparent;
+        box-shadow: none;
+        color: var(--tpfw-ink);
+        font: inherit;
+        font-size: 17px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--tpfw-bg);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+        }
+
+        &:disabled {
+            opacity: .3;
+            cursor: not-allowed;
+            background: transparent;
+            box-shadow: none;
+        }
+    }
+
+    .tpfw-stepper-value {
+        min-width: 72px;
+        text-align: center;
+        font-size: 0.82rem;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.tpfw-roster-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tpfw-roster-row {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    gap: 10px 12px;
+    align-items: center;
+    margin: 0;
+    padding: 12px 18px;
+    border-top: 1px solid var(--tpfw-border);
+
+    &.is-open {
+        background: var(--tpfw-sunk);
+    }
+}
+
+/* The badge is the row's whole status readout: its number while empty, the person's
+   initials once both names are filled in. */
+.tpfw-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: var(--tpfw-sunk);
+    border: 1px dashed var(--tpfw-border);
+    color: var(--tpfw-hint);
+    font-variant-numeric: tabular-nums;
+}
+
+.tpfw-roster-row.is-named .tpfw-avatar {
+    background: var(--tpfw-accent);
+    border: 1px solid var(--tpfw-accent);
+    color: var(--tpfw-accent-fg);
+}
+
+/* Two inputs, one control: the hairline between them reads as a divider inside a single
+   field rather than as two separate boxes competing for the row. */
+.tpfw-namefield {
+    display: flex;
+    border: 1px solid var(--tpfw-border);
+    border-radius: 10px;
+    background: var(--tpfw-bg);
+    overflow: hidden;
+    min-width: 0;
+
+    &:focus-within {
+        border-color: var(--tpfw-accent);
+        box-shadow: 0 0 0 1px var(--tpfw-accent);
+    }
+
+    input[type="text"] {
+        flex: 1 1 50%;
+        min-width: 0;
+        box-sizing: border-box;
+        // Themes give text inputs an inset shadow, a fixed height and a margin of their own;
+        // inside the shared field shell every one of those shows as a seam.
+        margin: 0;
+        height: auto;
+        min-height: 0;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 9px 11px;
+        font: inherit;
+        font-size: 0.9rem;
+        color: var(--tpfw-ink);
+        background: transparent;
+
+        &:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        &::placeholder {
+            color: var(--tpfw-hint);
+        }
+    }
+
+    /* Typed selector on both sides on purpose: it has to outrank the border: none above,
+       which is what draws the divider that makes the two inputs read as one field. */
+    input[type="text"] + input[type="text"] {
+        border-left: 1px solid var(--tpfw-border);
+    }
+}
+
+.tpfw-rowtools {
+    display: flex;
+    gap: 4px;
+}
+
+.tpfw-iconbtn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--tpfw-border);
+    border-radius: 10px;
+    background: var(--tpfw-bg);
+    color: var(--tpfw-hint);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+
+    &:hover {
+        color: var(--tpfw-ink);
+        border-color: var(--tpfw-ink);
+    }
+
+    &.is-on {
+        background: var(--tpfw-accent);
+        border-color: var(--tpfw-accent);
+        color: var(--tpfw-accent-fg);
+    }
+
+    svg {
+        width: 16px;
+        height: 16px;
+        display: block;
+    }
+}
+
+/* The email address only exists once the envelope is on, and it belongs under the name
+   it applies to - so it spans the row rather than opening a card of its own. */
+.tpfw-roster-email {
+    grid-column: 2 / -1;
+    display: none;
+
+    input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        height: auto;
+        min-height: 0;
+        box-shadow: none;
+        padding: 9px 11px;
+        border: 1px solid var(--tpfw-border);
+        border-radius: 10px;
+        font: inherit;
+        font-size: 0.9rem;
+        background: var(--tpfw-bg);
+        color: var(--tpfw-ink);
+
+        &:focus {
+            outline: none;
+            border-color: var(--tpfw-accent);
+            box-shadow: 0 0 0 1px var(--tpfw-accent);
+        }
+
+        &::placeholder {
+            color: var(--tpfw-hint);
+        }
+    }
+}
+
+.tpfw-roster-row.is-open .tpfw-roster-email {
+    display: block;
+}
+
+.tpfw-roster-email-hint {
+    margin: 5px 2px 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--tpfw-hint);
+}
+
+/* Both messages sit in the row's second column so they line up with the field that
+   failed, and each only appears for its own kind of failure. */
+.season-passes .field-error {
+    display: none;
+    grid-column: 2 / -1;
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--tpfw-error);
+}
+
+.tpfw-roster-email .field-error {
+    margin-top: 5px;
+}
+
+.tpfw-roster-row.is-invalid {
+    .tpfw-namefield {
+        border-color: var(--tpfw-error);
+        background: var(--tpfw-danger-soft);
+    }
+
+    .tpfw-error-name {
+        display: block;
+    }
+}
+
+.tpfw-roster-row.is-invalid-email {
+    .tpfw-roster-email input[type="text"] {
+        border-color: var(--tpfw-error);
+        background: var(--tpfw-danger-soft);
+    }
+
+    .tpfw-error-email {
+        display: block;
+    }
+
+    .tpfw-roster-email-hint {
+        display: none;
+    }
+}
+
+/* The second way to add a person, for anyone who reads down the list rather than up to
+   the stepper. Both write the same quantity input. */
+.tpfw-roster-add {
+    width: 100%;
+    padding: 12px 18px;
+    border: none;
+    border-top: 1px solid var(--tpfw-border);
+    background: transparent;
+    color: var(--tpfw-hint);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--tpfw-sunk);
+        color: var(--tpfw-ink);
+    }
+}
+
+/* Answers "am I done here" without counting rows by eye. */
+.tpfw-roster-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--tpfw-border);
+    border-radius: 0 0 14px 14px;
+    background: var(--tpfw-sunk);
+    font-size: 0.85rem;
+    color: var(--tpfw-hint);
+
+    strong {
+        color: var(--tpfw-ink);
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.tpfw-progress {
+    flex: 1 1 auto;
+    height: 4px;
+    max-width: 120px;
+    border-radius: 999px;
+    /* A tint rather than the border colour itself: shops that leave the pass border on its
+       black default would otherwise get a track that reads as a full bar. */
+    background: color-mix(in srgb, var(--tpfw-border) 25%, var(--tpfw-bg));
+    overflow: hidden;
+
+    i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--tpfw-accent);
+        transition: width .2s ease;
+    }
+}
+
+/* Narrow columns cannot hold badge, name and tools on one line, so the tools drop under
+   the name rather than squeezing the fields to nothing. */
+@media (max-width: 420px) {
+    .tpfw-roster-row {
+        grid-template-columns: 34px 1fr;
+    }
+
+    .tpfw-rowtools {
+        grid-column: 2;
+        justify-content: flex-start;
+    }
+}

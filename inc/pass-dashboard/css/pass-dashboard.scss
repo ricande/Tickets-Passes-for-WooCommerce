@@ -1,0 +1,411 @@
+.tpfw-dashboard {
+    .tpfw-dashboard-header {
+        display: flex;
+        align-items: center;
+        margin: 20px 0 16px;
+
+        h1 {
+            margin: 0;
+            padding: 0;
+            font-size: 23px;
+            font-weight: 600;
+        }
+    }
+
+    .tpfw-dashboard-table {
+        background: #fff;
+        border: 1px solid #dcdcde;
+        border-radius: 8px;
+        overflow: hidden;
+        overflow-x: auto;
+
+        .tablenav {
+            height: auto;
+            margin: 0;
+            padding: 12px 16px;
+            background: #f6f7f7;
+
+            &.top {
+                border-bottom: 1px solid #dcdcde;
+            }
+
+            &.bottom {
+                border-top: 1px solid #dcdcde;
+            }
+
+            .alignleft.actions {
+                padding: 0;
+                margin: 0;
+            }
+
+            #post-search-input {
+                height: 32px;
+                border-radius: 4px 0 0 4px;
+                border-color: #8c8f94;
+            }
+
+            #search-submit {
+                height: 32px;
+                border-radius: 0 4px 4px 0 !important;
+                margin: 0 !important;
+            }
+
+            .tablenav-pages {
+                margin: 0;
+                height: auto;
+            }
+        }
+
+        table.wp-list-table {
+            // Every column below gets an explicit width so the total can exceed the
+            // wrapper's 100% width - letting .tpfw-dashboard-table's overflow-x: auto
+            // scroll the table horizontally on narrow screens, instead of the browser
+            // squeezing unconstrained columns down to a few px and wrapping their text
+            // one character per line.
+            width: auto;
+            min-width: 100%;
+            border: none;
+            box-shadow: none;
+
+            thead th,
+            tfoot th {
+                padding: 10px 16px;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .04em;
+                color: #646970;
+                background: #fff;
+                border-bottom: 1px solid #dcdcde;
+                white-space: nowrap;
+                text-align: center;
+            }
+
+            tfoot th {
+                border-top: 1px solid #dcdcde;
+                border-bottom: none;
+            }
+
+            // Fixed-width columns for short, predictable content - Holder Name, Product,
+            // and Actions share whatever width is left over.
+            .column-buyer_user {
+                width: 160px;
+            }
+
+            .column-profile_image {
+                width: 60px;
+            }
+
+            .column-pass_holder_name {
+                width: 140px;
+            }
+
+            .column-nano_id {
+                width: 110px;
+            }
+
+            .column-status {
+                width: 100px;
+            }
+
+            .column-valid {
+                width: 100px;
+            }
+
+            .column-uses {
+                width: 70px;
+            }
+
+            .column-product_id {
+                width: 120px;
+            }
+
+            .column-order_id {
+                width: 80px;
+            }
+
+            .column-created {
+                width: 100px;
+            }
+
+            .column-actions {
+                width: 340px;
+                // tbody td below is text-align:center - fine for short text
+                // columns, but it centers the whole .tpfw-actions button grid,
+                // which shrinks to fit however many buttons are visible. Rows
+                // with fewer buttons (cancelled, no guest passes) then end up
+                // narrower AND centered, so their left-most button doesn't
+                // line up with fuller rows. Actions should always start flush
+                // left regardless of button count.
+                text-align: left;
+            }
+
+            tbody tr {
+                background: #fff !important;
+
+                &:hover {
+                    background: #f6f7f7 !important;
+                }
+
+                &:not(:last-child) td {
+                    border-bottom: 1px solid #f0f0f1;
+                }
+            }
+
+            // WP_List_Table renders the primary (first) column as a <th>, not a <td>, so a
+            // "tbody td" selector alone silently skips it - that is why User ID sat left
+            // aligned while every other cell was centred.
+            tbody td,
+            tbody th {
+                padding: 12px 16px;
+                vertical-align: middle;
+                text-align: center;
+            }
+        }
+    }
+}
+
+// Status pills, reused by the ajax-updated status HTML too. Pass adds "Active"
+// on top of the vocabulary the ticket dashboard uses (Unused/Partial/Used/...), since a
+// pass's primary state is validity, not a use-count.
+.tpfw-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+
+    &.tpfw-status-pill--active {
+        background: #e6f4ea;
+        color: #1e7e34;
+    }
+
+    &.tpfw-status-pill--expired {
+        background: #eceef0;
+        color: #50575e;
+    }
+
+    &.tpfw-status-pill--pending {
+        background: #f6ead4;
+        color: #a8752c;
+    }
+
+    &.tpfw-status-pill--cancelled {
+        background: #fbe7e9;
+        color: #a92323;
+    }
+}
+
+.tpfw-nano-id {
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    background: #f6f7f7;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #3c434a;
+    cursor: help;
+}
+
+// Date on one line, time on the next - shared by "Valid From" and "Created".
+// The --hint modifier (extra info in a title tooltip, e.g. "Valid to") adds
+// the dotted underline/help cursor; plain "Created" has nothing to hide.
+.tpfw-datetime {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+
+    &.tpfw-datetime--hint {
+        cursor: help;
+        border-bottom: 1px dotted #8c8f94;
+    }
+
+    .tpfw-datetime-date {
+        font-size: 12px;
+        color: #1d2327;
+        white-space: nowrap;
+    }
+
+    .tpfw-datetime-time {
+        font-size: 11px;
+        color: #646970;
+        white-space: nowrap;
+    }
+}
+
+.tpfw-profile-thumb {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #dcdcde;
+}
+
+// Truncate long product names instead of stretching the row - full name is
+// still on the link's title tooltip.
+.tpfw-product-link {
+    display: inline-block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+// Grid instead of flex-wrap so rows always break after 3 buttons, regardless
+// of column width - not just once the column gets too narrow to fit them all.
+.tpfw-actions {
+    display: inline-grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: 6px;
+
+    .tpfw-btn {
+        font-size: 12px;
+        padding: 0 10px;
+        min-height: 28px;
+        line-height: 26px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+
+    .tpfw-btn--checkin {
+        border-color: #2e7d32;
+        color: #2e7d32;
+
+        &:hover {
+            background: #2e7d32;
+            color: #fff;
+        }
+    }
+
+    .tpfw-btn--resend {
+        border-color: #a8752c;
+        color: #a8752c;
+
+        &:hover {
+            background: #a8752c;
+            color: #fff;
+        }
+    }
+
+    .tpfw-btn--reset {
+        border-color: #8c8f94;
+        color: #3c434a;
+
+        &:hover {
+            background: #f0f0f1;
+        }
+    }
+
+    .tpfw-btn--cancel {
+        border-color: #a92323;
+        color: #a92323;
+
+        &:hover {
+            background: #a92323;
+            color: #fff;
+        }
+    }
+
+    .tpfw-btn--guestpass {
+        border-color: #5b3cc4;
+        color: #5b3cc4;
+
+        &:hover {
+            background: #5b3cc4;
+            color: #fff;
+        }
+    }
+}
+
+// Guest pass rows are real sibling <tr>s in the pass table (see
+// single_row() override) - tinted so they read as nested under their parent.
+// Padding lives on .tpfw-row-inner (below), not the <td>, so the whole cell
+// can slide open/closed.
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td {
+    background: #fafafb;
+    padding: 0;
+}
+
+// The table's normal row-separator (below) draws a line straight across the
+// connector's trunk at every row boundary, cutting it into visible
+// fragments. Guest rows within the same group don't need their own divider -
+// only the last one, where the group ends - so removing it here is what
+// makes the trunk read as one continuous line instead of a broken one.
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row:not(.tpfw-guestpass-row--last) td {
+    border-bottom: none;
+}
+
+// Same reasoning, for the boundary between a parent pass row and its first
+// guest row - without this the trunk starts one row too late, visibly
+// detached from the parent instead of running from it. Removed for the whole
+// row (not just the pass_holder_name column) - with border-collapse:separate,
+// neighbouring columns' borders sit close enough at the same height that
+// they still read as one continuous line even where this one column's own
+// border is gone.
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-has-guestpass td {
+    border-bottom: none;
+}
+
+// Collapsed by default - jQuery slideToggle() animates this open/closed on
+// click. The <tr>/<td> stay real table cells throughout; only this inner
+// block's height (and padding) animates, which is what makes the slide
+// smooth and consistent across browsers.
+.tpfw-row-inner {
+    display: none;
+    padding: 9px 10px;
+}
+
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td.column-pass_holder_name .tpfw-row-inner {
+    padding-left: 30px;
+}
+
+// Tree connector (trunk + rounded branch) into the holder name - the same
+// shape a modern sidebar/file tree (VS Code, Linear, etc.) uses to show
+// "this belongs to the item above": thin soft-grey line, curved terminal
+// instead of a hard right angle. Read by eye instantly, no label needed.
+//
+// Positioned on the <td> itself, not on .tpfw-row-inner - the row's actual
+// rendered height is set by whichever column has the tallest content (e.g.
+// the two-line "Valid From"/"Created" cells), not by this column's own
+// (shorter, single-line) content. Anchoring to .tpfw-row-inner's own height
+// left the trunk floating in the middle of the row instead of spanning it -
+// anchoring to the <td> makes it span the row's true height, and it still
+// collapses to nothing when the row is closed since the <td>'s own height
+// then collapses along with its (display:none) .tpfw-row-inner.
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td.column-pass_holder_name {
+    position: relative;
+}
+
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td.column-pass_holder_name::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    border-left: 2px solid #9296a1;
+}
+
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td.column-pass_holder_name::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    width: 10px;
+    border-top: 2px solid #9296a1;
+}
+
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row--last td.column-pass_holder_name::before {
+    bottom: 50%;
+    border-bottom: 2px solid #9296a1;
+    border-bottom-left-radius: 6px;
+}
+
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row--last td.column-pass_holder_name::after {
+    display: none;
+}

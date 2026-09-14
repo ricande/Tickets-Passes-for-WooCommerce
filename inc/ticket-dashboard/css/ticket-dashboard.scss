@@ -1,0 +1,284 @@
+.tpfw-dashboard {
+    .tpfw-dashboard-header {
+        display: flex;
+        align-items: center;
+        margin: 20px 0 16px;
+
+        h1 {
+            margin: 0;
+            padding: 0;
+            font-size: 23px;
+            font-weight: 600;
+        }
+    }
+
+    .tpfw-dashboard-table {
+        background: #fff;
+        border: 1px solid #dcdcde;
+        border-radius: 8px;
+        overflow: hidden;
+
+        .tablenav {
+            height: auto;
+            margin: 0;
+            padding: 12px 16px;
+            background: #f6f7f7;
+
+            &.top {
+                border-bottom: 1px solid #dcdcde;
+            }
+
+            &.bottom {
+                border-top: 1px solid #dcdcde;
+            }
+
+            .alignleft.actions {
+                padding: 0;
+                margin: 0;
+            }
+
+            #post-search-input {
+                height: 32px;
+                border-radius: 4px 0 0 4px;
+                border-color: #8c8f94;
+            }
+
+            #search-submit {
+                height: 32px;
+                border-radius: 0 4px 4px 0 !important;
+                margin: 0 !important;
+            }
+
+            .tablenav-pages {
+                margin: 0;
+                height: auto;
+            }
+        }
+
+        table.wp-list-table {
+            border: none;
+            box-shadow: none;
+
+            thead th,
+            tfoot th {
+                padding: 10px 16px;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .04em;
+                color: #646970;
+                background: #fff;
+                border-bottom: 1px solid #dcdcde;
+                text-align: center;
+            }
+
+            tfoot th {
+                border-top: 1px solid #dcdcde;
+                border-bottom: none;
+            }
+
+            // Fixed-width columns for short, predictable content - the rest (Ticket ID,
+            // Product, Actions) share whatever width is left over.
+            .column-user_id {
+                width: 70px;
+            }
+
+            .column-nano_id {
+                width: 110px;
+            }
+
+            .column-status {
+                width: 110px;
+            }
+
+            .column-valid {
+                width: 100px;
+            }
+
+            .column-checkins {
+                width: 90px;
+            }
+
+            .column-order_id {
+                width: 90px;
+            }
+
+            .column-created {
+                width: 100px;
+            }
+
+            .column-actions {
+                width: 300px;
+            }
+
+            tbody tr {
+                background: #fff !important;
+
+                &:hover {
+                    background: #f6f7f7 !important;
+                }
+
+                &:not(:last-child) td {
+                    border-bottom: 1px solid #f0f0f1;
+                }
+            }
+
+            // WP_List_Table renders the primary (first) column as a <th>, not a <td>, so a
+            // "tbody td" selector alone silently skips it - that is why User ID sat left
+            // aligned while every other cell was centred.
+            tbody td,
+            tbody th {
+                padding: 12px 16px;
+                vertical-align: middle;
+                text-align: center;
+            }
+        }
+    }
+}
+
+// Status pills, reused by the ajax-updated status HTML too.
+.tpfw-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+
+    &.tpfw-status-pill--unused {
+        background: #e7f0fa;
+        color: #1d4f91;
+    }
+
+    &.tpfw-status-pill--partial {
+        background: #fdf0d5;
+        color: #8a5a00;
+    }
+
+    &.tpfw-status-pill--used {
+        background: #e6f4ea;
+        color: #1e7e34;
+    }
+
+    &.tpfw-status-pill--expired {
+        background: #eceef0;
+        color: #50575e;
+    }
+
+    &.tpfw-status-pill--pending {
+        background: #ece7f6;
+        color: #5b3ea3;
+    }
+
+    &.tpfw-status-pill--cancelled {
+        background: #fbe7e9;
+        color: #a92323;
+        text-decoration: line-through;
+    }
+}
+
+.tpfw-ticket-id {
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    background: #f6f7f7;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #3c434a;
+    cursor: help;
+}
+
+// Date on one line, time on the next - shared by "Valid From" and "Created".
+// The --hint modifier (extra info in a title tooltip, e.g. "Valid to") adds
+// the dotted underline/help cursor; plain "Created" has nothing to hide.
+.tpfw-datetime {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+
+    &.tpfw-datetime--hint {
+        cursor: help;
+        border-bottom: 1px dotted #8c8f94;
+    }
+
+    .tpfw-datetime-date {
+        font-size: 12px;
+        color: #1d2327;
+        white-space: nowrap;
+    }
+
+    .tpfw-datetime-time {
+        font-size: 11px;
+        color: #646970;
+        white-space: nowrap;
+    }
+}
+
+// Truncate long product names instead of stretching the row - full name is
+// still on the link's title tooltip.
+.tpfw-product-link {
+    display: inline-block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+// Grid instead of flex-wrap so rows always break after 3 buttons, regardless
+// of column width - not just once the column gets too narrow to fit them all.
+.tpfw-actions {
+    display: inline-grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: 6px;
+
+    .tpfw-btn {
+        font-size: 12px;
+        padding: 0 10px;
+        min-height: 28px;
+        line-height: 26px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+
+    .tpfw-btn--checkin {
+        border-color: #2e7d32;
+        color: #2e7d32;
+
+        &:hover {
+            background: #2e7d32;
+            color: #fff;
+        }
+    }
+
+    .tpfw-btn--resend {
+        border-color: #5b3ea3;
+        color: #5b3ea3;
+
+        &:hover {
+            background: #5b3ea3;
+            color: #fff;
+        }
+    }
+
+    .tpfw-btn--reset {
+        border-color: #8c8f94;
+        color: #3c434a;
+
+        &:hover {
+            background: #f0f0f1;
+        }
+    }
+
+    .tpfw-btn--cancel {
+        border-color: #a92323;
+        color: #a92323;
+
+        &:hover {
+            background: #a92323;
+            color: #fff;
+        }
+    }
+}

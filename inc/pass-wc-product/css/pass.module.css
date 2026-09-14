@@ -1,0 +1,528 @@
+/* Shared design system for the QR tabs across all product types (Ticket, Timeslot Ticket,
+   Pass, Guest Pass) - loaded on every product-edit admin page. */
+
+.hide {
+	display: none !important;
+}
+
+/****************************************************************************************************************************/
+/*  CARD-BASED SETTINGS LAYOUT (all 4 product types: Pass, Guest Pass, Ticket, Timeslot Ticket)                        */
+/****************************************************************************************************************************/
+
+.woocommerce_options_panel {
+	--tpfw-ink: #1d2327;
+	/* Pass, Ticket and Timeslot Ticket cards follow the admin's own colour scheme
+	   (--wp-admin-theme-color, set by WP core per user) instead of a fixed hue.
+	   Guest Pass keeps its own accent so the four card types stay distinguishable. */
+	--tpfw-annual-accent: var(--wp-admin-theme-color, #a8752c);
+	--tpfw-annual-accent-soft: color-mix(in srgb, var(--wp-admin-theme-color, #a8752c) 12%, white);
+	--tpfw-guest-accent: #3b6e8f;
+	--tpfw-guest-accent-soft: #e7eef2;
+	--tpfw-ticket-accent: var(--wp-admin-theme-color, #5b3ea3);
+	--tpfw-ticket-accent-soft: color-mix(in srgb, var(--wp-admin-theme-color, #5b3ea3) 12%, white);
+	--tpfw-timeslot-accent: var(--wp-admin-theme-color, #3f7d4a);
+	--tpfw-timeslot-accent-soft: color-mix(in srgb, var(--wp-admin-theme-color, #3f7d4a) 12%, white);
+	--tpfw-border: #dcdcde;
+	--tpfw-surface: #ffffff;
+	--tpfw-surface-muted: #f6f7f7;
+	--tpfw-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+
+.tpfw-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	/* Fill the product data panel instead of capping at a fixed width - the Timeslots
+	   card's rows (6 fields + actions per row) need the room; a fixed cap left them
+	   wrapping awkwardly narrower than the panel actually was. */
+	max-width: 100%;
+	/* padding, not margin: a top margin on the first child collapses through the
+	   (unpadded) .woocommerce_options_panel and ends up outside it, not below it. */
+	padding: 20px 0 4px;
+	margin: 0 0 20px;
+}
+
+.tpfw-card {
+	border: 1px solid var(--tpfw-border);
+	border-left: 3px solid var(--tpfw-border);
+	border-radius: 8px;
+	background: var(--tpfw-surface);
+	overflow: hidden;
+}
+
+/* Ticket, timeslot ticket and pass cards use a plain uniform border - no accent stripe. The
+   product type is already named in the tab strip above, so a coloured edge only added a second
+   thing to read. */
+.tpfw-card.tpfw-card--ticket,
+.tpfw-card.tpfw-card--timeslot,
+.tpfw-card.tpfw-card--annual,
+.tpfw-card.tpfw-card--guest { border-left: 1px solid var(--tpfw-border); }
+
+.tpfw-card-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 18px;
+	background: var(--tpfw-surface-muted);
+	border-bottom: 1px solid var(--tpfw-border);
+}
+
+.tpfw-card-icon {
+	width: 16px;
+	height: 16px;
+	flex: 0 0 16px;
+	stroke: var(--tpfw-ink);
+	fill: none;
+	stroke-width: 1.6;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.tpfw-card-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .06em;
+	color: var(--tpfw-ink);
+}
+
+.tpfw-card-tag {
+	margin-left: auto;
+	font-family: var(--tpfw-mono);
+	font-size: 11px;
+	letter-spacing: .02em;
+	color: #646970;
+	background: #fff;
+	border: 1px solid var(--tpfw-border);
+	border-radius: 9999px;
+	padding: 2px 10px;
+	white-space: nowrap;
+}
+
+/* Grid variant: opt-in via .tpfw-cards--grid, other product types keep the plain stacked
+   layout untouched. */
+.tpfw-cards.tpfw-cards--grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tpfw-cards--grid .tpfw-card--wide {
+	grid-column: 1 / -1;
+}
+
+@media (max-width: 1024px) {
+	.tpfw-cards.tpfw-cards--grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.tpfw-card-body {
+	padding: 0 18px;
+}
+
+/* !important needed: WooCommerce core hard-codes padding-left:162px on
+   .woocommerce_options_panel p.form-field to make room for its classic
+   absolutely-positioned label - our flex layout doesn't use that label
+   style, so the inherited padding left a dead gap that pushed every field
+   off the left edge and read as "centered". The extra ".woocommerce_options_panel"
+   qualifier below matches that rule's specificity (2 classes + a tag) so
+   this override actually wins instead of just tying and losing on source order. */
+.woocommerce_options_panel .tpfw-card-body .form-field,
+.tpfw-card-body .form-field {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	row-gap: 6px;
+	padding: 16px 0 12px !important;
+	margin: 0;
+	border-bottom: 1px dashed var(--tpfw-border);
+}
+
+/* Checkbox/toggle fields are the one exception - label and switch stay on one line. */
+.woocommerce_options_panel .tpfw-card-body .form-field:has(> input[type="checkbox"]),
+.tpfw-card-body .form-field:has(> input[type="checkbox"]) {
+	flex-direction: row;
+	align-items: center;
+	column-gap: 12px;
+}
+
+.tpfw-card-body .form-field:last-child { border-bottom: none; }
+
+.tpfw-card-body .form-field label {
+	float: none;
+	width: auto;
+	flex: 0 0 auto;
+	margin: 0;
+	padding: 0;
+	/* !important: WooCommerce sets line-height:40px on these labels for its classic
+	   inline layout. On a 12px font that is ~14px of dead half-leading under the text,
+	   which reads as a big gap above the stacked control. Its selector outweighs ours
+	   on specificity, but it is not !important, so this wins. */
+	line-height: 1.4 !important;
+	font-weight: 600;
+	color: var(--tpfw-ink);
+}
+
+.tpfw-card-body .form-field:has(> input[type="checkbox"]) label {
+	width: 220px;
+	flex: 0 0 220px;
+}
+
+/* Help tip sits right after the label, before the control - same spot WooCommerce
+   places it by default, so every field in the panel reads in the same order.
+   ">" (direct-child only) keeps this from also matching the hidden seconds input
+   or the number/select nested inside a .tpfw-duration-control. */
+.tpfw-card-body .form-field > .woocommerce-help-tip {
+	order: 1;
+	flex: 0 0 auto;
+	margin: 0;
+	opacity: .65;
+	transition: opacity .15s ease;
+}
+
+.tpfw-card-body .form-field > .woocommerce-help-tip:hover,
+.tpfw-card-body .form-field > .woocommerce-help-tip:focus-visible {
+	opacity: 1;
+}
+
+/* QR tab color fields: hex text input + native swatch travel together as one control. */
+.tpfw-card-body .form-field > .tpfw-color-control {
+	order: 2;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 0 0 auto;
+}
+
+.tpfw-card-body .form-field > .tpfw-color-control input[type="text"] {
+	width: 110px;
+	height: 32px;
+	box-sizing: border-box;
+	padding: 0 8px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	font-family: var(--tpfw-mono);
+}
+
+.tpfw-card-body .form-field > .tpfw-color-control input[type="color"] {
+	width: 40px;
+	height: 32px;
+	flex: 0 0 auto;
+	box-sizing: border-box;
+	padding: 2px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	cursor: pointer;
+	background: none;
+}
+
+/* The QR label text is free-form copy, not data - give it room to show what was typed,
+   unlike the fixed-width hex fields above which are always exactly 7 characters. */
+.tpfw-card-body .form-field.tpfw-qr-text-field > input[type="text"] {
+	width: 100%;
+	max-width: 320px;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.tpfw-card-body .form-field > input[type="text"],
+.tpfw-card-body .form-field > input[type="number"],
+.tpfw-card-body .form-field > input[type="date"],
+.tpfw-card-body .form-field > select {
+	order: 2;
+	height: 32px;
+	width: 220px;
+	flex: 0 0 auto;
+	box-sizing: border-box;
+	padding: 0 8px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+}
+
+.tpfw-card-body .form-field > input[type="number"] { font-family: var(--tpfw-mono); }
+
+/* Without an order of its own a textarea keeps the default 0 and lands *before* the help
+   tip (order 1), so the note cards read tip-after-field while every other card reads
+   tip-before-field. */
+.tpfw-card-body .form-field > textarea {
+	order: 2;
+	width: 100%;
+	max-width: 420px;
+	flex: 1 1 auto;
+	min-width: 0;
+	box-sizing: border-box;
+	padding: 6px 8px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+}
+
+/* A native multi-select needs to actually show its options, not get squashed to input height. */
+.tpfw-card-body .form-field > select[multiple] {
+	height: auto;
+	min-height: 120px;
+	width: 260px;
+}
+
+.tpfw-card-body .form-field > .tpfw-duration-control {
+	order: 2;
+	flex: 0 0 auto;
+}
+
+.tpfw-card-body .form-field > .description {
+	order: 3;
+	flex: 1 1 100%;
+	/* !important on the left: WooCommerce indents .description by 7px when it directly
+	   follows a checkbox, which knocked the hint out of line with the label above it. */
+	margin: 4px 0 0;
+	margin-left: 0 !important;
+	font-size: 12px;
+	color: #646970;
+}
+
+.tpfw-note-counter {
+	display: block;
+	font-family: var(--tpfw-mono);
+	font-size: 11px;
+	color: #8c8f94;
+	margin: -8px 0 8px;
+	text-align: right;
+}
+
+/* Checkboxes styled as switches, accented per pass type via --tpfw-toggle-accent. */
+.tpfw-card--annual { --tpfw-toggle-accent: var(--tpfw-annual-accent); }
+.tpfw-card--guest { --tpfw-toggle-accent: var(--tpfw-guest-accent); }
+.tpfw-card--ticket { --tpfw-toggle-accent: var(--tpfw-ticket-accent); }
+.tpfw-card--timeslot { --tpfw-toggle-accent: var(--tpfw-timeslot-accent); }
+
+.tpfw-card-body .form-field > input[type="checkbox"] {
+	order: 2;
+	appearance: none;
+	-webkit-appearance: none;
+	width: 40px;
+	height: 22px;
+	flex: 0 0 auto;
+	margin: 0;
+	border-radius: 11px;
+	background: #c3c4c7;
+	position: relative;
+	cursor: pointer;
+	transition: background .15s ease;
+}
+
+.tpfw-card-body .form-field input[type="checkbox"]::before {
+	content: "";
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+	transition: left .15s ease;
+}
+
+.tpfw-card-body .form-field input[type="checkbox"]:checked {
+	background: var(--tpfw-toggle-accent, #2271b1);
+}
+
+.tpfw-card-body .form-field input[type="checkbox"]:checked::before {
+	left: 20px;
+}
+
+.tpfw-card-body .form-field input[type="checkbox"]:focus-visible {
+	outline: 2px solid var(--tpfw-toggle-accent, #2271b1);
+	outline-offset: 2px;
+}
+
+/* Number + unit duration control - visible UI sits beside a hidden input that carries the raw seconds value. */
+.tpfw-duration-field .tpfw-duration-control {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.tpfw-duration-field .tpfw-duration-control input,
+.tpfw-duration-field .tpfw-duration-control select {
+	height: 32px;
+	box-sizing: border-box;
+	padding: 0 8px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+}
+
+.tpfw-duration-field .tpfw-duration-number {
+	width: 90px;
+	text-align: right;
+	font-family: var(--tpfw-mono);
+}
+
+.tpfw-duration-field .tpfw-duration-unit {
+	width: 110px;
+	background: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tpfw-card-body .form-field input[type="checkbox"],
+	.tpfw-card-body .form-field input[type="checkbox"]::before {
+		transition: none;
+	}
+}
+
+@media (max-width: 782px) {
+	.tpfw-card-body .form-field {
+		flex-wrap: wrap;
+	}
+
+	.tpfw-card-body .form-field label {
+		width: 100%;
+		flex: 1 1 100%;
+		order: 0;
+	}
+
+	.tpfw-card-body .form-field > input[type="text"],
+	.tpfw-card-body .form-field > input[type="number"],
+	.tpfw-card-body .form-field > input[type="date"],
+	.tpfw-card-body .form-field > textarea,
+	.tpfw-card-body .form-field > select {
+		width: 100%;
+		flex: 1 1 100%;
+	}
+
+	.tpfw-card-body .form-field > .tpfw-duration-control {
+		flex: 1 1 100%;
+	}
+}
+
+/****************************************************************************************************************************/
+/*  QR TAB "PASS CARD" MOCKUP (all 4 product types)                                                                            */
+/****************************************************************************************************************************/
+
+.tpfw-qr-layout {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 28px;
+	/* padding, not margin - see .tpfw-cards for why margin-top collapses away here. */
+	padding: 20px 0 0;
+	margin: 0 0 20px;
+}
+
+/* Both halves of the QR tab are just .tpfw-card flex items sitting directly in
+   .tpfw-qr-layout's row - no need for the .tpfw-cards stack wrapper since each
+   side only ever holds one card. */
+.tpfw-qr-fields-card {
+	flex: 1 1 320px;
+	min-width: 280px;
+}
+
+.tpfw-qr-preview-card {
+	flex: 0 0 auto;
+}
+
+.tpfw-card-body--preview {
+	padding: 18px;
+	display: flex;
+	justify-content: center;
+}
+
+.tpfw-qr-preview-col {
+	flex: 0 0 auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+}
+
+.tpfw-pass-card {
+	width: 260px;
+	max-width: 100%;
+	box-sizing: border-box;
+	border-radius: 16px;
+	overflow: hidden;
+	background: #fff;
+	border: 1px solid var(--tpfw-border);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, .08);
+}
+
+.tpfw-pass-card-header {
+	padding: 14px 16px;
+	background: var(--tpfw-pass-fg, #000);
+	color: var(--tpfw-pass-header-text, #fff);
+}
+
+.tpfw-pass-card-kicker {
+	display: block;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	opacity: .8;
+}
+
+.tpfw-pass-card-name {
+	display: block;
+	font-size: 15px;
+	font-weight: 700;
+	margin-top: 2px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.tpfw-pass-card-qr {
+	padding: 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--tpfw-pass-bg, #fff);
+}
+
+.tpfw-pass-card-qr img {
+	max-width: 100%;
+	max-height: 220px;
+}
+
+.tpfw-button-group {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+}
+
+
+/* Colour reset button on the QR tabs - the same control as on the settings screens, so the same
+   rules apply. Scoped under .wp-core-ui to beat core's own .wp-core-ui .button, which is what
+   otherwise sets the theme-blue border, the text-label padding and the 30px line-height that
+   pushes the icon off centre. */
+.wp-core-ui .tpfw-color-reset {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	min-height: 32px;
+	padding: 0;
+	line-height: 1;
+	border-color: #8c8f94;
+	color: #50575e;
+}
+
+.wp-core-ui .tpfw-color-reset:hover,
+.wp-core-ui .tpfw-color-reset:active {
+	border-color: #787c82;
+	color: #1d2327;
+	background: #f6f7f7;
+}
+
+/* Focus ring is left to core on purpose - it is the only visible focus indicator here. */
+
+.wp-core-ui .tpfw-color-reset .dashicons {
+	font-size: 17px;
+	width: 17px;
+	height: 17px;
+	line-height: 1;
+	color: inherit;
+}

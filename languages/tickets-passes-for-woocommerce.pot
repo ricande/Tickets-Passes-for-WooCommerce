@@ -1,0 +1,3474 @@
+# Copyright (C) 2026 Magnus V.
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Tickets & Passes for WooCommerce 1.2.3\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tickets-passes-for-woocommerce\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-09-02T22:01:54+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: tickets-passes-for-woocommerce\n"
+
+#. Plugin Name of the plugin
+#: tickets-passes-for-woocommerce.php
+msgid "Tickets & Passes for WooCommerce"
+msgstr ""
+
+#. Description of the plugin
+#: tickets-passes-for-woocommerce.php
+msgid "Sell tickets, timeslot bookings and passes with WooCommerce, and check visitors in at the door with a built-in QR scanner."
+msgstr ""
+
+#. Author of the plugin
+#: tickets-passes-for-woocommerce.php
+msgid "Magnus V."
+msgstr ""
+
+#: class--main.php:204
+msgid "First Name"
+msgstr ""
+
+#: class--main.php:205
+msgid "Last Name"
+msgstr ""
+
+#: class--main.php:206
+#: inc/functions/class--functions.php:828
+#: inc/pass-wc-product/class--pass-wc-product.php:1153
+msgid "Email"
+msgstr ""
+
+#: class--main.php:209
+#: class--main.php:210
+#: inc/dashboard/class--dashboard.php:953
+#: inc/functions/class--functions.php:386
+#: inc/functions/class--functions.php:725
+#: inc/functions/class--functions.php:4414
+#: inc/pass-dashboard/class--pass-dashboard.php:182
+#: inc/pass-wc-myaccount/template/page-content.php:102
+#: inc/pass-wc-product/class--pass-wc-product.php:1174
+#: inc/ticket-dashboard/class--ticket-dashboard.php:67
+#: inc/ticket-wc-myaccount/template/page-content.php:86
+#: inc/ticket-wc-product/class--ticket-wc-product.php:481
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:70
+msgid "Valid from"
+msgstr ""
+
+#: class--main.php:211
+#: inc/dashboard/class--dashboard.php:954
+#: inc/dashboard/class--dashboard.php:1079
+#: inc/functions/class--functions.php:390
+#: inc/functions/class--functions.php:729
+#: inc/functions/class--functions.php:4418
+#: inc/pass-wc-myaccount/template/page-content.php:106
+#: inc/pass-wc-product/class--pass-wc-product.php:1179
+#: inc/ticket-wc-myaccount/template/page-content.php:87
+#: inc/ticket-wc-product/class--ticket-wc-product.php:486
+msgid "Valid to"
+msgstr ""
+
+#: class--main.php:212
+#: inc/ticket-wc-myaccount/template/page-content.php:86
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:434
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2536
+msgid "Start"
+msgstr ""
+
+#: class--main.php:213
+#: inc/ticket-wc-myaccount/template/page-content.php:87
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:436
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2541
+msgid "End"
+msgstr ""
+
+#: class--main.php:222
+#: inc/pass-dashboard/class--pass-dashboard.php:180
+msgid "Pass ID"
+msgstr ""
+
+#. translators: %d: running number of the ticket within the order, e.g. "Ticket ID #2".
+#: class--main.php:227
+#, php-format
+msgid "Ticket ID #%d"
+msgstr ""
+
+#: inc/admin/class--admin.php:66
+#: inc/dashboard/class--dashboard.php:231
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:170
+msgid "The action could not be completed. Please try again."
+msgstr ""
+
+#: inc/admin/class--admin.php:126
+msgid "TPFW Product Actions"
+msgstr ""
+
+#: inc/admin/class--admin.php:147
+msgid "Tickets, Timeslot Tickets & Pass's"
+msgstr ""
+
+#: inc/admin/class--admin.php:148
+msgid "Create"
+msgstr ""
+
+#: inc/admin/class--admin.php:149
+#: inc/dashboard/class--dashboard.php:670
+#: inc/dashboard/class--dashboard.php:1055
+#: inc/dashboard/template/page-content.php:35
+#: inc/pass-dashboard/class--pass-dashboard.php:302
+#: inc/pass-wc-myaccount/template/page-content.php:128
+#: inc/scanner/class--scanner.php:298
+msgid "Cancel"
+msgstr ""
+
+#: inc/admin/class--admin.php:169
+#: inc/admin/class--admin.php:206
+#: inc/analytics-dashboard/class--analytics-dashboard.php:166
+#: inc/analytics-dashboard/class--analytics-dashboard.php:249
+#: inc/analytics-dashboard/class--analytics-dashboard.php:336
+#: inc/api/class--api-settings.php:74
+#: inc/emails/class--emails.php:311
+#: inc/functions/class--functions.php:1861
+#: inc/settings/class--settings-tab.php:211
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2712
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2763
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2834
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2866
+msgid "Current user does not have admin privileges"
+msgstr ""
+
+#: inc/admin/class--admin.php:175
+#: inc/admin/class--admin.php:212
+msgid "Order ID seems to be missing"
+msgstr ""
+
+#: inc/admin/class--admin.php:189
+msgid "Pass's cancelled for order"
+msgstr ""
+
+#: inc/admin/class--admin.php:223
+msgid "Tickets, Timeslot Tickets & Pass's created for order"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:74
+#: inc/analytics-dashboard/class--analytics-dashboard.php:75
+#: inc/analytics-dashboard/pages/page-content.php:36
+msgid "Analytics"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:121
+msgid "The statistics could not be loaded. Please try again."
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:122
+#: inc/dashboard/class--dashboard.php:1052
+#: inc/pass-dashboard/class--pass-dashboard.php:295
+msgid "Checkin"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:124
+#: inc/functions/class--functions.php:4091
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1716
+msgid "January"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:125
+#: inc/functions/class--functions.php:4092
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1717
+msgid "February"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:126
+#: inc/functions/class--functions.php:4093
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1718
+msgid "March"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:127
+#: inc/functions/class--functions.php:4094
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1719
+msgid "April"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:128
+#: inc/functions/class--functions.php:4095
+#: inc/functions/class--functions.php:4109
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1720
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1735
+msgid "May"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:129
+#: inc/functions/class--functions.php:4096
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1721
+msgid "June"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:130
+#: inc/functions/class--functions.php:4097
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1722
+msgid "July"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:131
+#: inc/functions/class--functions.php:4098
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1723
+msgid "August"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:132
+#: inc/functions/class--functions.php:4099
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1724
+msgid "September"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:133
+#: inc/functions/class--functions.php:4100
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1725
+msgid "October"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:134
+#: inc/functions/class--functions.php:4101
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1726
+msgid "November"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:135
+#: inc/functions/class--functions.php:4102
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1727
+msgid "December"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:172
+#: inc/analytics-dashboard/class--analytics-dashboard.php:178
+#: inc/analytics-dashboard/class--analytics-dashboard.php:342
+#: inc/analytics-dashboard/class--analytics-dashboard.php:348
+msgid "The start date seems not to be set"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:184
+#: inc/analytics-dashboard/class--analytics-dashboard.php:354
+msgid "The product id seems not to be set, or not an array"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:212
+msgid "Customer ID"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:213
+msgid "Customer Email"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:214
+msgid "Customer Name"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:215
+#: inc/dashboard/class--dashboard.php:950
+msgid "Product ID"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:216
+msgid "Product Name"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:217
+msgid "Checkin Date"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:226
+msgid "There are no check-ins in the selected range to export"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:230
+msgid "Successfully fetched all available data, and transformed to a CSV file"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:255
+msgid "The year date seems not to be set"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:261
+msgid "The month date seems not to be set"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:267
+msgid "The day date seems not to be set"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:273
+msgid "The product id seems not to be set or not an array"
+msgstr ""
+
+#: inc/analytics-dashboard/class--analytics-dashboard.php:317
+#: inc/analytics-dashboard/class--analytics-dashboard.php:402
+msgid "Succesful fetched all available data"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:23
+#: inc/ticket-dashboard/class--ticket-dashboard.php:32
+#: inc/ticket-dashboard/class--ticket-dashboard.php:34
+#: inc/ticket-wc-myaccount/class--ticket-wc-myaccount.php:136
+#: inc/ticket-wc-myaccount/template/page-content.php:49
+msgid "Tickets"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:24
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:32
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:34
+msgid "Timeslot Tickets"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:25
+#: inc/pass-dashboard/class--pass-dashboard.php:34
+#: inc/pass-dashboard/class--pass-dashboard.php:36
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:153
+#: inc/pass-wc-myaccount/template/page-content.php:18
+#: inc/pass-wc-product/class--pass-wc-product.php:1238
+msgid "Passes"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:37
+msgid "Check-ins recorded at the door, day by day and hour by hour."
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:47
+msgid "Year"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:62
+#: inc/functions/class--functions.php:977
+#: inc/functions/class--functions.php:1220
+#: inc/functions/class--functions.php:1283
+msgid "Products"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:65
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:959
+msgid "All"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:66
+msgid "None"
+msgstr ""
+
+#. translators: 1: number of products currently selected, 2: total number of products available.
+#: inc/analytics-dashboard/pages/page-content.php:70
+#, php-format
+msgid "%1$s of %2$s selected"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:110
+msgid "Show check-ins"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:117
+msgid "Check-ins by day"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:118
+msgid "Select a day to break it down by hour."
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:120
+msgid "Export year"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:125
+#: inc/dashboard/class--dashboard.php:955
+#: inc/pass-dashboard/class--pass-dashboard.php:183
+#: inc/ticket-dashboard/class--ticket-dashboard.php:68
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:69
+msgid "Check-ins"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:129
+msgid "Busiest day"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:133
+msgid "Days with check-ins"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:141
+msgid "No check-ins were recorded for this year and selection."
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:145
+msgid "Quiet"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:149
+msgid "Busy"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:156
+msgid "Check-ins by hour"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:160
+msgid "Go to date"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:162
+msgid "Export day"
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:169
+msgid "Select a day above, or pick a date, to see when people arrived."
+msgstr ""
+
+#: inc/analytics-dashboard/pages/page-content.php:170
+msgid "Nobody checked in on this day."
+msgstr ""
+
+#: inc/api/class--api-settings.php:33
+msgid "Scanner / API Settings"
+msgstr ""
+
+#. translators: %s: HTTP status the colour is for, e.g. 202
+#: inc/api/class--api-settings.php:108
+#, php-format
+msgid "Status %s color is not a valid HEX format color"
+msgstr ""
+
+#: inc/api/class--api-settings.php:126
+msgid "Scanner / API Settings have successfully been updated"
+msgstr ""
+
+#: inc/api/class--api.php:120
+msgid "Timeslot ticket could not be found"
+msgstr ""
+
+#: inc/api/class--api.php:170
+#: inc/api/class--api.php:171
+#: inc/scanner/class--scanner.php:177
+#: inc/scanner/class--scanner.php:182
+msgid "Access denied"
+msgstr ""
+
+#: inc/api/class--api.php:262
+msgid "Guest Pass could not be found with the given id"
+msgstr ""
+
+#: inc/api/class--api.php:270
+#: inc/api/class--api.php:313
+msgid "Parent Pass could not be found with the given id"
+msgstr ""
+
+#: inc/api/class--api.php:325
+msgid "Timeslot / Ticket / Pass could not be found with the given id"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:51
+msgid "Checks in a ticket, timeslot ticket or pass. One nano id namespace covers all three - the endpoint works out which type the scanned code belongs to."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:52
+#: inc/api/setting-pages/api-page-content.php:63
+#: inc/api/setting-pages/api-page-content.php:74
+msgid "Scanner role or manage_woocommerce"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:54
+msgid "Checked in. Body carries sMessage, the ticket/pass row as ticket, valid_from, valid_to, max_uses (tickets and timeslot tickets), sPhotoURL (passes) and sHexColor."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:55
+msgid "Refused for a reason the door staff needs to read: outside its validity window, on cooldown after a previous scan (iCooldown, iCooldownOver), already at its maximum uses, or being scanned at another door at the same moment. Body carries sMessage and sHexColor."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:56
+msgid "No valid credentials, or no ticket, timeslot ticket or pass matches the id."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:57
+#: inc/api/setting-pages/api-page-content.php:68
+msgid "The nano id in the path is not shaped like one, so nothing was looked up."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:62
+msgid "Checks in a guest pass - a pass issued under a parent pass. Same responses as the endpoint above, plus sPhotoURL on success when the guest has a profile photo."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:65
+msgid "Checked in. Body carries sMessage, sPhotoURL and sHexColor."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:66
+msgid "Outside its validity window, on cooldown, at its maximum uses, or being scanned at another door at the same moment."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:67
+msgid "No valid credentials, or the guest pass (or its parent pass) could not be found."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:73
+msgid "The 50 most recent check-ins performed by the authenticated scanner account, newest first. Use it to fill a history list in your app. Each entry has sTypeKey (ticket, timeslot, pass or guestpass), sHolderName and sCreatedUTC, an ISO-8601 timestamp carrying the site timezone offset."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:76
+msgid "Body carries aHistory, an array of entries. An account that has scanned nothing gets an empty array."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:77
+msgid "No valid credentials."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:82
+msgid "Returns a timeslot ticket as a calendar file. This one is deliberately open: the nano id in the URL is itself the secret, and the confirmation email hands it to the customer so they can add their booking to a calendar on any device."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:83
+msgid "None - the nano id is the secret"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:85
+msgid "A text/calendar file, not JSON."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:86
+msgid "No timeslot ticket matches the id."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:96
+msgid "This is the check-in API external scanner apps use to validate tickets, timeslot tickets and passes."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:97
+msgid "Turn the API and the built-in scanner page on or off below, and set the colors returned to the scanner for each scan result."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:102
+msgid "A note on the built-in scanner"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:103
+msgid "The check-in page that ships with this plugin does the job: it opens the camera in a browser, decodes the QR code and checks the visitor in. For a small door, or a venue scanning a few hundred people a night, it is all you need."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:104
+msgid "It is not the optimal tool, though. A browser page cannot drive a phone the way a native app can: focus and decoding are slower, every single scan needs a live connection, and a locked screen or a switched tab interrupts the camera. If you scan at volume, or at a gate where the signal is poor, a standalone native scanner app will be faster and far more reliable."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:105
+msgid "That is what the API is for. Turn it on and any app - one your developer builds, or an existing scanner app that can call a URL - can check tickets, timeslot tickets and passes in against this site. The endpoints are documented below: plain authenticated GET requests, so a working prototype is an afternoon of work rather than a project."
+msgstr ""
+
+#. translators: %s: link to the plugin support forum.
+#: inc/api/setting-pages/api-page-content.php:109
+#, php-format
+msgid "If you would rather not build it yourself, get in touch on %s and we can see if we can figure something out."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:110
+msgid "the plugin support forum"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:117
+msgid "Enable API"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:117
+msgid "An API is how an external app - like a scanner app on your door staff's phones - talks to this site to check tickets in and out. Turn this on only if something outside this site needs to call the check-in endpoints; the built-in scanner below works without it."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:128
+msgid "API endpoint reference"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:130
+msgid "Base URL"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:132
+msgid "Every path below is relative to that. All of them are GET requests and return JSON, apart from the calendar file."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:134
+msgid "Authentication"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:135
+msgid "HTTP Basic authentication with a WordPress account on this site that holds the Scanner role, or any account that can manage WooCommerce. Create one account per device so the check-in history tells you which door did what."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:136
+msgid "Use an Application Password rather than the real account password - WordPress generates them under Users, they only work for API requests and can be revoked one at a time. Send requests over HTTPS: Basic authentication puts the credentials in a header on every single request."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:137
+msgid "Outside callers are only accepted while Enable API is on above. The built-in scanner page authenticates with its own login session instead, so it keeps working either way."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:139
+msgid "Endpoints"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:144
+msgid "Requires:"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:153
+msgid "Result colors"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:154
+msgid "Every JSON response carries sHexColor, the color configured above for that outcome. Painting your result screen with it means the colors your staff learn to read are set here, in wp-admin, and not baked into the app."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:156
+msgid "Example"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:158
+msgid "A nano id is 21 characters of A-Z, a-z and 0-9. The QR code itself contains the full check-in URL for this site (…/scanner/checkin/<nano id>, with /guest appended for a guest pass), so your app can either request that URL directly or take the last path segment and build the request against this site's REST base."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:164
+msgid "Enable built-in scanner"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:164
+msgid "Turns on the check-in page at /check-in/ - a full-screen camera scanner your door staff open on a phone, with no wp-admin around it. They sign in with a WordPress account that has the Scanner role, and a link to it appears in this plugin's menu. Leave it off if you check people in with a separate scanner app instead. This toggle is independent of the API above."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:176
+msgid "Successful Check-in (200)"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:176
+msgid "Color the scanner app should show when a ticket, timeslot ticket or pass is successfully checked in."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:181
+#: inc/api/setting-pages/api-page-content.php:191
+#: inc/api/setting-pages/api-page-content.php:201
+#: inc/functions/class--functions.php:1984
+#: inc/functions/class--functions.php:1993
+#: inc/functions/class--functions.php:2002
+#: inc/pass-settings/setting-pages/pass-page-content.php:96
+#: inc/pass-settings/setting-pages/pass-page-content.php:106
+#: inc/pass-settings/setting-pages/pass-page-content.php:116
+#: inc/pass-settings/setting-pages/pass-page-content.php:126
+#: inc/pass-settings/setting-pages/pass-page-content.php:136
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:112
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:122
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:132
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:142
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:152
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:162
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:172
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:109
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:119
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:129
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:139
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:149
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:159
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:169
+msgid "Reset to the default color"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:186
+msgid "Not Valid or Already Used (202)"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:186
+msgid "Color shown when a scan happens outside its valid time window, on cooldown after a previous scan, or after it has already reached its maximum uses."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:196
+msgid "Invalid Request (406)"
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:196
+msgid "Color shown when the request itself is invalid, e.g. the scanned code doesn't match any known ticket, timeslot ticket or pass."
+msgstr ""
+
+#: inc/api/setting-pages/api-page-content.php:207
+#: inc/emails/template/page-content.php:131
+#: inc/pass-settings/setting-pages/pass-page-content.php:142
+#: inc/settings/setting-pages/page-content.php:71
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:178
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:175
+msgid "Save Settings"
+msgstr ""
+
+#: inc/cronjobs/class--cronjobs.php:66
+msgid "Once per Minute"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:132
+#: inc/dashboard/class--dashboard.php:269
+msgid "This action is only allowed for site admins"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:232
+msgid "Sent"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:233
+msgid "Cancel this item? Its QR code will stop working until it is reset."
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:234
+msgid "Reset this item? Its recorded check-ins will be cleared."
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:235
+msgid "Remove this profile photo? The holder will be able to upload a new one."
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:236
+msgid "Apply this action to every selected row?"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:237
+msgid "Transferred"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:285
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:93
+msgid "Nano ID not found"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:308
+msgid "No matching row found for the provided Nano ID"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:314
+msgid "User with the given ID, was not found"
+msgstr ""
+
+#. translators: %s: email address the ticket or pass was sent to
+#: inc/dashboard/class--dashboard.php:324
+#, php-format
+msgid "Successfully resent to %s"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:340
+msgid "Order not found"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:347
+msgid "The product this ticket was bought from no longer exists"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:354
+msgid "Email Message was empty, so no email was send"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:390
+msgid "No account was found for that email address or user ID. The new holder needs an account on this site first."
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:398
+msgid "No active row was found for the provided Nano ID"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:402
+msgid "That account already holds this item."
+msgstr ""
+
+#. translators: 1: row type ("Ticket"), 2: nano id, 3: previous holder, 4: new holder, 5: admin who did it
+#: inc/dashboard/class--dashboard.php:416
+#, php-format
+msgid "%1$s %2$s transferred from %3$s to %4$s by %5$s."
+msgstr ""
+
+#. translators: %s: new holder's email address
+#: inc/dashboard/class--dashboard.php:427
+#, php-format
+msgid "Transferred and emailed to %s"
+msgstr ""
+
+#. translators: 1: new holder's email address, 2: why the email was not sent
+#: inc/dashboard/class--dashboard.php:429
+#, php-format
+msgid "Transferred to %1$s, but the email could not be sent: %2$s"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:468
+msgid "Successfully reset"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:505
+#: inc/dashboard/class--dashboard.php:986
+#: inc/dashboard/class--dashboard.php:1007
+#: inc/functions/class--functions.php:4492
+#: inc/pass-dashboard/class--pass-dashboard.php:202
+#: inc/pass-dashboard/class--pass-dashboard.php:215
+#: inc/pass-wc-myaccount/template/page-content.php:56
+#: inc/ticket-wc-myaccount/template/page-content.php:99
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:802
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:822
+msgid "Cancelled"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:506
+msgid "Successfully cancelled"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:617
+msgid "Filter by status"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:619
+msgid "All statuses"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:624
+#: inc/dashboard/class--dashboard.php:625
+msgid "Search"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:626
+msgid "Filter"
+msgstr ""
+
+#. translators: %s: number of rows the current search and filter match.
+#: inc/dashboard/class--dashboard.php:641
+#, php-format
+msgid "Download CSV (%s row)"
+msgid_plural "Download CSV (%s rows)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: inc/dashboard/class--dashboard.php:671
+#: inc/dashboard/class--dashboard.php:1054
+#: inc/pass-dashboard/class--pass-dashboard.php:300
+msgid "Reset"
+msgstr ""
+
+#. translators: 1: rows cancelled, 2: rows selected
+#: inc/dashboard/class--dashboard.php:730
+#, php-format
+msgid "%1$d of %2$d selected rows cancelled."
+msgstr ""
+
+#. translators: 1: rows reset, 2: rows selected
+#: inc/dashboard/class--dashboard.php:732
+#, php-format
+msgid "%1$d of %2$d selected rows reset."
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:946
+msgid "ID"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:947
+#: inc/pass-dashboard/class--pass-dashboard.php:181
+#: inc/ticket-dashboard/class--ticket-dashboard.php:66
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:68
+msgid "Status"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:948
+msgid "Holder user ID"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:949
+msgid "Holder email"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:951
+#: inc/emails/class--emails.php:256
+#: inc/pass-dashboard/class--pass-dashboard.php:184
+#: inc/ticket-dashboard/class--ticket-dashboard.php:69
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:71
+msgid "Product"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:952
+msgid "Order ID"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:956
+msgid "Max uses"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:957
+#: inc/pass-dashboard/class--pass-dashboard.php:186
+#: inc/ticket-dashboard/class--ticket-dashboard.php:71
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:73
+msgid "Created"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:987
+#: inc/dashboard/class--dashboard.php:1004
+#: inc/functions/class--functions.php:4488
+#: inc/product-type/class--product-type.php:132
+#: inc/ticket-wc-myaccount/template/page-content.php:104
+msgid "Used"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:988
+#: inc/dashboard/class--dashboard.php:1005
+#: inc/functions/class--functions.php:4490
+#: inc/pass-dashboard/class--pass-dashboard.php:200
+#: inc/pass-dashboard/class--pass-dashboard.php:216
+#: inc/pass-wc-myaccount/template/page-content.php:61
+#: inc/ticket-wc-myaccount/template/page-content.php:109
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2553
+msgid "Expired"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:989
+#: inc/dashboard/class--dashboard.php:1006
+#: inc/functions/class--functions.php:4491
+#: inc/pass-dashboard/class--pass-dashboard.php:201
+#: inc/pass-dashboard/class--pass-dashboard.php:217
+#: inc/pass-wc-myaccount/template/page-content.php:66
+#: inc/ticket-wc-myaccount/template/page-content.php:114
+msgid "Not valid yet"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:990
+#: inc/dashboard/class--dashboard.php:1003
+#: inc/functions/class--functions.php:4487
+#: inc/product-type/class--product-type.php:132
+msgid "Partial"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:991
+#: inc/dashboard/class--dashboard.php:1002
+#: inc/functions/class--functions.php:4486
+#: inc/product-type/class--product-type.php:132
+#: inc/ticket-dashboard/class--ticket-dashboard.php:35
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:35
+msgid "Unused"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:1048
+#: inc/dashboard/template/page-content.php:36
+msgid "Transfer"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:1053
+#: inc/pass-dashboard/class--pass-dashboard.php:301
+msgid "Resend"
+msgstr ""
+
+#: inc/dashboard/class--dashboard.php:1072
+msgid "(deleted product)"
+msgstr ""
+
+#: inc/dashboard/template/page-content.php:29
+msgid "Transfer to another customer"
+msgstr ""
+
+#: inc/dashboard/template/page-content.php:30
+msgid "The new holder must already have an account on this site. They will be emailed the QR code, and a note is added to the original order."
+msgstr ""
+
+#: inc/dashboard/template/page-content.php:31
+msgid "Email address or user ID"
+msgstr ""
+
+#: inc/emails/class--emails.php:34
+msgid "Email Settings"
+msgstr ""
+
+#: inc/emails/class--emails.php:61
+msgid "Copied!"
+msgstr ""
+
+#: inc/emails/class--emails.php:62
+msgid "Failed to save settings."
+msgstr ""
+
+#: inc/emails/class--emails.php:236
+msgid "Purchased Items"
+msgstr ""
+
+#: inc/emails/class--emails.php:259
+#: inc/functions/class--functions.php:996
+#: inc/functions/class--functions.php:1239
+#: inc/functions/class--functions.php:1302
+msgid "Your QR Code"
+msgstr ""
+
+#: inc/emails/class--emails.php:272
+#: inc/functions/class--functions.php:986
+#: inc/functions/class--functions.php:1229
+#: inc/functions/class--functions.php:1292
+#: inc/pass-wc-product/class--pass-wc-product.php:1253
+msgid "Firstname"
+msgstr ""
+
+#: inc/emails/class--emails.php:273
+#: inc/functions/class--functions.php:987
+#: inc/functions/class--functions.php:1230
+#: inc/functions/class--functions.php:1293
+#: inc/pass-wc-product/class--pass-wc-product.php:1254
+msgid "Lastname"
+msgstr ""
+
+#: inc/emails/class--emails.php:277
+#: inc/ticket-wc-myaccount/template/page-content.php:191
+msgid "Add to Calendar"
+msgstr ""
+
+#: inc/emails/class--emails.php:346
+msgid "Email Settings have successfully been updated"
+msgstr ""
+
+#: inc/emails/template/page-content.php:10
+msgid "WooCommerce Order Confirmation"
+msgstr ""
+
+#: inc/emails/template/page-content.php:11
+msgid "Appended to the standard WooCommerce order confirmation email whenever the order contains a ticket, timeslot ticket or pass. The QR codes are not issued yet at this point, so this text cannot show them."
+msgstr ""
+
+#: inc/emails/template/page-content.php:16
+msgid "WooCommerce Completed Order"
+msgstr ""
+
+#: inc/emails/template/page-content.php:17
+msgid "Appended to the WooCommerce completed order email whenever the order contains a ticket, timeslot ticket or pass. This is the first email that carries the QR codes, which are listed below this text."
+msgstr ""
+
+#: inc/emails/template/page-content.php:22
+msgid "Resend Ticket"
+msgstr ""
+
+#: inc/emails/template/page-content.php:23
+msgid "Sent when a customer or admin manually resends a ticket's QR code from the order or account dashboard."
+msgstr ""
+
+#: inc/emails/template/page-content.php:28
+msgid "Resend Pass"
+msgstr ""
+
+#: inc/emails/template/page-content.php:29
+msgid "Sent when a customer or admin manually resends a pass's QR code from the order or account dashboard."
+msgstr ""
+
+#: inc/emails/template/page-content.php:34
+msgid "Guest Pass Invite - New User"
+msgstr ""
+
+#: inc/emails/template/page-content.php:35
+msgid "Sent to a guest pass recipient who doesn't have an account on this site yet, inviting them to create one."
+msgstr ""
+
+#: inc/emails/template/page-content.php:40
+msgid "Guest Pass Invite - Existing User"
+msgstr ""
+
+#: inc/emails/template/page-content.php:41
+msgid "Sent to a guest pass recipient who already has an account on this site."
+msgstr ""
+
+#: inc/emails/template/page-content.php:70
+msgid "These templates control the emails sent automatically alongside your regular WooCommerce order emails."
+msgstr ""
+
+#: inc/emails/template/page-content.php:71
+msgid "Expand a template below to edit its subject and message, and use the tags to insert live details like the customer's name or QR code."
+msgstr ""
+
+#. translators: %s: name of the email settings panel being toggled open or closed.
+#: inc/emails/template/page-content.php:97
+#, php-format
+msgid "Toggle panel: %s"
+msgstr ""
+
+#: inc/emails/template/page-content.php:106
+msgid "Subject"
+msgstr ""
+
+#: inc/emails/template/page-content.php:111
+msgid "Message"
+msgstr ""
+
+#: inc/emails/template/page-content.php:118
+msgid "Available tags - click to insert at your cursor:"
+msgstr ""
+
+#: inc/functions/class--functions.php:151
+#: inc/scanner/class--scanner.php:67
+#: inc/scanner/class--scanner.php:68
+msgid "Scanner"
+msgstr ""
+
+#: inc/functions/class--functions.php:289
+#: inc/functions/class--functions.php:610
+msgid "Missing Nano ID"
+msgstr ""
+
+#: inc/functions/class--functions.php:299
+#: inc/functions/class--functions.php:621
+msgid "QR code image does not seem to exist"
+msgstr ""
+
+#: inc/functions/class--functions.php:327
+msgid "Ticket / Timeslot with given Nano ID does not seem to exist"
+msgstr ""
+
+#: inc/functions/class--functions.php:342
+msgid "The product this ticket belongs to no longer exists"
+msgstr ""
+
+#: inc/functions/class--functions.php:355
+#: inc/functions/class--functions.php:664
+msgid "QR code image could not be read"
+msgstr ""
+
+#: inc/functions/class--functions.php:374
+#: inc/functions/class--functions.php:824
+#: inc/functions/class--functions.php:3130
+#: inc/scanner/class--scanner.php:241
+#: inc/ticket-dashboard/class--ticket-dashboard.php:33
+#: inc/ticket-wc-product/class--ticket-wc-product.php:390
+msgid "Ticket"
+msgstr ""
+
+#: inc/functions/class--functions.php:434
+msgid "The ticket PDF could not be generated"
+msgstr ""
+
+#: inc/functions/class--functions.php:440
+#: inc/functions/class--functions.php:777
+msgid "PDF file successfully created and fetched"
+msgstr ""
+
+#: inc/functions/class--functions.php:469
+#: inc/functions/class--functions.php:825
+#: inc/scanner/class--scanner.php:242
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:33
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:330
+msgid "Timeslot Ticket"
+msgstr ""
+
+#: inc/functions/class--functions.php:635
+#: inc/functions/class--functions.php:3853
+#: inc/functions/class--functions.php:3945
+msgid "Pass with given Nano ID does not seem to exist"
+msgstr ""
+
+#: inc/functions/class--functions.php:654
+msgid "The product this pass belongs to no longer exists"
+msgstr ""
+
+#: inc/functions/class--functions.php:670
+#: inc/functions/class--functions.php:826
+#: inc/functions/class--functions.php:3142
+#: inc/pass-dashboard/class--pass-dashboard.php:35
+#: inc/pass-dashboard/class--pass-dashboard.php:348
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:362
+#: inc/pass-wc-product/class--pass-wc-product.php:318
+#: inc/scanner/class--scanner.php:243
+msgid "Pass"
+msgstr ""
+
+#: inc/functions/class--functions.php:670
+#: inc/pass-dashboard/class--pass-dashboard.php:298
+#: inc/pass-dashboard/class--pass-dashboard.php:349
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:100
+#: inc/pass-wc-myaccount/template/page-content.php:146
+#: inc/pass-wc-myaccount/template/page-content.php:183
+#: inc/pass-wc-product/class--pass-wc-product.php:304
+#: inc/pass-wc-product/class--pass-wc-product.php:376
+#: inc/scanner/class--scanner.php:244
+msgid "Guest Pass"
+msgstr ""
+
+#: inc/functions/class--functions.php:771
+msgid "The pass PDF could not be generated"
+msgstr ""
+
+#: inc/functions/class--functions.php:823
+msgid "General"
+msgstr ""
+
+#: inc/functions/class--functions.php:827
+msgid "Scanner / API"
+msgstr ""
+
+#: inc/functions/class--functions.php:832
+#: inc/settings/class--settings.php:63
+#: inc/settings/class--settings.php:64
+msgid "Ticket & Passes"
+msgstr ""
+
+#: inc/functions/class--functions.php:937
+msgid "Ticket ID: "
+msgstr ""
+
+#: inc/functions/class--functions.php:1040
+#: inc/functions/class--functions.php:1047
+#: inc/functions/class--functions.php:1054
+#: inc/functions/class--functions.php:1063
+#: inc/functions/class--functions.php:1072
+#: inc/functions/class--functions.php:1082
+msgid "Hi {{customer_name}},"
+msgstr ""
+
+#: inc/functions/class--functions.php:1041
+msgid "Thanks for your order at {{site_name}}. We will email your QR codes as soon as the order is completed - until then there is nothing you need to do."
+msgstr ""
+
+#: inc/functions/class--functions.php:1043
+msgid "Your tickets and passes will also appear under <a href=\"{{myaccount_url}}\">My Account</a>."
+msgstr ""
+
+#: inc/functions/class--functions.php:1048
+msgid "Your order at {{site_name}} is complete. Your QR codes are below - have them ready at the door."
+msgstr ""
+
+#: inc/functions/class--functions.php:1050
+msgid "You can find them again at any time under <a href=\"{{myaccount_url}}\">My Account</a>."
+msgstr ""
+
+#: inc/functions/class--functions.php:1053
+msgid "Your ticket for {{site_name}} (order #{{order_id}})"
+msgstr ""
+
+#: inc/functions/class--functions.php:1055
+msgid "Here is your ticket again - show the QR code below at the door."
+msgstr ""
+
+#: inc/functions/class--functions.php:1058
+msgid "Ticket ID: {{nano_id}}"
+msgstr ""
+
+#: inc/functions/class--functions.php:1059
+#: inc/functions/class--functions.php:1068
+msgid "You can also find it under <a href=\"{{myaccount_url}}\">My Account</a>."
+msgstr ""
+
+#: inc/functions/class--functions.php:1062
+msgid "Your pass for {{site_name}} (order #{{order_id}})"
+msgstr ""
+
+#: inc/functions/class--functions.php:1064
+msgid "Here is your pass again - show the QR code below at the door."
+msgstr ""
+
+#: inc/functions/class--functions.php:1067
+msgid "Pass ID: {{nano_id}}"
+msgstr ""
+
+#: inc/functions/class--functions.php:1071
+#: inc/functions/class--functions.php:1081
+msgid "{{buyer_name}} has sent you a pass for {{site_name}}"
+msgstr ""
+
+#: inc/functions/class--functions.php:1073
+#: inc/functions/class--functions.php:1083
+msgid "{{buyer_name}} has bought you a pass for {{site_name}}. Show the QR code below at the door."
+msgstr ""
+
+#: inc/functions/class--functions.php:1076
+msgid "We have created an account for you so you can find your pass again at any time:"
+msgstr ""
+
+#: inc/functions/class--functions.php:1078
+msgid "Sign in at <a href=\"{{site_login}}\">{{site_login}}</a> and open <a href=\"{{myaccount_url}}\">My Account</a>."
+msgstr ""
+
+#: inc/functions/class--functions.php:1086
+msgid "It is also waiting for you under <a href=\"{{myaccount_url}}\">My Account</a>."
+msgstr ""
+
+#: inc/functions/class--functions.php:1129
+#: inc/functions/class--functions.php:1138
+#: inc/functions/class--functions.php:1147
+#: inc/functions/class--functions.php:1160
+#: inc/functions/class--functions.php:1173
+#: inc/functions/class--functions.php:1188
+msgid "Name of your site"
+msgstr ""
+
+#: inc/functions/class--functions.php:1130
+#: inc/functions/class--functions.php:1139
+#: inc/functions/class--functions.php:1148
+#: inc/functions/class--functions.php:1161
+#: inc/functions/class--functions.php:1174
+#: inc/functions/class--functions.php:1189
+msgid "Login URL, to your site"
+msgstr ""
+
+#: inc/functions/class--functions.php:1131
+#: inc/functions/class--functions.php:1140
+#: inc/functions/class--functions.php:1149
+#: inc/functions/class--functions.php:1162
+#: inc/functions/class--functions.php:1175
+#: inc/functions/class--functions.php:1190
+msgid "Site URL"
+msgstr ""
+
+#: inc/functions/class--functions.php:1132
+#: inc/functions/class--functions.php:1141
+#: inc/functions/class--functions.php:1150
+#: inc/functions/class--functions.php:1163
+#: inc/functions/class--functions.php:1176
+#: inc/functions/class--functions.php:1191
+msgid "Direct URL to 'My Account'"
+msgstr ""
+
+#: inc/functions/class--functions.php:1133
+#: inc/functions/class--functions.php:1142
+#: inc/functions/class--functions.php:1151
+#: inc/functions/class--functions.php:1164
+#: inc/functions/class--functions.php:1177
+#: inc/functions/class--functions.php:1178
+#: inc/functions/class--functions.php:1192
+#: inc/functions/class--functions.php:1193
+msgid "Name of the customer"
+msgstr ""
+
+#: inc/functions/class--functions.php:1134
+#: inc/functions/class--functions.php:1143
+#: inc/functions/class--functions.php:1156
+#: inc/functions/class--functions.php:1169
+#: inc/functions/class--functions.php:1184
+#: inc/functions/class--functions.php:1198
+msgid "The product note written on the product, if any"
+msgstr ""
+
+#: inc/functions/class--functions.php:1152
+msgid "The Nano ID of the Ticket"
+msgstr ""
+
+#: inc/functions/class--functions.php:1153
+msgid "Ticket QR Image"
+msgstr ""
+
+#: inc/functions/class--functions.php:1154
+#: inc/functions/class--functions.php:1167
+#: inc/functions/class--functions.php:1182
+#: inc/functions/class--functions.php:1196
+msgid "Direct URL link to the QR code"
+msgstr ""
+
+#: inc/functions/class--functions.php:1155
+#: inc/functions/class--functions.php:1168
+#: inc/functions/class--functions.php:1183
+#: inc/functions/class--functions.php:1197
+msgid "The ID of the connected Order"
+msgstr ""
+
+#: inc/functions/class--functions.php:1165
+#: inc/functions/class--functions.php:1180
+#: inc/functions/class--functions.php:1194
+msgid "The Nano ID of the Pass"
+msgstr ""
+
+#: inc/functions/class--functions.php:1166
+#: inc/functions/class--functions.php:1181
+#: inc/functions/class--functions.php:1195
+msgid "Pass QR Image"
+msgstr ""
+
+#: inc/functions/class--functions.php:1179
+msgid "Username of the new account and a link to choose its password"
+msgstr ""
+
+#: inc/functions/class--functions.php:1311
+msgid "Login Details"
+msgstr ""
+
+#: inc/functions/class--functions.php:1319
+msgid "Username"
+msgstr ""
+
+#: inc/functions/class--functions.php:1327
+msgid "Password"
+msgstr ""
+
+#: inc/functions/class--functions.php:1330
+msgid "Choose your password"
+msgstr ""
+
+#: inc/functions/class--functions.php:1828
+msgid "Seconds"
+msgstr ""
+
+#: inc/functions/class--functions.php:1829
+msgid "Minutes"
+msgstr ""
+
+#: inc/functions/class--functions.php:1830
+msgid "Hours"
+msgstr ""
+
+#: inc/functions/class--functions.php:1831
+msgid "Days"
+msgstr ""
+
+#: inc/functions/class--functions.php:1832
+msgid "Weeks"
+msgstr ""
+
+#: inc/functions/class--functions.php:1882
+msgid "Could not find the post id"
+msgstr ""
+
+#: inc/functions/class--functions.php:1901
+msgid "QR code preview image created"
+msgstr ""
+
+#: inc/functions/class--functions.php:1971
+msgid "QR Appearance"
+msgstr ""
+
+#: inc/functions/class--functions.php:1975
+msgid "Label Text"
+msgstr ""
+
+#: inc/functions/class--functions.php:1980
+msgid "Label Color"
+msgstr ""
+
+#: inc/functions/class--functions.php:1989
+#: inc/pass-settings/setting-pages/pass-page-content.php:121
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:137
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:134
+msgid "Background Color"
+msgstr ""
+
+#: inc/functions/class--functions.php:1998
+msgid "Foreground Color"
+msgstr ""
+
+#: inc/functions/class--functions.php:2011
+msgid "Preview"
+msgstr ""
+
+#: inc/functions/class--functions.php:2027
+msgid "Upload Logo"
+msgstr ""
+
+#: inc/functions/class--functions.php:2028
+msgid "Remove Logo"
+msgstr ""
+
+#: inc/functions/class--functions.php:2029
+msgid "Preview QR"
+msgstr ""
+
+#: inc/functions/class--functions.php:2408
+msgid "Unknown"
+msgstr ""
+
+#: inc/functions/class--functions.php:3086
+msgid "This code is already being checked in on another scanner. Try again in a moment."
+msgstr ""
+
+#: inc/functions/class--functions.php:3136
+msgid "Timeslot ticket"
+msgstr ""
+
+#: inc/functions/class--functions.php:3151
+msgid "Guest pass"
+msgstr ""
+
+#: inc/functions/class--functions.php:3310
+#: inc/functions/class--functions.php:3331
+msgid "The scanned code does not belong to a ticket or pass product"
+msgstr ""
+
+#. translators: 1: ticket, timeslot ticket, pass or guest pass. 2: start of the validity window. 3: end of it.
+#: inc/functions/class--functions.php:3321
+#, php-format
+msgid "%1$s is outside its validity window (%2$s - %3$s)"
+msgstr ""
+
+#. translators: 1: ticket, timeslot ticket, pass or guest pass. 2: the maximum number of uses.
+#: inc/functions/class--functions.php:3342
+#, php-format
+msgid "%1$s has already reached its maximum uses (%2$d)"
+msgstr ""
+
+#. translators: %s: ticket, timeslot ticket, pass or guest pass.
+#: inc/functions/class--functions.php:3361
+#, php-format
+msgid "%s is on cooldown after a previous check-in"
+msgstr ""
+
+#: inc/functions/class--functions.php:3385
+msgid "The check-in could not be recorded - nobody was let through, try again"
+msgstr ""
+
+#. translators: %s: ticket, timeslot ticket, pass or guest pass.
+#: inc/functions/class--functions.php:3397
+#, php-format
+msgid "%s is valid and checked in"
+msgstr ""
+
+#: inc/functions/class--functions.php:3597
+msgid "Ticket Nano ID seems to be empty"
+msgstr ""
+
+#: inc/functions/class--functions.php:3598
+msgid "Ticket with given Nano ID does not seem to exist"
+msgstr ""
+
+#. translators: %s: ticket nano id
+#: inc/functions/class--functions.php:3600
+#, php-format
+msgid "Ticket with ID, %s, has been reset"
+msgstr ""
+
+#. translators: %s: ticket nano id
+#: inc/functions/class--functions.php:3602
+#, php-format
+msgid "Cancelled Ticket with Nano ID: %s"
+msgstr ""
+
+#: inc/functions/class--functions.php:3609
+msgid "Timeslot Nano ID seems to be empty"
+msgstr ""
+
+#: inc/functions/class--functions.php:3610
+msgid "Timeslot Ticket with given Nano ID does not seem to exist"
+msgstr ""
+
+#. translators: %s: timeslot ticket nano id
+#: inc/functions/class--functions.php:3612
+#, php-format
+msgid "Timeslot Ticket with ID, %s, has been reset"
+msgstr ""
+
+#. translators: %s: timeslot ticket nano id
+#: inc/functions/class--functions.php:3614
+#, php-format
+msgid "Cancelled Timeslot Ticket with Nano ID: %s"
+msgstr ""
+
+#: inc/functions/class--functions.php:3632
+msgid "Unknown ticket type"
+msgstr ""
+
+#: inc/functions/class--functions.php:3838
+#: inc/functions/class--functions.php:3930
+msgid "Pass Nano ID seems to be empty"
+msgstr ""
+
+#: inc/functions/class--functions.php:3895
+#: inc/pass-wc-product/class--pass-wc-product.php:892
+msgid "Pass with ID"
+msgstr ""
+
+#: inc/functions/class--functions.php:3895
+msgid "has been reset"
+msgstr ""
+
+#: inc/functions/class--functions.php:3909
+msgid "Reset Pass with Nano ID"
+msgstr ""
+
+#: inc/functions/class--functions.php:3990
+msgid "Cancelled Pass with ID"
+msgstr ""
+
+#: inc/functions/class--functions.php:4004
+msgid "Cancelled Pass with Nano ID"
+msgstr ""
+
+#: inc/functions/class--functions.php:4064
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:505
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1685
+msgid "Sunday"
+msgstr ""
+
+#: inc/functions/class--functions.php:4065
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:499
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1686
+msgid "Monday"
+msgstr ""
+
+#: inc/functions/class--functions.php:4066
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:500
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1687
+msgid "Tuesday"
+msgstr ""
+
+#: inc/functions/class--functions.php:4067
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:501
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1688
+msgid "Wednesday"
+msgstr ""
+
+#: inc/functions/class--functions.php:4068
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:502
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1689
+msgid "Thursday"
+msgstr ""
+
+#: inc/functions/class--functions.php:4069
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:503
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1690
+msgid "Friday"
+msgstr ""
+
+#: inc/functions/class--functions.php:4070
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:504
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1691
+msgid "Saturday"
+msgstr ""
+
+#: inc/functions/class--functions.php:4073
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1695
+msgid "Sun"
+msgstr ""
+
+#: inc/functions/class--functions.php:4074
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1696
+msgid "Mon"
+msgstr ""
+
+#: inc/functions/class--functions.php:4075
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1697
+msgid "Tue"
+msgstr ""
+
+#: inc/functions/class--functions.php:4076
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1698
+msgid "Wed"
+msgstr ""
+
+#: inc/functions/class--functions.php:4077
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1699
+msgid "Thu"
+msgstr ""
+
+#: inc/functions/class--functions.php:4078
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1700
+msgid "Fri"
+msgstr ""
+
+#: inc/functions/class--functions.php:4079
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1701
+msgid "Sat"
+msgstr ""
+
+#: inc/functions/class--functions.php:4082
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1706
+msgid "Su"
+msgstr ""
+
+#: inc/functions/class--functions.php:4083
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1707
+msgid "Mo"
+msgstr ""
+
+#: inc/functions/class--functions.php:4084
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1708
+msgid "Tu"
+msgstr ""
+
+#: inc/functions/class--functions.php:4085
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1709
+msgid "We"
+msgstr ""
+
+#: inc/functions/class--functions.php:4086
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1710
+msgid "Th"
+msgstr ""
+
+#: inc/functions/class--functions.php:4087
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1711
+msgid "Fr"
+msgstr ""
+
+#: inc/functions/class--functions.php:4088
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1712
+msgid "Sa"
+msgstr ""
+
+#: inc/functions/class--functions.php:4105
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1731
+msgid "Jan"
+msgstr ""
+
+#: inc/functions/class--functions.php:4106
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1732
+msgid "Feb"
+msgstr ""
+
+#: inc/functions/class--functions.php:4107
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1733
+msgid "Mar"
+msgstr ""
+
+#: inc/functions/class--functions.php:4108
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1734
+msgid "Apr"
+msgstr ""
+
+#: inc/functions/class--functions.php:4110
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1736
+msgid "Jun"
+msgstr ""
+
+#: inc/functions/class--functions.php:4111
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1737
+msgid "Jul"
+msgstr ""
+
+#: inc/functions/class--functions.php:4112
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1738
+msgid "Aug"
+msgstr ""
+
+#: inc/functions/class--functions.php:4113
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1739
+msgid "Sep"
+msgstr ""
+
+#: inc/functions/class--functions.php:4114
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1740
+msgid "Oct"
+msgstr ""
+
+#: inc/functions/class--functions.php:4115
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1741
+msgid "Nov"
+msgstr ""
+
+#: inc/functions/class--functions.php:4116
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1742
+msgid "Dec"
+msgstr ""
+
+#: inc/functions/class--functions.php:4118
+#: inc/scanner/class--scanner.php:252
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:158
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1744
+msgid "Today"
+msgstr ""
+
+#: inc/functions/class--functions.php:4119
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:159
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1745
+msgid "Clear"
+msgstr ""
+
+#: inc/functions/class--functions.php:4200
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:187
+msgid "No date yet"
+msgstr ""
+
+#: inc/functions/class--functions.php:4203
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1529
+msgid "Select a date"
+msgstr ""
+
+#: inc/functions/class--functions.php:4205
+msgid "Pick a start date before adding this to the cart."
+msgstr ""
+
+#: inc/functions/class--functions.php:4384
+msgid "Maximum uses"
+msgstr ""
+
+#: inc/functions/class--functions.php:4395
+msgid "Date"
+msgstr ""
+
+#: inc/functions/class--functions.php:4428
+msgid "Purchasable between"
+msgstr ""
+
+#. translators: 1: first date the product can be bought. 2: last date it can be bought.
+#: inc/functions/class--functions.php:4431
+#, php-format
+msgid "%1$s - %2$s"
+msgstr ""
+
+#: inc/functions/class--functions.php:4489
+#: inc/pass-dashboard/class--pass-dashboard.php:37
+#: inc/pass-dashboard/class--pass-dashboard.php:199
+#: inc/pass-dashboard/class--pass-dashboard.php:218
+#: inc/pass-wc-myaccount/template/page-content.php:71
+#: inc/ticket-wc-myaccount/template/page-content.php:119
+msgid "Active"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:80
+msgid "No matching order item found for the provided Order Line ID"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:126
+msgid "Invalid request"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:133
+msgid "No profile image was found on that pass"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:142
+msgid "Pass Profile image have successfully been removed"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:177
+msgid "Buyer"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:178
+msgid "Profile Image"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:179
+msgid "Holder Name"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:185
+#: inc/ticket-dashboard/class--ticket-dashboard.php:70
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:72
+msgid "Order"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:187
+#: inc/ticket-dashboard/class--ticket-dashboard.php:72
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:74
+msgid "Actions"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:285
+msgid "(deleted user)"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:294
+msgid "Delete Image"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:347
+msgid "Type"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:350
+msgid "Parent pass ID"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:351
+msgid "Buyer user ID"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:352
+msgid "Buyer email"
+msgstr ""
+
+#: inc/pass-dashboard/class--pass-dashboard.php:353
+msgid "Holder name"
+msgstr ""
+
+#: inc/pass-settings/class--pass-settings.php:38
+#: inc/pass-wc-product/class--pass-wc-product.php:259
+msgid "Pass Settings"
+msgstr ""
+
+#: inc/pass-settings/class--pass-settings.php:39
+#: inc/pass-settings/setting-pages/pass-page-content.php:18
+#: inc/pass-wc-product/class--pass-wc-product.php:1206
+msgid "Add a name for each person this pass covers. You can optionally email someone their own copy of the pass."
+msgstr ""
+
+#: inc/pass-settings/class--pass-settings.php:40
+msgid "Pass settings have successfully been updated"
+msgstr ""
+
+#: inc/pass-settings/class--pass-settings.php:41
+msgid "One of the pass colors is not a valid HEX format color"
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:69
+msgid "Passes are one long-validity product that covers several people, each with their own name and optional pass copy."
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:70
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:86
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:83
+msgid "Turn the product type on below, then customize how it looks and behaves for customers."
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:76
+msgid "Enable Pass Product"
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:76
+msgid "Lets shop admins create long-validity passes, optionally including guest passes for other people."
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:85
+msgid "Persons Section Hint Text"
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:85
+msgid "Shown to customers just above the person fields on the pass product page, explaining what to fill in."
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:91
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:107
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:104
+msgid "Accent Color"
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:91
+msgid "Used for the \"Person\" label, the card's left border, and focused input fields on the pass product page."
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:101
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:117
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:114
+msgid "Text Color"
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:101
+msgid "Main text color used for labels and hint text on the pass product page."
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:111
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:127
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:124
+msgid "Border Color"
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:111
+msgid "Used for the card border and the divider line above the email field on the pass product page."
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:121
+msgid "Background color of each person's card on the pass product page."
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:131
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:147
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:144
+msgid "Hint Text Color"
+msgstr ""
+
+#: inc/pass-settings/setting-pages/pass-page-content.php:131
+msgid "Color of the hint text shown above the person fields on the pass product page."
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:91
+msgid "Failed to fetch guest passes."
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:92
+msgid "Are you sure the image complies with our guidelines? You can NOT change the image afterwards"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:94
+msgid "Row ID not found"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:95
+msgid "File input not found"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:96
+msgid "Please select only one file"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:97
+msgid "Please select a file"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:98
+msgid "File size is greater than 8MB"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:99
+msgid "File type not allowed"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:101
+msgid "Guest Pass ID"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:104
+msgid "The upload could not be completed. Please try again."
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:105
+msgid "The pass could not be downloaded. Please try again."
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:206
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:280
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:420
+#: inc/ticket-wc-myaccount/class--ticket-wc-myaccount.php:210
+msgid "Something went wrong"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:212
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:286
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:426
+#: inc/ticket-wc-myaccount/class--ticket-wc-myaccount.php:216
+msgid "You must be logged in to upload an image"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:218
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:292
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:298
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:448
+#: inc/ticket-wc-myaccount/class--ticket-wc-myaccount.php:222
+msgid "Nano ID seems to be missing"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:224
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:442
+#: inc/ticket-wc-myaccount/class--ticket-wc-myaccount.php:228
+msgid "Row ID seems to be missing"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:246
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:320
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:479
+msgid "Failed to find pass with the given ID"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:361
+msgid "Guest"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:383
+msgid "Error occured when trying to get guest pass's"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:400
+msgid "Sucessfully fetched all guest pass's."
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:432
+msgid "Failed to upload iamge"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:454
+msgid "Compressions functions seems not to be available"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:487
+msgid "Profile image upload is not enabled for this product"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:496
+msgid "A profile image has already been uploaded for this pass and cannot be changed."
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:502
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:520
+msgid "No image or invalid image uploaded"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:513
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:575
+msgid "The uploaded file is too big"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:514
+msgid "The upload did not complete. Please try again."
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:527
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:543
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:551
+msgid "Not image or invalid image uploaded"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:559
+msgid "File is not an image"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:588
+msgid "The image compression method selected for this product is not available on this server"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:602
+msgid "No valid Image compression for the given mime type"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:608
+msgid "The image could not be read"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:664
+msgid "No valid Image compression algo selected for this product"
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:672
+msgid "The image could not be saved. Please try again or contact the shop."
+msgstr ""
+
+#: inc/pass-wc-myaccount/class--pass-wc-myaccount.php:700
+msgid "You have successfully uploaded an image to your membership card."
+msgstr ""
+
+#: inc/pass-wc-myaccount/template/page-content.php:20
+#: inc/ticket-wc-myaccount/template/page-content.php:51
+msgid "Show the QR code at the door, or download a printable copy."
+msgstr ""
+
+#: inc/pass-wc-myaccount/template/page-content.php:31
+msgid "You don't have any passes yet."
+msgstr ""
+
+#: inc/pass-wc-myaccount/template/page-content.php:33
+msgid "Browse passes"
+msgstr ""
+
+#: inc/pass-wc-myaccount/template/page-content.php:46
+msgid "Product Not Found"
+msgstr ""
+
+#. translators: %s: name of the product the QR code belongs to.
+#: inc/pass-wc-myaccount/template/page-content.php:82
+#: inc/ticket-wc-myaccount/template/page-content.php:140
+#, php-format
+msgid "QR code for %s"
+msgstr ""
+
+#: inc/pass-wc-myaccount/template/page-content.php:126
+msgid "Add Profile Photo"
+msgstr ""
+
+#: inc/pass-wc-myaccount/template/page-content.php:129
+msgid "Save Photo"
+msgstr ""
+
+#: inc/pass-wc-myaccount/template/page-content.php:159
+#: inc/ticket-wc-myaccount/template/page-content.php:183
+msgid "Download"
+msgstr ""
+
+#: inc/pass-wc-myaccount/template/page-content.php:184
+msgid "Scan one of these codes at check-in."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:115
+#: inc/ticket-wc-product/class--ticket-wc-product.php:94
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:163
+msgid "Upload/Insert Logo"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:116
+#: inc/ticket-wc-product/class--ticket-wc-product.php:95
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:164
+msgid "Use Selected"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:119
+#: inc/ticket-wc-product/class--ticket-wc-product.php:98
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:171
+msgid "The preview could not be generated. Please try again."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:161
+msgid "Pass Product"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:266
+msgid "Pass QR"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:273
+msgid "Guest Pass Settings"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:280
+msgid "Guest Pass QR"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:370
+msgid "Guest Passes"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:378
+msgid "Enable guest pass options for customers who purchase this product."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:384
+msgid "Number of Guest Pass's"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:388
+msgid "How many guest passes a customer receives when purchasing this product."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:399
+msgid "Guest Pass Checkin Cooldown"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:400
+msgid "The minimum time required between check-ins on a guest pass that allows multiple uses."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:407
+msgid "Valid After Parent Check-in"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:408
+msgid "How long after the primary pass is checked in that its guest passes remain valid for check-in."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:433
+msgid "Not available"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:437
+msgid "pass"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:442
+msgid "Profile Photos"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:448
+msgid "Profile Image Upload"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:450
+msgid "Enable profile photo upload for customers who purchase this product."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:454
+msgid "Image Compression Algorithm"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:458
+msgid "Controls which library compresses uploaded profile photos. If no options are available, your host has neither the GD nor ImageMagick extension installed, so users won't be able to upload a photo."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:462
+msgid "Max Image Size (MB)"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:466
+msgid "The maximum file size, in MB, allowed for an uploaded profile photo."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:606
+msgid "Pass max usage does not seem to be set"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:615
+#: inc/ticket-wc-product/class--ticket-wc-product.php:567
+msgid "is missing a valid duration value"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:680
+msgid "Could not create a customer account for the gifted pass recipient"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:802
+msgid "Pass('s) for order line created"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:842
+msgid "Pass for this order line already seems to be cancelled"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:892
+msgid "cancelled from order"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:897
+msgid "All related Pass's have been cancelled"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1015
+#: inc/ticket-wc-product/class--ticket-wc-product.php:264
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2374
+msgid "This product is not available for purchase right now."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1023
+msgid "Please enter a name for every person on this pass."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1030
+msgid "Please enter a first and last name for every person on this pass."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1035
+msgid "Please enter a valid email address for every person you chose to email."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1046
+#: inc/ticket-wc-product/class--ticket-wc-product.php:274
+msgid "Please pick a start date before adding this to the cart."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1059
+msgid "Please pick a date within the dates offered for this pass."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1146
+msgid "Name"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1228
+msgid "Select a Start Date"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1229
+msgid "Pick the date this pass should be valid from."
+msgstr ""
+
+#. translators: %d: number of people on the pass.
+#: inc/pass-wc-product/class--pass-wc-product.php:1235
+#, php-format
+msgid "%d person"
+msgstr ""
+
+#. translators: %d: number of people on the pass.
+#: inc/pass-wc-product/class--pass-wc-product.php:1235
+#, php-format
+msgid "%d people"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1243
+msgid "One fewer person"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1245
+msgid "One more person"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1258
+msgid "Email this person their own pass"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1261
+msgid "Enter a first and last name."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1263
+msgid "Email address"
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1264
+msgid "Enter a valid email address."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1265
+msgid "They get their own copy of the pass at this address."
+msgstr ""
+
+#: inc/pass-wc-product/class--pass-wc-product.php:1269
+msgid "+ Add another person"
+msgstr ""
+
+#. translators: 1: number of people named so far, 2: total number of people on the pass.
+#: inc/pass-wc-product/class--pass-wc-product.php:1274
+#, php-format
+msgid "%1$s of %2$s named"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:98
+msgid "Could not find the nano id"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:105
+msgid "Could not find the item with the given nano id"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:111
+msgid "You are not permitted to do this action"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:118
+msgid "Could not check in"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:125
+msgid "Successfully checked in"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:179
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:582
+msgid "Product Note"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:180
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:583
+msgid "Max 350 characters"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:187
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:590
+msgid "Note"
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:190
+#, php-format
+msgid "Shown on the %s PDF, in the customer emails, on the order view and in My Account."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:201
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:616
+msgid "Access & Usage"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:207
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:623
+msgid "Max Uses"
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:211
+#, php-format
+msgid "The maximum number of times a %s can be checked in before further check-ins are rejected."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:216
+#: inc/product-type/class--product-type.php:281
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:637
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:755
+msgid "Show On Product Page"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:217
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:638
+msgid "Enable this to list the maximum number of uses in the details table on the product page."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:227
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:669
+msgid "Check-in Rules"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:233
+msgid "Checkin Cooldown"
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:235
+#, php-format
+msgid "The minimum time required between check-ins on a %s that allows multiple uses."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:252
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:719
+msgid "Sales Window"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:258
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:725
+msgid "Sales Timespan"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:259
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:726
+msgid "Enable this to restrict purchasing to a specific date range - the product can only be bought while today's date falls within it."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:264
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:733
+msgid "Sales Timespan, Start Date"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:265
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:734
+msgid "The date from which this product can be purchased."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:272
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:744
+msgid "Sales Timespan, End Date"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:273
+msgid "The last date on which this product can be purchased."
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:283
+#, php-format
+msgid "Enable this to list the dates between which the %s can be bought in the details table on the product page."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:307
+msgid "Validity Window"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:313
+#: inc/product-type/class--product-type.php:320
+msgid "Predefined Start Date"
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:315
+#, php-format
+msgid "Enable this to make the %s valid from a fixed date, instead of the validity period starting the moment it is purchased."
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:322
+#, php-format
+msgid "The fixed date the %s becomes valid from, regardless of when it was purchased."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:331
+msgid "Customer Selected Start Date"
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:333
+#, php-format
+msgid "Enable this to let the customer pick the date the %s is valid from, on the product page. Cannot be combined with a predefined start date."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:338
+msgid "Selectable From"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:339
+msgid "The earliest date the customer can pick on the product page."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:347
+msgid "Selectable To"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:348
+msgid "The latest date the customer can pick on the product page."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:356
+msgid "Valid Duration"
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:358
+#, php-format
+msgid "How long a %s is valid, from the point of purchase."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:363
+msgid "Show Date On Product Page"
+msgstr ""
+
+#: inc/product-type/class--product-type.php:364
+msgid "Enable this to list the predefined date in the details table on the product page."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:370
+msgid "Show Valid from On Product Page"
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:372
+#, php-format
+msgid "Enable this to list the date the %s becomes valid in the details table on the product page."
+msgstr ""
+
+#: inc/product-type/class--product-type.php:378
+msgid "Show Valid to On Product Page"
+msgstr ""
+
+#. translators: %s: "ticket" or "pass"
+#: inc/product-type/class--product-type.php:380
+#, php-format
+msgid "Enable this to list the date the %s expires in the details table on the product page."
+msgstr ""
+
+#: inc/scanner/class--scanner.php:183
+msgid "Your account is not allowed to check people in. Ask an administrator for the Scanner role."
+msgstr ""
+
+#: inc/scanner/class--scanner.php:184
+msgid "Log in as someone else"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:230
+#: inc/scanner/class--scanner.php:296
+msgid "Starting camera..."
+msgstr ""
+
+#: inc/scanner/class--scanner.php:231
+msgid "Point the camera at a QR code"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:232
+msgid "Code ready - tap Check In"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:233
+msgid "Checking in..."
+msgstr ""
+
+#: inc/scanner/class--scanner.php:234
+msgid "No camera found - tap Check In to see a sample result"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:235
+msgid "That QR code is not a ticket from this site."
+msgstr ""
+
+#: inc/scanner/class--scanner.php:236
+msgid "No connection to the site. Check the signal and try again."
+msgstr ""
+
+#: inc/scanner/class--scanner.php:237
+msgid "No check-ins yet"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:238
+msgid "Could not load history. Tap to try again."
+msgstr ""
+
+#: inc/scanner/class--scanner.php:239
+msgid "Session expired - reload this page"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:240
+msgid "That is not a ticket code or check-in link from this site."
+msgstr ""
+
+#: inc/scanner/class--scanner.php:245
+msgid "Just now"
+msgstr ""
+
+#. translators: %d: number of minutes since the check-in, e.g. "5m ago".
+#: inc/scanner/class--scanner.php:247
+#, php-format
+msgid "%dm ago"
+msgstr ""
+
+#. translators: %d: number of hours since the check-in, e.g. "3h ago".
+#: inc/scanner/class--scanner.php:249
+#, php-format
+msgid "%dh ago"
+msgstr ""
+
+#. translators: %d: number of days since the check-in, e.g. "2d ago".
+#: inc/scanner/class--scanner.php:251
+#, php-format
+msgid "%dd ago"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:253
+msgid "Yesterday"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:281
+msgid "Check-in scanner"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:290
+#: inc/scanner/class--scanner.php:314
+msgid "Menu"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:297
+#: inc/scanner/class--scanner.php:338
+msgid "Check In"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:302
+msgid "Toggle flashlight"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:329
+msgid "History"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:335
+msgid "Enter a code by hand"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:337
+msgid "Ticket code or link"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:348
+msgid "Log out"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:356
+msgid "Back"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:357
+msgid "Check-in history"
+msgstr ""
+
+#: inc/scanner/class--scanner.php:358
+msgid "Refresh history"
+msgstr ""
+
+#: inc/settings/class--settings-tab.php:162
+msgid "The settings could not be saved. Please try again."
+msgstr ""
+
+#: inc/settings/class--settings-tab.php:163
+msgid "Settings saved."
+msgstr ""
+
+#: inc/settings/class--settings.php:30
+msgid "Settings"
+msgstr ""
+
+#: inc/settings/class--settings.php:110
+msgid "General settings have successfully been updated"
+msgstr ""
+
+#: inc/settings/setting-pages/page-content.php:29
+msgid "General settings for the Ticket & Passes plugin."
+msgstr ""
+
+#: inc/settings/setting-pages/page-content.php:30
+msgid "These apply across your whole store."
+msgstr ""
+
+#: inc/settings/setting-pages/page-content.php:36
+msgid "Display Date Format"
+msgstr ""
+
+#: inc/settings/setting-pages/page-content.php:36
+msgid "Controls how dates and times are displayed across the plugin's dashboards and customer-facing pages."
+msgstr ""
+
+#: inc/settings/setting-pages/page-content.php:61
+msgid "Enable Analytics Dashboard"
+msgstr ""
+
+#: inc/settings/setting-pages/page-content.php:61
+msgid "Adds a dashboard showing check-in and sales statistics for tickets, timeslot tickets and passes."
+msgstr ""
+
+#: inc/ticket-dashboard/class--ticket-dashboard.php:64
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:65
+msgid "User ID"
+msgstr ""
+
+#: inc/ticket-dashboard/class--ticket-dashboard.php:65
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:67
+msgid "Ticket ID"
+msgstr ""
+
+#: inc/ticket-settings/class--ticket-settings.php:40
+#: inc/ticket-wc-product/class--ticket-wc-product.php:364
+msgid "Ticket Settings"
+msgstr ""
+
+#: inc/ticket-settings/class--ticket-settings.php:41
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:20
+#: inc/ticket-wc-product/class--ticket-wc-product.php:228
+msgid "Pick the date this ticket should be valid from."
+msgstr ""
+
+#: inc/ticket-settings/class--ticket-settings.php:42
+msgid "Ticket settings have successfully been updated"
+msgstr ""
+
+#: inc/ticket-settings/class--ticket-settings.php:43
+msgid "One of the ticket colors is not a valid HEX format color"
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:85
+msgid "Tickets are simple, non-timed entry products - one product, one QR code, no time slot attached."
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:92
+msgid "Enable Ticket Product"
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:92
+msgid "Lets shop admins create simple, non-timed entry tickets as a WooCommerce product type."
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:101
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:98
+msgid "Date Picker Hint Text"
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:101
+msgid "Shown to customers just above the calendar on the ticket product page, explaining what to do. Only visible when the ticket lets the customer choose a start date."
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:107
+msgid "Used for the selected date in the calendar and the chosen date pill on the ticket product page, and for the card border and buttons on My Account -> Tickets."
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:117
+msgid "Main text color used for the ticket details list and the calendar dates on the ticket product page."
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:127
+msgid "Used for the card outlines and row separators on the ticket product page."
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:137
+msgid "Background color of the ticket details card and the calendar on the ticket product page."
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:147
+msgid "Color of the hint text above the calendar, the detail labels and the validity summary on the ticket product page."
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:157
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:154
+msgid "Day Name Color"
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:157
+msgid "Color of the weekday header row (MO, TU, WE...) in the calendar on the ticket product page."
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:167
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:164
+msgid "Month/Year Title Color"
+msgstr ""
+
+#: inc/ticket-settings/setting-pages/ticket-page-content.php:167
+msgid "Color of the calendar's month/year heading (e.g. \"August, 2026\") on the ticket product page."
+msgstr ""
+
+#: inc/ticket-wc-myaccount/class--ticket-wc-myaccount.php:88
+msgid "The ticket could not be downloaded. Please try again."
+msgstr ""
+
+#: inc/ticket-wc-myaccount/class--ticket-wc-myaccount.php:263
+msgid "Failed to find ticket with the given ID"
+msgstr ""
+
+#: inc/ticket-wc-myaccount/template/page-content.php:62
+msgid "You don't have any tickets yet."
+msgstr ""
+
+#: inc/ticket-wc-myaccount/template/page-content.php:64
+msgid "Browse tickets"
+msgstr ""
+
+#: inc/ticket-wc-myaccount/template/page-content.php:76
+msgid "No Variation Found"
+msgstr ""
+
+#: inc/ticket-wc-myaccount/template/page-content.php:78
+msgid "No Price Found"
+msgstr ""
+
+#: inc/ticket-wc-myaccount/template/page-content.php:167
+msgid "Uses left"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:120
+msgid "Ticket Product"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:236
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1511
+msgid "Select a Date"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:287
+msgid "Please pick a date within the dates offered for this ticket."
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:369
+msgid "Ticket QR"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:420
+msgid "ticket"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:557
+msgid "is missing a max usage value"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:708
+msgid "Ticket for order line created"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:742
+msgid "Ticket for this order line already seems to be cancelled"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:771
+msgid "Ticket with ID"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:771
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2157
+msgid "cancelled"
+msgstr ""
+
+#: inc/ticket-wc-product/class--ticket-wc-product.php:777
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2176
+msgid "All related tickets have been cancelled"
+msgstr ""
+
+#: inc/timeslot-ticket-dashboard/class--timeslot-ticket-dashboard.php:66
+msgid "Timeslot ID"
+msgstr ""
+
+#: inc/timeslot-ticket-settings/class--timeslot-ticket-settings.php:40
+msgid "Timeslot Ticket Settings"
+msgstr ""
+
+#: inc/timeslot-ticket-settings/class--timeslot-ticket-settings.php:41
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:17
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1482
+msgid "Pick an available date below, then choose a time."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/class--timeslot-ticket-settings.php:42
+msgid "Timeslot Ticket settings have successfully been updated"
+msgstr ""
+
+#: inc/timeslot-ticket-settings/class--timeslot-ticket-settings.php:43
+msgid "One of the timeslot ticket colors is not a valid HEX format color"
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:82
+msgid "Timeslot tickets are tied to a specific date and time slot, with a set capacity per slot."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:89
+msgid "Enable Timeslot Ticket Product"
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:89
+msgid "Lets shop admins create tickets tied to a specific date and time slot, with a set capacity per slot."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:98
+msgid "Shown to customers just above the calendar on the timeslot ticket product page, explaining what to do."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:104
+msgid "Used for the date picker and the selected/available time slot pills on the timeslot ticket product page."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:114
+msgid "Main text color used for labels and time slot text on the timeslot ticket product page."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:124
+msgid "Used for the calendar and time slot pill borders on the timeslot ticket product page."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:134
+msgid "Background color of the calendar and the available time slot pills on the timeslot ticket product page."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:144
+msgid "Color of the hint text shown above the calendar on the timeslot ticket product page."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:154
+msgid "Color of the weekday header row (MO, TU, WE...) in the calendar on the timeslot ticket product page."
+msgstr ""
+
+#: inc/timeslot-ticket-settings/setting-pages/timeslot-ticket-page-content.php:164
+msgid "Color of the calendar's month/year heading (e.g. \"August, 2026\") on the timeslot ticket product page."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:165
+msgid "Accepting, will also cancel the recurring timeslot and all its timeslots + cancel all the connected timeslot tickets"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:166
+msgid "Accepting, will cancel the timeslot and also cancel all its connected tickets"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:174
+msgid "On sale"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:175
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1650
+msgid "Sold out"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:176
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:957
+msgid "Past"
+msgstr ""
+
+#. translators: %d: number of places still available.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:178
+#, php-format
+msgid "%d left"
+msgstr ""
+
+#. translators: %d: number of timeslots.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:180
+#, php-format
+msgid "%d timeslot"
+msgstr ""
+
+#. translators: %d: number of timeslots.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:182
+#, php-format
+msgid "%d timeslots"
+msgstr ""
+
+#. translators: %d: number of recurring rules.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:184
+#, php-format
+msgid "%d recurring timeslot"
+msgstr ""
+
+#. translators: %d: number of recurring rules.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:186
+#, php-format
+msgid "%d recurring timeslots"
+msgstr ""
+
+#. translators: %d: number of timeslots the current filter is hiding.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:189
+#, php-format
+msgid "%d hidden by filter"
+msgstr ""
+
+#. translators: 1: "3 timeslots". 2: tickets sold that day. 3: total places that day.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:191
+#, php-format
+msgid "%1$s · %2$d of %3$d sold"
+msgstr ""
+
+#. translators: 1: tickets sold. 2: total places.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:193
+#, php-format
+msgid "%1$d of %2$d places sold"
+msgstr ""
+
+#. translators: 1: weekday. 2: start time. 3: end time.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:196
+#, php-format
+msgid "Every %1$s, %2$s–%3$s"
+msgstr ""
+
+#. translators: 1: first week number. 2: last week number. 3: places per timeslot.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:198
+#, php-format
+msgid "· weeks %1$s–%2$s · %3$s places each"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:302
+msgid "Timeslot Settings"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:308
+msgid "Timeslot QR"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:428
+msgid "Places"
+msgstr ""
+
+#. translators: 1: number of places already sold. 2: input field holding the total number of places.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:446
+#, php-format
+msgid "%1$s of %2$s sold"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:458
+msgid "See timeslot tickets"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:459
+msgid "Cancel timeslot"
+msgstr ""
+
+#. translators: 1: how many timeslots the series has generated. 2: tickets sold across them. 3: total places across them.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:518
+#, php-format
+msgid "%1$d timeslot · %2$d of %3$d sold"
+msgid_plural "%1$d timeslots · %2$d of %3$d sold"
+msgstr[0] ""
+msgstr[1] ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:523
+msgid "Force create timeslots"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:524
+msgid "Cancel recurring timeslot"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:524
+msgid "Cancel Series"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:530
+msgid "Weekday"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:538
+msgid "Week Start"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:542
+msgid "Week End"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:546
+msgid "Time Start"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:550
+msgid "Time End"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:554
+msgid "Quantity"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:592
+msgid "A short note shown on the ticket PDF, in the customer emails, on the order view and in My Account. Max 350 characters."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:626
+msgid "The maximum number of times a timeslot ticket can be checked in before further check-ins are rejected."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:675
+msgid "Before Checkin Duration"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:676
+msgid "How long before the timeslot's start time a ticket can be checked in."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:682
+msgid "Timeslot Ticket Cooldown"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:683
+msgid "The minimum time required between check-ins on a timeslot ticket that allows multiple uses."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:745
+msgid "The date after which this product can no longer be purchased."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:756
+msgid "Enable this to list the dates between which the ticket can be bought in the details table on the product page."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:798
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:818
+msgid "Pending"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:799
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:819
+msgid "Processing"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:800
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:820
+msgid "On-Hold"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:801
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:821
+msgid "Completed"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:803
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:823
+msgid "Refunded"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:804
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:824
+msgid "Failed"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:805
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:825
+msgid "Checkout-draft"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:831
+msgid "Reservations"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:837
+msgid "Enable Timeslot Ticket Reservations"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:838
+msgid "Enabling this will temporarily reserve a timeslot's available spot for a customer once added to their cart, so it can't be sold to someone else while they checkout."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:844
+msgid "Reservation Duration"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:845
+msgid "How long a timeslot stays reserved for a customer after being added to their cart."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:852
+msgid "Order Created, Reservation Duration Added"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:853
+msgid "Extra time added to the reservation once an order is created at checkout but not yet paid, to allow time to complete payment."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:862
+msgid "Delete Reservation, WC Statuses"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:863
+msgid "Which order statuses cause the reservation to be deleted once its reservation time has passed."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:875
+msgid "Delete Orderline, WC Statuses"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:876
+msgid "Which order statuses cause the timeslot ticket to be removed from the order once its reservation time has passed."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:903
+msgid "Recurring"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:909
+msgid "Enable Recurring Timeslot Tickets"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:910
+msgid "Enabling this lets you define a weekly recurring pattern instead of adding individual timeslots one by one - future timeslots are then generated automatically from that pattern."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:917
+msgid "Recurring Future"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:919
+msgid "How many weeks ahead of today timeslots should automatically be generated for."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:943
+msgid "Timeslots"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:945
+msgid "Add Timeslot"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:946
+msgid "Add Recurring Timeslot"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:958
+msgid "Upcoming"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1091
+msgid "No timeslots yet"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1096
+msgid "Add a recurring timeslot to generate a weekly pattern of timeslots."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1100
+msgid "Add a timeslot, or turn on \"Enable Recurring Timeslot Tickets\" above to generate a weekly pattern instead."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1425
+msgid "Timeslot Ticket Product"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1462
+msgid "There are no upcoming timeslots for this product right now. Please check back later."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1522
+msgid "One fewer ticket"
+msgstr ""
+
+#. translators: %d: number of tickets.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1523
+#, php-format
+msgid "%d ticket"
+msgstr ""
+
+#. translators: %d: number of tickets.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1523
+#, php-format
+msgid "%d tickets"
+msgstr ""
+
+#. translators: %d: number of tickets.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1524
+msgid "One more ticket"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1534
+msgid "Available Times"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1535
+msgid "No date selected"
+msgstr ""
+
+#. translators: 1: time the timeslot ends, e.g. 14:45. 2: how long it lasts, in minutes.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1623
+#, php-format
+msgid "until %1$s · %2$d min"
+msgstr ""
+
+#. translators: 1: date the timeslot ends. 2: time it ends, e.g. 14:45.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1628
+#, php-format
+msgid "until %1$s at %2$s"
+msgstr ""
+
+#. translators: %d: number of places still available in this timeslot.
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1655
+#, php-format
+msgid "%d spot left"
+msgid_plural "%d spots left"
+msgstr[0] ""
+msgstr[1] ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1667
+msgid "Pick a date to see available times"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1857
+msgid "Timeslot product, seems to have no timeslots set"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1867
+msgid "This Timeslot product Requires a reservation ID to be created, but seems to have no reservation ID"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1876
+msgid "Timeslot ID does not seem to be set"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1894
+msgid "Unable to find a matching timeslot"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1916
+msgid "Seems like the maximum number of tickets already created for the following timeslot"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1927
+msgid "Timeslot Ticket max usage does not seem to be set"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1937
+msgid "is missing a valid before check-in duration value"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:1949
+msgid "is missing a valid cooldown duration value"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2093
+msgid "Timeslot Ticket for order line created"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2130
+msgid "Timeslot Ticket for this order line already seems to be cancelled"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2157
+msgid "Timeslot Ticket with ID"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2310
+msgid "the reserved timeslot"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2311
+msgid "The following product was removed because the reservation was no longer valid:"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2363
+msgid "Please pick a timeslot before adding this to the cart."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2393
+msgid "That timeslot is no longer available. Please pick another one."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2423
+msgid "Unable to add because of lacking stock/quantity"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2519
+msgid "Admin only - Timeslot ID"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2527
+msgid "Admin only - Reservation ID"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2552
+msgid "Reservation Time Left"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2718
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2769
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2840
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2872
+msgid "Missing timeslot parameter"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2745
+msgid "Timeslot and connected tickets cancelled"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2816
+msgid "Recurring Timeslot and connected timeslot&tickets cancelled"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2847
+msgid "Recurring timeslot children force created"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2906
+msgid "Generated timeslots"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2929
+msgid "No Timeslots Found"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2930
+msgid "This recurring timeslot have no connected timeslots yet."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2931
+msgid "Timeslots are automaticly created/updated every hour, if the recurring timeslot have valid settings. You can wait for the next time timeslots are created/updated, or you can force timeslot creation by pressing the \"Force Create\" button next to the timeslot."
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2936
+msgid "+ Add Manual Timeslot"
+msgstr ""
+
+#: inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php:2942
+msgid "timeslot children fetched"
+msgstr ""
+
+#: tickets-passes-for-woocommerce.php:105
+msgid "Tickets & Passes for WooCommerce requires WooCommerce to be installed and active. It has been deactivated."
+msgstr ""
+
+#: tickets-passes-for-woocommerce.php:132
+msgid "Tickets & Passes for WooCommerce requires WooCommerce to be installed and active."
+msgstr ""
+
+#: tickets-passes-for-woocommerce.php:133
+msgid "Plugin activation error"
+msgstr ""

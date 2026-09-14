@@ -1,0 +1,526 @@
+.timeslot-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: var(--tpfw-surface, #fff);
+  border-bottom: 1px solid var(--tpfw-border, #dcdcde);
+}
+
+.timeslot-filter {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--tpfw-border, #dcdcde);
+  border-radius: 999px;
+  background: var(--tpfw-surface-muted, #f6f7f7);
+}
+
+.woocommerce_options_panel .timeslot-filter button.timeslot-filter-btn {
+  height: 24px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  line-height: 24px;
+  color: #646970;
+  cursor: pointer;
+  box-shadow: none;
+}
+.woocommerce_options_panel .timeslot-filter button.timeslot-filter-btn[aria-pressed=true] {
+  background: var(--tpfw-surface, #fff);
+  color: var(--tpfw-ink, #1d2327);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.timeslot-toolbar-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: #646970;
+}
+
+.timeslot-row-wrapper {
+  padding: 0;
+}
+
+.timeslot-day-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 18px 6px;
+  background: var(--tpfw-surface-muted, #f6f7f7);
+  border-top: 1px solid var(--tpfw-border, #dcdcde);
+  border-bottom: 1px solid var(--tpfw-border, #dcdcde);
+}
+
+.timeslot-day-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--tpfw-ink, #1d2327);
+}
+
+.timeslot-day-count {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: #646970;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeslot-row {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) 132px 128px auto;
+  gap: 14px;
+  align-items: center;
+  padding: 9px 18px 9px 0;
+  border-bottom: 1px solid var(--tpfw-border, #dcdcde);
+}
+.timeslot-row:last-child {
+  border-bottom: none;
+}
+.timeslot-row:hover {
+  background: var(--tpfw-surface-muted, #f6f7f7);
+}
+
+.timeslot-flag {
+  align-self: stretch;
+  background: var(--tpfw-timeslot-accent, #3f7d4a);
+}
+
+.timeslot-row.is-full .timeslot-flag {
+  background: #b45309;
+}
+
+.timeslot-row.is-past .timeslot-flag {
+  background: var(--tpfw-border, #dcdcde);
+}
+
+.timeslot-when {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.woocommerce_options_panel .timeslot-when input.timeslot-start-picker,
+.woocommerce_options_panel .timeslot-when input.timeslot-end-picker {
+  flex: 0 1 78px;
+  width: 78px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tpfw-ink, #1d2327);
+  text-align: center;
+  cursor: pointer;
+}
+.woocommerce_options_panel .timeslot-when input.timeslot-start-picker:hover,
+.woocommerce_options_panel .timeslot-when input.timeslot-end-picker:hover {
+  border-color: var(--tpfw-border, #dcdcde);
+  background: #fff;
+}
+.woocommerce_options_panel .timeslot-when input.timeslot-start-picker:focus,
+.woocommerce_options_panel .timeslot-when input.timeslot-end-picker:focus {
+  border-color: var(--tpfw-timeslot-accent, #3f7d4a);
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 1px var(--tpfw-timeslot-accent, #3f7d4a);
+}
+
+.woocommerce_options_panel .timeslot-row.is-past input.timeslot-start-picker, .woocommerce_options_panel .timeslot-row.is-past input.timeslot-end-picker {
+  color: #646970;
+}
+
+.woocommerce_options_panel .recurring-timeslot-row-child input.timeslot-start-picker, .woocommerce_options_panel .recurring-timeslot-row-child input.timeslot-end-picker {
+  flex: 0 1 128px;
+  width: 128px;
+}
+
+.timeslot-when-dash {
+  color: #646970;
+}
+
+.timeslot-duration {
+  font-size: 11.5px;
+  color: #646970;
+  white-space: nowrap;
+}
+
+.timeslot-cap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.timeslot-cap-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #646970;
+  font-variant-numeric: tabular-nums;
+}
+
+.woocommerce_options_panel .timeslot-cap-line input.timeslot-qty.timeslot-qty {
+  display: inline-block;
+  float: none;
+  width: 52px;
+  min-height: 0;
+  height: 26px;
+  margin: 0;
+  padding: 0 6px;
+  border: 1px solid var(--tpfw-border, #dcdcde);
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12.5px;
+  line-height: 24px;
+  text-align: center;
+}
+
+.timeslot-meter {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--tpfw-border, #dcdcde);
+  overflow: hidden;
+}
+.timeslot-meter i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--tpfw-timeslot-accent, #3f7d4a);
+  transition: width 0.2s ease;
+}
+
+.timeslot-row.is-full .timeslot-meter i {
+  background: #b45309;
+}
+
+.timeslot-state {
+  font-size: 12px;
+  color: #646970;
+  font-variant-numeric: tabular-nums;
+}
+.timeslot-state b {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tpfw-ink, #1d2327);
+}
+
+.timeslot-row.is-past .timeslot-state b {
+  color: #646970;
+  font-weight: 500;
+}
+
+/* A row that has never been saved has no "see tickets" button yet, so a column sized to its
+   own contents comes out one button narrower than every saved row's and drags the whole row's
+   columns out of line. The pair of buttons is reserved whether or not both are there. */
+.timeslot-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 64px;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.timeslot-row:hover .timeslot-row-actions,
+.timeslot-row:focus-within .timeslot-row-actions,
+.timeslot-series-head:hover .timeslot-row-actions,
+.timeslot-series-head:focus-within .timeslot-row-actions {
+  opacity: 1;
+}
+
+.timeslot-series-actions {
+  opacity: 1;
+}
+
+.woocommerce_options_panel .timeslot-row-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--wp-admin-theme-color, #2271b1);
+  border-radius: 3px;
+  background: var(--tpfw-surface-muted, #f6f7f7);
+  color: var(--wp-admin-theme-color, #2271b1);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+}
+.woocommerce_options_panel .timeslot-row-actions button svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.woocommerce_options_panel .timeslot-row-actions button.timeslot-action-trash {
+  border-color: #b32d2e;
+  color: #b32d2e;
+}
+.woocommerce_options_panel .timeslot-row-actions button.timeslot-action-trash--text {
+  width: auto;
+  padding: 0 12px;
+}
+.woocommerce_options_panel .timeslot-row-actions button:hover {
+  background: #fff;
+}
+.woocommerce_options_panel .timeslot-row-actions button.hide {
+  display: none;
+}
+
+.timeslot-row-recurring {
+  border-bottom: 1px solid var(--tpfw-border, #dcdcde);
+}
+.timeslot-row-recurring.is-loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.timeslot-series-head {
+  display: grid;
+  grid-template-columns: 9px 20px minmax(0, 1fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 11px 18px 11px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.timeslot-series-head::-webkit-details-marker {
+  display: none;
+}
+.timeslot-series-head:hover {
+  background: var(--tpfw-surface-muted, #f6f7f7);
+}
+
+.timeslot-row-recurring .timeslot-flag {
+  align-self: stretch;
+  background: var(--tpfw-timeslot-accent, #3f7d4a);
+}
+
+.timeslot-series-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #646970;
+}
+.timeslot-series-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s ease;
+}
+
+.timeslot-row-recurring[open] .timeslot-series-toggle svg {
+  transform: rotate(90deg);
+}
+
+.timeslot-series-rule {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--tpfw-ink, #1d2327);
+}
+.timeslot-series-rule .timeslot-series-rule-muted {
+  font-weight: 400;
+  color: #646970;
+}
+
+.timeslot-series-count {
+  font-size: 11.5px;
+  color: #646970;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.timeslot-row-fields {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  padding: 4px 18px 16px 23px;
+  background: var(--tpfw-surface-muted, #f6f7f7);
+  border-top: 1px dashed var(--tpfw-border, #dcdcde);
+}
+
+.timeslot-field {
+  min-width: 0;
+}
+.timeslot-field.timeslot-field label {
+  display: block;
+  float: none;
+  width: auto;
+  margin: 0 0 3px;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  color: #646970;
+}
+.woocommerce_options_panel .timeslot-field input, .woocommerce_options_panel .timeslot-field select {
+  width: 100%;
+  min-height: 0;
+  height: 30px;
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid #8c8f94;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  text-align: left;
+}
+
+.recurring-timeslot-children-wrapper {
+  background: var(--tpfw-surface, #fff);
+}
+
+.recurring-timeslot-children-head {
+  padding: 8px 18px 8px 41px;
+  border-top: 1px solid var(--tpfw-border, #dcdcde);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #646970;
+}
+
+.timeslot-row.recurring-timeslot-row-child {
+  grid-template-columns: minmax(0, 1fr) 132px 128px auto;
+  padding: 7px 18px 7px 41px;
+  border-bottom: none;
+  border-top: 1px solid var(--tpfw-border, #dcdcde);
+}
+.timeslot-row.recurring-timeslot-row-child .timeslot-flag {
+  display: none;
+}
+
+.recurring-timeslot-children-text {
+  padding: 10px 18px 4px 41px;
+  font-size: 12px;
+  color: #646970;
+}
+.recurring-timeslot-children-text h2 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--tpfw-ink, #1d2327);
+}
+.recurring-timeslot-children-text p {
+  margin: 2px 0;
+}
+
+.woocommerce_options_panel input.timeslot-action-manual-add-timeslot-tickets {
+  height: 30px;
+  margin: 8px 18px 12px 41px;
+  padding: 0 12px;
+  border: 1px solid var(--wp-admin-theme-color, #2271b1);
+  border-radius: 3px;
+  background: var(--tpfw-surface-muted, #f6f7f7);
+  color: var(--wp-admin-theme-color, #2271b1);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: none;
+}
+.woocommerce_options_panel input.timeslot-action-manual-add-timeslot-tickets:hover {
+  background: #fff;
+}
+
+.timeslot-empty {
+  padding: 34px 18px;
+  text-align: center;
+  font-size: 13px;
+  color: #646970;
+}
+
+.timeslot-empty-title {
+  margin: 0 0 12px;
+  font-weight: 600;
+  color: var(--tpfw-ink, #1d2327);
+}
+
+.timeslot-empty-text {
+  margin: 0;
+}
+
+.timeslot-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--tpfw-border, #dcdcde);
+  background: var(--tpfw-surface-muted, #f6f7f7);
+  font-size: 12px;
+  color: #646970;
+  font-variant-numeric: tabular-nums;
+}
+.timeslot-foot strong {
+  color: var(--tpfw-ink, #1d2327);
+}
+
+.timeslot-foot-note {
+  margin-left: auto;
+}
+
+.timeslot-row-divider {
+  display: none;
+}
+
+.tpfw-card-header input.timeslot-action-add.button,
+.tpfw-card-header input.timeslot-recurring-action-add.button {
+  align-self: center;
+}
+
+.tpfw-card-header .timeslot-card-tag + input.timeslot-action-add.button,
+.tpfw-card-header .tpfw-card-title + input.timeslot-action-add.button,
+.tpfw-card-header .timeslot-card-tag + input.timeslot-recurring-action-add.button {
+  margin-left: auto;
+}
+
+.air-datepicker {
+  --adp-border-color: var(--wp-admin-theme-color, #2271b1);
+  --adp-accent-color: var(--tpfw-timeslot-accent, #3f7d4a);
+  --adp-color-current-date: var(--tpfw-timeslot-accent, #3f7d4a);
+  --adp-cell-background-color-selected: var(--tpfw-timeslot-accent, #3f7d4a);
+  --adp-cell-background-color-selected-hover: var(--tpfw-timeslot-accent-hover, #356b3f);
+  --adp-cell-background-color-in-range: var(--tpfw-timeslot-accent-soft, #e7f0e9);
+  --adp-btn-color: var(--tpfw-timeslot-accent, #3f7d4a);
+  border-width: 2px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.air-datepicker-time {
+  background: var(--tpfw-timeslot-accent-soft, #e7f0e9);
+  border-top: 1px solid var(--tpfw-timeslot-accent-soft, #e7f0e9) !important;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.air-datepicker-time--current-hours,
+.air-datepicker-time--current-minutes {
+  color: var(--tpfw-timeslot-accent, #3f7d4a);
+}
+
+.air-datepicker-time--row {
+  --adp-time-track-color: var(--tpfw-timeslot-accent, #3f7d4a);
+  --adp-time-track-color-hover: var(--tpfw-timeslot-accent-hover, #356b3f);
+}

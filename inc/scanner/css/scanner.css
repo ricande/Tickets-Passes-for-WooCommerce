@@ -1,0 +1,146 @@
+		* { box-sizing: border-box; }
+		html, body { margin:0; padding:0; height:100%; background:#101418; overflow:hidden;
+		             font:16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+		             color:#fff; -webkit-text-size-adjust:100%; }
+		#tpfw-scanner { position:fixed; inset:0; display:flex; flex-direction:column; }
+
+		#tpfw-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; }
+
+		/* Aiming frame - purely to tell staff where to hold the code. */
+		#tpfw-reticle { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+		               width:min(68vw, 68vh); aspect-ratio:1; border:3px solid rgba(255,255,255,.85);
+		               border-radius:20px; box-shadow:0 0 0 100vmax rgba(0,0,0,.45); pointer-events:none; }
+
+		/* Just the burger: who is signed in now lives in the menu header, and the scanning
+		   screen is better off with nothing between the reticle and the camera feed. */
+		#tpfw-topbar { position:relative; z-index:2; display:flex; align-items:center; justify-content:flex-end;
+		              padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+		              background:linear-gradient(rgba(0,0,0,.65), rgba(0,0,0,0)); }
+
+		#tpfw-menu-btn { appearance:none; border:0; background:none; padding:6px; width:34px; height:34px;
+		                display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; cursor:pointer; }
+		#tpfw-menu-btn span { display:block; width:20px; height:2px; background:#fff; border-radius:1px; }
+
+		/* Bottom cluster: status hint above the Check-In button, same readable-over-video gradient. */
+		#tpfw-bottom { position:absolute; left:0; right:0; bottom:0; z-index:2; display:flex; flex-direction:column;
+		              gap:14px; padding:18px 18px calc(env(safe-area-inset-bottom) + 22px);
+		              background:linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.7)); }
+		#tpfw-status { text-align:center; font-size:15px; }
+		#tpfw-checkin-btn { height:56px; border:0; border-radius:14px; font-size:17px; font-weight:700;
+		                   background:#2f7dfb; color:#fff; cursor:pointer; }
+		#tpfw-checkin-btn:disabled { background:#2a2f36; color:#6b7280; cursor:default; }
+		#tpfw-cancel-btn { height:48px; border:0; border-radius:14px; font-size:16px; font-weight:600;
+		                  background:rgba(255,255,255,.12); color:#fff; cursor:pointer; }
+		#tpfw-cancel-btn[hidden] { display:none; }
+
+		/* Flashlight toggle, opposite the burger; hidden until the camera says it has a torch. */
+		#tpfw-torch-btn { position:absolute; z-index:2; top:calc(env(safe-area-inset-top) + 10px); left:14px;
+		                 width:34px; height:34px; border:0; border-radius:50%; padding:7px; cursor:pointer;
+		                 background:rgba(255,255,255,.14); color:#fff; }
+		#tpfw-torch-btn[hidden] { display:none; }
+		#tpfw-torch-btn[aria-pressed="true"] { background:#ffd166; color:#101418; }
+		#tpfw-torch-btn svg { width:100%; height:100%; }
+
+		/* Result notification - floats down from the top in the scan colour, camera stays visible.
+		   Sized ~55% bigger than the first pass; the reticle sits vertically centred at min(68vw,68vh)
+		   so even on a short landscape phone this stays well clear of the QR aiming area. */
+		#tpfw-notice { position:fixed; top:calc(env(safe-area-inset-top) + 12px); left:14px; right:14px; z-index:30;
+		              display:flex; align-items:center; gap:16px; padding:18px 22px; border-radius:20px;
+		              box-shadow:0 10px 30px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);
+		              opacity:0; transform:translateY(-130%);
+		              transition:transform .35s cubic-bezier(.22,1,.36,1), opacity .25s ease; }
+		#tpfw-notice.is-visible { opacity:1; transform:translateY(0); }
+		#tpfw-notice-icon { flex:0 0 auto; width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,.18);
+		                    display:flex; align-items:center; justify-content:center; overflow:hidden; }
+		#tpfw-notice-icon svg { width:24px; height:24px; }
+		#tpfw-notice-icon img { width:100%; height:100%; object-fit:cover; }
+		#tpfw-notice-body { flex:1 1 auto; min-width:0; text-align:left; }
+		#tpfw-notice-message { display:block; font-size:18px; font-weight:700; line-height:1.25; }
+		@media (prefers-reduced-motion: reduce) {
+			#tpfw-notice { transition:opacity .2s ease; }
+		}
+
+		/* Slide-out menu. */
+		#tpfw-menu-scrim { position:fixed; inset:0; z-index:19; background:rgba(0,0,0,.5); opacity:0;
+		                  pointer-events:none; transition:opacity .2s ease; }
+		#tpfw-menu-scrim.is-visible { opacity:1; pointer-events:auto; }
+		#tpfw-menu { position:fixed; top:0; right:0; bottom:0; z-index:20; width:min(80vw, 310px);
+		            display:flex; flex-direction:column; overflow:hidden;
+		            background:linear-gradient(180deg, #1d232c 0%, #141920 100%);
+		            border-left:1px solid rgba(255,255,255,.07);
+		            border-top-left-radius:22px; border-bottom-left-radius:22px;
+		            box-shadow:-10px 0 40px rgba(0,0,0,.45);
+		            transform:translateX(100%); transition:transform .28s cubic-bezier(.32,.72,0,1);
+		            padding:calc(env(safe-area-inset-top) + 18px) 0 calc(env(safe-area-inset-bottom) + 14px); }
+		#tpfw-menu.is-open { transform:translateX(0); }
+
+		/* Both subviews are full-height flex columns: it lets Log out sit at the bottom of the
+		   drawer, and lets the history list scroll on its own instead of the whole drawer. */
+		.tpfw-menu-view { flex:1 1 auto; min-height:0; flex-direction:column; }
+		.tpfw-menu-view--main { display:flex; }
+		.tpfw-menu-view--history { display:none; }
+		#tpfw-menu.is-history .tpfw-menu-view--main { display:none; }
+		#tpfw-menu.is-history .tpfw-menu-view--history { display:flex; }
+
+		/* Identity header - the same person as the topbar pill, at drawer scale. */
+		.tpfw-menu-head { display:flex; align-items:center; gap:11px; padding:2px 18px 15px;
+		                 border-bottom:1px solid rgba(255,255,255,.07); margin-bottom:10px; }
+		.tpfw-menu-head-avatar { flex:0 0 auto; width:38px; height:38px; border-radius:50%;
+		                        background:linear-gradient(135deg, #4f9dff, #2f7dfb);
+		                        display:flex; align-items:center; justify-content:center;
+		                        font-size:16px; font-weight:800; color:#fff; }
+		.tpfw-menu-head-text { min-width:0; }
+		.tpfw-menu-head-name { display:block; font-size:15px; font-weight:700; overflow:hidden;
+		                      text-overflow:ellipsis; white-space:nowrap; }
+		.tpfw-menu-head-role { display:block; font-size:12px; opacity:.55; margin-top:1px; }
+
+		#tpfw-menu ul { list-style:none; margin:0; padding:0 10px; }
+		#tpfw-menu a, #tpfw-menu-history-btn { display:flex; align-items:center; gap:12px; width:100%;
+		              padding:10px; border-radius:14px; color:#fff; text-decoration:none;
+		              font-size:15px; font-weight:600; text-align:left; background:none; border:0;
+		              cursor:pointer; transition:background .15s ease; }
+		#tpfw-menu a:active, #tpfw-menu-history-btn:active { background:rgba(255,255,255,.07); }
+		/* Icon chip - gives each row an anchor point instead of a bare stroke glyph floating in space. */
+		.tpfw-menu-icon { flex:0 0 auto; width:34px; height:34px; border-radius:11px; padding:7px;
+		                 background:rgba(255,255,255,.07); color:#cfe0ff; }
+		/* Manual code entry, for a desk without a camera or a code the camera will not read. */
+		.tpfw-menu-manual { padding:12px 10px 4px; }
+		.tpfw-menu-manual label { display:block; font-size:12px; font-weight:700; letter-spacing:.04em;
+		                          text-transform:uppercase; opacity:.55; margin:0 0 8px 2px; }
+		.tpfw-menu-manual-row { display:flex; gap:8px; }
+		#tpfw-manual-input { flex:1 1 auto; min-width:0; height:42px; padding:0 12px; border-radius:12px;
+		                     border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.07);
+		                     color:#fff; font:inherit; font-size:15px; }
+		#tpfw-manual-input::placeholder { color:rgba(255,255,255,.4); }
+		#tpfw-manual-form button { flex:0 0 auto; height:42px; padding:0 14px; border:0; border-radius:12px;
+		                           background:#2f7dfb; color:#fff; font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+
+		/* Log out is pinned to the bottom, away from the everyday actions, so a mis-tap in the
+		   dark does not end the shift's session. */
+		.tpfw-menu-foot { margin-top:auto; }
+		.tpfw-menu-foot ul { padding-top:10px; margin:0 10px; border-top:1px solid rgba(255,255,255,.07); padding-left:0; padding-right:0; }
+		.tpfw-menu-foot a { color:#ff9a9a; }
+		.tpfw-menu-foot .tpfw-menu-icon { background:rgba(255,107,107,.13); color:#ff9a9a; }
+
+		.tpfw-menu-history-head { display:flex; align-items:center; gap:9px; padding:2px 18px 13px;
+		                         border-bottom:1px solid rgba(255,255,255,.07); font-size:15px; font-weight:700; }
+		#tpfw-menu-back-btn { appearance:none; border:0; background:rgba(255,255,255,.07); color:#fff;
+		                     flex:0 0 auto; width:30px; height:30px; border-radius:50%; display:flex;
+		                     align-items:center; justify-content:center; font-size:16px; line-height:1;
+		                     padding:0; cursor:pointer; }
+		#tpfw-history-refresh-btn { appearance:none; border:0; background:rgba(255,255,255,.07); color:#fff;
+		                          flex:0 0 auto; margin-left:auto; width:30px; height:30px; border-radius:50%;
+		                          display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer; }
+		#tpfw-history-refresh-btn svg { width:16px; height:16px; }
+		#tpfw-history-list { flex:1 1 auto; min-height:0; overflow-y:auto; list-style:none; margin:0; padding:4px 0 0; }
+		#tpfw-history-list li { display:flex; align-items:center; gap:12px; padding:11px 18px;
+		                        border-bottom:1px solid rgba(255,255,255,.06); }
+		.tpfw-history-date-header { padding:14px 18px 6px; font-size:11px; font-weight:700; letter-spacing:.04em;
+		                            text-transform:uppercase; opacity:.5; border-bottom:0; }
+		.tpfw-history-badge { flex:0 0 auto; width:34px; height:34px; border-radius:12px;
+		                      display:flex; align-items:center; justify-content:center;
+		                      font-size:11px; font-weight:800; color:#fff; }
+		.tpfw-history-info { flex:1 1 auto; min-width:0; }
+		.tpfw-history-name { display:block; font-size:15px; font-weight:700; overflow:hidden;
+		                     text-overflow:ellipsis; white-space:nowrap; }
+		.tpfw-history-meta { display:block; font-size:12px; opacity:.65; margin-top:2px; }

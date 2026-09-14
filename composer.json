@@ -1,0 +1,7 @@
+{
+  "name": "tpfw/tickets-passes-for-woocommerce",
+  "description": "Test scripts only — the plugin itself does not require Composer to run.",
+  "scripts": {
+    "test": "bash tests/run.sh"
+  }
+}

@@ -1,0 +1,388 @@
+// Timeslot picker on the single product page - the "agenda" layout: one card, calendar on
+// top, the picked day's times listed underneath as full-width rows. The rows carry a second
+// line and a spots-left pill because a bare "10:00" chip could not say how long the slot runs
+// or how close it is to full, which is the information the choice actually turns on.
+.tpfw-timeslot-picker {
+    --tpfw-accent: #3f7d4a;
+    --tpfw-accent-fg: #ffffff;
+    --tpfw-accent-soft: #e7f0e9;
+    --tpfw-ink: #1d2327;
+    --tpfw-border: #c3c4c7;
+    --tpfw-bg: #fff;
+    --tpfw-hint: #646970;
+
+    // Not shop-configurable: a recessed shade for the seams and a warning tone for the
+    // nearly-full marker. Both are read against the card, not against the shop's accent.
+    // Mixed from the shop's own background so it sinks on a dark card as well as a light one.
+    --tpfw-sunk: color-mix(in srgb, var(--tpfw-bg) 94%, var(--tpfw-ink));
+    --tpfw-warn: #b45309;
+
+    width: 100%;
+    max-width: 440px;
+    margin: 24px 0;
+    background: var(--tpfw-bg);
+    color: var(--tpfw-ink);
+    border: 1px solid var(--tpfw-border);
+    border-radius: 14px;
+    // Sections divide themselves with full-bleed borders, so the card holds no padding of
+    // its own and clips its children to the rounded corners instead.
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.tpfw-timeslot-picker-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 18px 14px;
+}
+
+.tpfw-timeslot-picker-label {
+    label {
+        display: block;
+        // Themes commonly give every label a bottom margin; the hint below sets its own.
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.3;
+        color: var(--tpfw-ink);
+    }
+
+    .tpfw-timeslot-picker-hint {
+        margin: 4px 0 0;
+        // Long hint text set by the shop wraps to a readable measure instead of running the
+        // full width of the card.
+        max-width: 42ch;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        color: var(--tpfw-hint);
+    }
+}
+
+.tpfw-timeslot-stepper {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--tpfw-border);
+    border-radius: 999px;
+    background: var(--tpfw-sunk);
+
+    button {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: none;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--tpfw-ink);
+        font: inherit;
+        font-size: 17px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--tpfw-bg);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+        }
+
+        &:disabled {
+            opacity: .3;
+            cursor: not-allowed;
+            background: transparent;
+            box-shadow: none;
+        }
+    }
+
+    .tpfw-timeslot-stepper-value {
+        min-width: 64px;
+        text-align: center;
+        font-size: 0.82rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.tpfw-timeslot-calendar {
+    padding: 0 8px 8px;
+
+    // AirDatepicker only needs this input as its mount anchor in inline mode - the
+    // calendar itself already highlights the selected date, so showing the raw
+    // "yyyy-mm-dd" text above it too was pure duplication.
+    input {
+        display: none;
+    }
+
+    // The library ships its own border/shadow meant for a floating popup - here it's
+    // rendered inline in the page flow, so the card treatment on the picker replaces
+    // that instead of the two stacking into a double border.
+    .air-datepicker {
+        border: none;
+        box-shadow: none;
+        width: 100%;
+    }
+}
+
+.tpfw-timeslot-times {
+    display: none;
+}
+
+// Names the list below and repeats the picked date on the right, so the times stay attached
+// to a day once the calendar has scrolled out of view on a phone.
+.tpfw-timeslot-times-seam {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px 8px;
+    border-top: 1px solid var(--tpfw-border);
+}
+
+.tpfw-timeslot-times-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--tpfw-hint);
+}
+
+.tpfw-timeslot-times-day {
+    margin-left: auto;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--tpfw-ink);
+    font-variant-numeric: tabular-nums;
+
+    &.is-empty {
+        font-weight: 500;
+        color: var(--tpfw-hint);
+    }
+}
+
+.tpfw-timeslot-option {
+    // The inline datepicker script flips this to "grid" for the rows belonging to the
+    // selected date.
+    display: none;
+    grid-template-columns: 34px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 18px;
+    border-top: 1px solid var(--tpfw-border);
+    cursor: pointer;
+    transition: background-color .15s ease;
+
+    .tpfw-timeslot-option-icon {
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px dashed var(--tpfw-border);
+        border-radius: 999px;
+        background: var(--tpfw-sunk);
+        color: var(--tpfw-hint);
+
+        svg {
+            display: block;
+            width: 15px;
+            height: 15px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    }
+
+    .tpfw-timeslot-option-lines {
+        min-width: 0;
+    }
+
+    .tpfw-timeslot-option-time {
+        display: block;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: -.01em;
+        color: var(--tpfw-ink);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .tpfw-timeslot-option-sub {
+        display: block;
+        margin-top: 1px;
+        font-size: 0.78rem;
+        color: var(--tpfw-hint);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .tpfw-timeslot-option-spots {
+        flex: none;
+        padding: 4px 11px;
+        border: 1px solid var(--tpfw-border);
+        border-radius: 999px;
+        background: var(--tpfw-bg);
+        color: var(--tpfw-hint);
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    // "3 spots left" reads the same as "30 spots left" in a column of identical pills - this
+    // is what makes a nearly-full slot stand out while there is still time to pick another.
+    .tpfw-timeslot-option-spots--low {
+        border-color: var(--tpfw-warn);
+        color: var(--tpfw-warn);
+    }
+
+    &:hover {
+        background: var(--tpfw-sunk);
+    }
+
+    // The row is already the width of the card, so the selection reads off the filled icon
+    // rather than a shop-accent wash behind the text - which at a light accent left the row
+    // barely distinguishable and at a dark one fought with the text color.
+    &.selected {
+        background: var(--tpfw-accent-soft);
+
+        .tpfw-timeslot-option-icon {
+            border: 1px solid var(--tpfw-accent);
+            background: var(--tpfw-accent);
+            color: var(--tpfw-accent-fg);
+        }
+    }
+
+    // Slots that hit 0 remaining (existing tickets/reservations ate the whole quantity)
+    // used to render identically to a pickable slot - this makes "not actually
+    // available" visible instead of only surfacing as a later add-to-cart failure.
+    &.tpfw-timeslot-option--soldout {
+        cursor: not-allowed;
+
+        .tpfw-timeslot-option-time {
+            font-weight: 500;
+            color: var(--tpfw-hint);
+            text-decoration: line-through;
+        }
+
+        .tpfw-timeslot-option-spots {
+            border-style: dashed;
+        }
+
+        &:hover {
+            background: transparent;
+        }
+    }
+}
+
+// Always present, so the card has a fixed bottom edge whether or not a date has been picked
+// yet - the times list appearing and disappearing above it does not reflow the whole page.
+.tpfw-timeslot-picker-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--tpfw-border);
+    background: var(--tpfw-sunk);
+    font-size: 0.85rem;
+    color: var(--tpfw-hint);
+
+    strong {
+        color: var(--tpfw-ink);
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+// How much of the chosen slot the current quantity takes - a quiet way to show that asking
+// for 6 of 8 places is close to the ceiling, without another line of text.
+.tpfw-timeslot-picker-meter {
+    flex: 1 1 auto;
+    max-width: 120px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--tpfw-border);
+    overflow: hidden;
+
+    i {
+        display: block;
+        width: 0;
+        height: 100%;
+        background: var(--tpfw-accent);
+        transition: width .2s ease;
+    }
+}
+
+@media (max-width: 480px) {
+    .tpfw-timeslot-picker-head {
+        flex-direction: column;
+    }
+}
+
+// air-datepicker theme - matches the timeslot green used everywhere else this product
+// type appears (admin timeslot rows, QR preview card mockup), same override values as
+// the admin edit-screen copy in timeslot.module.css. Also darkens the library's own
+// defaults for body text, nav arrows and the inline border (#4a4a4a/#9c9c9c/#d7d7d7) -
+// all fairly pale on their own, and with most cells legitimately greyed out as
+// unavailable, the whole calendar otherwise reads as washed out.
+//
+// Everything below is scoped to the picker card: the same library also draws the Ticket and
+// Pass start date calendars, which carry their own palette and must not inherit this one.
+.tpfw-timeslot-picker .air-datepicker {
+    --adp-accent-color: var(--tpfw-timeslot-accent, #3f7d4a);
+    --adp-background-color: var(--tpfw-bg, #fff);
+    --adp-color: var(--tpfw-ink, #1d2327);
+    --adp-color-secondary: var(--tpfw-hint, #50575e);
+    --adp-nav-arrow-color: var(--tpfw-hint, #50575e);
+    --adp-nav-color-secondary: var(--tpfw-hint, #50575e);
+    // The library's hover is a fixed near-white, which flashes on a dark card.
+    --adp-cell-background-color-hover: color-mix(in srgb, var(--tpfw-timeslot-accent, #3f7d4a) 18%, var(--tpfw-bg, #fff));
+    --adp-day-name-color: var(--tpfw-timeslot-dayname, #b45309);
+    --adp-day-name-color-hover: var(--tpfw-timeslot-dayname-hover, #92400e);
+    --adp-border-color-inline: var(--tpfw-border, #c3c4c7);
+    --adp-color-current-date: var(--tpfw-timeslot-accent, #3f7d4a);
+    --adp-cell-background-color-selected: var(--tpfw-timeslot-accent, #3f7d4a);
+    --adp-cell-background-color-selected-hover: var(--tpfw-timeslot-accent-hover, #356b3f);
+    --adp-btn-color: var(--tpfw-timeslot-accent, #3f7d4a);
+
+    // The theme's own body text is a light 300 weight, which the calendar otherwise
+    // inherits (air-datepicker never sets its own font-weight) - at 14px that reads as
+    // faint regardless of color, so every override above needed this too.
+    font-weight: 500;
+}
+
+// The library hardcodes the selected day's text to white (no CSS var exposed for it),
+// which disappears against a light accent color like the site's own pale-yellow test
+// palette. Same contrast-aware foreground already computed server-side for the accent.
+.tpfw-timeslot-picker .air-datepicker-cell.-selected- {
+    color: var(--tpfw-timeslot-accent-fg, #fff);
+}
+
+// The weekday header row (MO, TU, ...) is tiny (0.8em) - bolding it on top of the
+// darker orange above keeps it legible at that size.
+.tpfw-timeslot-picker .air-datepicker-body--day-name {
+    font-weight: 700;
+}
+
+// The library never sets a color of its own for the month text - it just inherits
+// --adp-color (the calendar's general body text color) - but the year is wrapped in its
+// own <i> with an explicit color: var(--adp-nav-color-secondary), which needs overriding
+// separately or it stays that secondary grey regardless of the rule above.
+.tpfw-timeslot-picker .air-datepicker-nav--title {
+    color: var(--tpfw-timeslot-navtitle, #000);
+
+    i {
+        color: var(--tpfw-timeslot-navtitle, #000);
+    }
+}
+
+// AirDatepicker's own disabled state already blocks the click - this adds the visible
+// treatment the plugin never gave it, so a date with no timeslots reads as unavailable
+// at a glance instead of looking identical to one that can actually be picked. Kept to
+// a mid-grey (not the library's own near-white --adp-color-disabled) since most months
+// are mostly unavailable dates in practice - text that pale made the whole calendar
+// read as faded instead of just those specific cells.
+.tpfw-timeslot-picker .air-datepicker-cell.disabled-class {
+    color: #8c8f94 !important;
+    text-decoration: line-through;
+}

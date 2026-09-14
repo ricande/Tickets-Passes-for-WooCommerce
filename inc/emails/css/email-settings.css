@@ -1,0 +1,227 @@
+/* Email settings tab */
+
+.hide {
+	display: none !important;
+}
+
+.tpfw-settings-wrap .nav-tab-wrapper {
+	margin-bottom: 1.5em;
+}
+
+/* #wpfooter ("Thank you for creating with WordPress.") is "position: absolute; bottom: 0"
+   relative to <body> in WP core. That only resolves correctly once, against whatever
+   body's height happens to be at that moment - opening a template here adds a full TinyMCE
+   editor, growing real content well past that, and the footer's absolute position does not
+   recompute to track it (verified: its resolved position stays pinned to the original,
+   shorter body height, landing visually in the middle of the now-taller page). Taking it out
+   of absolute positioning entirely and letting it sit in normal flow is what actually makes
+   it follow content, on both short and tall pages. Scoped to this page only, since the
+   stylesheet is only enqueued here. */
+#wpfooter {
+	position: static;
+	margin-top: 20px;
+}
+
+/* Shared card look, matching the General/API tabs (see settings.css / api-settings.css) */
+.tpfw-settings-page {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.tpfw-email-settings-intro {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin: 16px 0 20px;
+	padding: 14px 16px;
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	border-radius: 4px;
+}
+
+.tpfw-email-settings-intro .dashicons {
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	margin-top: 2px;
+	color: #2271b1;
+}
+
+.tpfw-email-settings-intro-lead {
+	margin: 0 0 4px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.tpfw-email-settings-intro-sub {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #3c434a;
+}
+
+.tpfw-email-settings-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.tpfw-email-settings-page .postbox .hndle {
+	padding: 12px;
+	margin: 0;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+/* Core only draws the collapse-arrow glyph for postboxes nested inside ".meta-box-sortables"
+   (the drag-reorder wrapper) - we don't want drag-reordering here, so the two rules below
+   mirror core's own icon rule (wp-admin/css/common.css) scoped to our own list instead. */
+.tpfw-email-settings-list .postbox .toggle-indicator::before {
+	content: "\f142";
+	content: "\f142" / "";
+	display: inline-block;
+	font: normal 20px/1 dashicons;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-decoration: none;
+}
+
+.tpfw-email-settings-list .postbox.closed .handlediv .toggle-indicator::before {
+	content: "\f140";
+	content: "\f140" / "";
+}
+
+.tpfw-email-settings-page .postbox .hndle span:first-child {
+	font-weight: 600;
+}
+
+.tpfw-email-settings-page .postbox .inside {
+	padding: 16px 12px 16px;
+	margin-top: 0;
+}
+
+.tpfw-email-panel-body {
+	display: flex;
+	align-items: flex-start;
+	gap: 24px;
+	flex-wrap: wrap;
+}
+
+.tpfw-email-panel-fields {
+	flex: 1 1 320px;
+	min-width: 0;
+}
+
+.tpfw-email-settings-page .postbox label {
+	display: block;
+	font-weight: 600;
+	margin: 12px 0 6px;
+}
+
+.tpfw-email-settings-page .postbox label:first-of-type {
+	margin-top: 0;
+}
+
+/* Room above the Message row when a Subject field precedes it */
+.tpfw-email-panel-fields .email-input + .tpfw-email-message-row {
+	margin-top: 20px;
+}
+
+/* Message label sits on the same line as the editor's Visual/Code tabs, in the empty
+   space to their left (media_buttons is off, so that space is otherwise unused) */
+.tpfw-email-message-row {
+	position: relative;
+}
+
+.tpfw-email-settings-page .postbox .tpfw-email-message-row label {
+	position: absolute;
+	top: 0;
+	left: 0;
+	margin: 0;
+	line-height: 43px; /* matches WP core's .wp-editor-tools row height, vertically centers the label on the tabs */
+	z-index: 1;
+}
+
+.tpfw-email-message-row .wp-editor-wrap,
+.tpfw-email-message-row .wp-editor-tools {
+	margin: 0;
+	padding: 0;
+}
+
+.tpfw-email-settings-page .email-input {
+	width: 100%;
+	max-width: 100%;
+}
+
+/* Stretches to the full row height and cancels .inside's padding on the top/bottom
+   edges so the divider runs flush from the postbox header down to the bottom, instead
+   of floating short like the flex-start-aligned fields column would leave it. */
+.tpfw-merge-tags {
+	flex: 0 0 200px;
+	align-self: stretch;
+	margin: -16px 0;
+	padding: 16px 0 16px 20px;
+	border-left: 1px solid #dcdcde;
+}
+
+.tpfw-merge-tags-label {
+	display: block;
+	font-size: 12px;
+	font-weight: 600;
+	color: #646970;
+	margin-bottom: 8px;
+}
+
+.tpfw-merge-tag {
+	display: block;
+	width: 100%;
+	margin: 0 0 6px;
+	padding: 5px 8px;
+	background: #f0f0f1;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+	color: #2c3338;
+	text-align: left;
+	cursor: pointer;
+	transition: background-color .15s ease-in-out;
+}
+
+.tpfw-merge-tag:hover {
+	background: #e5e5e5;
+}
+
+.tpfw-merge-tag-copied {
+	background: #d4f4dd;
+	border-color: #46b450;
+	color: #1e7e34;
+}
+
+.tpfw-settings-page .submit {
+	padding: 20px 0 0;
+	margin: 0;
+	border-top: 1px solid #dcdcde;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.tpfw-email-settings-save-notice {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.tpfw-email-settings-save-notice.tpfw-notice-success {
+	color: #1e7e34;
+}
+
+.tpfw-email-settings-save-notice.tpfw-notice-error {
+	color: #a92323;
+}

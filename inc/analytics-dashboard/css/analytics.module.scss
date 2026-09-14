@@ -1,0 +1,435 @@
+// Analytics screen.
+//
+// One instrument panel: a filter rail that stays put while you read, and two stacked panels for
+// the year and for the hour. Everything is scoped to .tpfw-analytics so the sibling dashboards,
+// which share the older .tpfw-dashboard classes, are untouched.
+
+.tpfw-analytics {
+    // The accent follows whichever admin colour scheme the user picked, so the screen belongs to
+    // their WordPress rather than to this plugin. The heat ramp is the screen's own: check-in
+    // density is the one thing here that carries meaning through colour.
+    --tpfw-ink: #101517;
+    --tpfw-ink-soft: #5c6469;
+    --tpfw-line: #dfe3e4;
+    --tpfw-line-soft: #eceff0;
+    --tpfw-surface: #fff;
+    --tpfw-sunken: #f5f7f7;
+    --tpfw-accent: var(--wp-admin-theme-color, #2271b1);
+    --tpfw-radius: 10px;
+    --tpfw-shadow: 0 1px 2px rgba(16, 21, 23, 0.04), 0 10px 28px -20px rgba(16, 21, 23, 0.35);
+
+    color: var(--tpfw-ink);
+    font-size: 13px;
+
+    // Several elements below set their own display, which would otherwise win over the hidden
+    // attribute the script toggles states with.
+    [hidden] {
+        display: none !important;
+    }
+
+    *:focus-visible {
+        outline: 2px solid var(--tpfw-accent);
+        outline-offset: 2px;
+        box-shadow: none;
+    }
+
+    .tpfw-analytics__masthead {
+        margin: 8px 0 20px;
+
+        h1 {
+            margin: 0;
+            padding: 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+
+        .tpfw-analytics__lede {
+            margin: 6px 0 0;
+            max-width: 62ch;
+            font-size: 13px;
+            color: var(--tpfw-ink-soft);
+        }
+    }
+
+    .tpfw-notice {
+        margin: 0 0 20px;
+        border-radius: 6px;
+    }
+
+    .tpfw-analytics__layout {
+        display: grid;
+        grid-template-columns: 288px minmax(0, 1fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    // Filter rail
+    .tpfw-filters {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 18px 18px 20px;
+        background: var(--tpfw-surface);
+        border: 1px solid var(--tpfw-line);
+        border-radius: var(--tpfw-radius);
+        box-shadow: var(--tpfw-shadow);
+        // Clears the admin bar so the filters stay reachable while reading a long year.
+        position: sticky;
+        top: 46px;
+    }
+
+    .tpfw-filters__field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    .tpfw-filters__label {
+        padding: 0;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--tpfw-ink-soft);
+    }
+
+    // Sizing only: the admin styles its own selects and inputs, and a control that matches the
+    // rest of wp-admin is worth more here than one that matches this screen.
+    .tpfw-select {
+        width: 100%;
+        max-width: 180px;
+        box-sizing: border-box;
+    }
+
+    .tpfw-products__bar {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .tpfw-textbutton {
+        padding: 0;
+        border: 0;
+        background: none;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--tpfw-accent);
+        cursor: pointer;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .tpfw-products__count {
+        margin: 0 0 0 auto;
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        color: var(--tpfw-ink-soft);
+    }
+
+    // Checkbox rows rather than a native multi-select: the selected state on a multi-select is too
+    // subtle to scan, and these have to be read at a glance against the chart beside them.
+    .tpfw-products__list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 420px;
+        overflow-y: auto;
+        padding: 10px;
+        background: var(--tpfw-sunken);
+        border: 1px solid var(--tpfw-line);
+        border-radius: 6px;
+    }
+
+    .tpfw-products__group {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .tpfw-products__grouplabel {
+        margin-bottom: 6px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--tpfw-ink-soft);
+    }
+
+    .tpfw-products__row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        line-height: 1.35;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background: rgba(16, 21, 23, 0.05);
+        }
+
+        &:has(.tpfw-product-checkbox:checked) {
+            background: var(--tpfw-surface);
+            box-shadow: inset 0 0 0 1px var(--tpfw-line);
+        }
+
+        .tpfw-product-checkbox {
+            margin: 0;
+            flex: 0 0 auto;
+        }
+    }
+
+    .tpfw-products__name {
+        flex: 1 1 auto;
+        min-width: 0;
+        word-break: break-word;
+    }
+
+    .tpfw-products__id {
+        flex: 0 0 auto;
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        color: var(--tpfw-ink-soft);
+    }
+
+    .analytics-search {
+        align-self: flex-start;
+    }
+
+    // Panels
+    .tpfw-analytics__main {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        min-width: 0;
+    }
+
+    .tpfw-panel {
+        background: var(--tpfw-surface);
+        border: 1px solid var(--tpfw-line);
+        border-radius: var(--tpfw-radius);
+        box-shadow: var(--tpfw-shadow);
+        overflow: hidden;
+    }
+
+    .tpfw-panel__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 18px 20px 16px;
+    }
+
+    .tpfw-panel__heading {
+        flex: 1 1 260px;
+        min-width: 0;
+    }
+
+    .tpfw-panel__title {
+        margin: 0;
+        padding: 0;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        color: var(--tpfw-ink);
+    }
+
+    .tpfw-panel__hint {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: var(--tpfw-ink-soft);
+    }
+
+    // The date of the day on screen, tied visually to the heat ramp so the two panels read as one
+    // drill-down rather than as two unrelated charts.
+    .tpfw-panel__day {
+        display: inline-block;
+        margin: 6px 0 0;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #14532d;
+        background: #e4efe6;
+        border-radius: 999px;
+    }
+
+    .tpfw-panel__tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+    }
+
+    .tpfw-select#analytics-day {
+        max-width: 160px;
+    }
+
+    // Readout: the year's three figures, sitting on the chart they summarise rather than floating
+    // above the page as separate tiles.
+    .tpfw-readout {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin: 0;
+        border-top: 1px solid var(--tpfw-line-soft);
+        border-bottom: 1px solid var(--tpfw-line-soft);
+        background: var(--tpfw-sunken);
+    }
+
+    .tpfw-readout__item {
+        padding: 12px 20px;
+
+        & + .tpfw-readout__item {
+            border-left: 1px solid var(--tpfw-line-soft);
+        }
+
+        dt {
+            margin: 0 0 2px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--tpfw-ink-soft);
+        }
+
+        dd {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.25;
+            letter-spacing: -0.015em;
+            font-variant-numeric: tabular-nums;
+            color: var(--tpfw-ink);
+        }
+    }
+
+    // The count beside the busiest date: same line, clearly the smaller of the two figures.
+    .tpfw-readout__sub {
+        margin-left: 6px;
+        font-size: 13px;
+        font-weight: 400;
+        letter-spacing: 0;
+        color: var(--tpfw-ink-soft);
+    }
+
+    .tpfw-panel__body {
+        padding: 14px 12px 10px;
+    }
+
+    // Cells drill into the hourly panel, so say so with the cursor - ApexCharts draws plain rects
+    // that give no hint of their own.
+    #apex-yearly-chart .apexcharts-heatmap-rect {
+        cursor: pointer;
+    }
+
+    .tpfw-scale {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 10px 20px 14px;
+        font-size: 11px;
+        color: var(--tpfw-ink-soft);
+    }
+
+    .tpfw-scale__ramp {
+        display: inline-flex;
+        gap: 3px;
+
+        i {
+            width: 20px;
+            height: 10px;
+            border-radius: 2px;
+        }
+    }
+
+    .tpfw-empty {
+        margin: 0;
+        padding: 56px 20px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--tpfw-ink-soft);
+    }
+
+    // Loading: a placeholder the size of the chart that is coming, so the panel keeps its height
+    // and the page does not jump when the data lands.
+    .tpfw-skeleton {
+        border-radius: 6px;
+        background: linear-gradient(90deg, var(--tpfw-sunken) 25%, #eceff0 37%, var(--tpfw-sunken) 63%);
+        background-size: 400% 100%;
+        animation: tpfw-shimmer 1.4s ease infinite;
+    }
+
+    .tpfw-skeleton--year {
+        height: 430px;
+    }
+
+    .tpfw-skeleton--day {
+        height: 320px;
+    }
+
+    .tpfw-panel--year.is-busy #apex-yearly-chart,
+    .tpfw-panel--day.is-busy #apex-daily-chart {
+        display: none;
+    }
+
+    @media (max-width: 1100px) {
+        .tpfw-analytics__layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .tpfw-filters {
+            position: static;
+        }
+
+        .tpfw-products__list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            max-height: 260px;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .tpfw-readout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .tpfw-readout__item + .tpfw-readout__item {
+            border-left: 0;
+            border-top: 1px solid var(--tpfw-line-soft);
+        }
+
+        .tpfw-panel__body {
+            padding: 10px 4px 6px;
+        }
+    }
+}
+
+@keyframes tpfw-shimmer {
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0 50%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tpfw-analytics .tpfw-skeleton {
+        animation: none;
+    }
+
+    .tpfw-analytics * {
+        transition-duration: 0.01ms !important;
+    }
+}

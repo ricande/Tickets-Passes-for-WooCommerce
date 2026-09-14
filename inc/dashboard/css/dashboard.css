@@ -1,0 +1,247 @@
+/* Shared styling for the Tickets, Timeslot Tickets and Passes dashboards. Per-screen extras
+   (guest pass rows, profile thumbnails) live in that screen's own stylesheet. */
+.tpfw-dashboard .tpfw-dashboard-header {
+  display: flex;
+  align-items: center;
+  margin: 20px 0 16px;
+}
+.tpfw-dashboard .tpfw-dashboard-header h1 {
+  margin: 0;
+  padding: 0;
+  font-size: 23px;
+  font-weight: 600;
+}
+/* Last control on the filter row, set off from the Filter button it follows. */
+.tpfw-dashboard .tpfw-export-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  margin-left: 12px;
+  vertical-align: top;
+}
+.tpfw-dashboard .tpfw-export-csv .dashicons {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  line-height: 1;
+}
+.tpfw-dashboard .tpfw-dashboard-table {
+  display: block;
+  background: #fff;
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+.tpfw-dashboard .tpfw-dashboard-table .tablenav {
+  height: auto;
+  margin: 0;
+  padding: 12px 16px;
+  background: #f6f7f7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tpfw-dashboard .tpfw-dashboard-table .tablenav.top {
+  border-bottom: 1px solid #dcdcde;
+}
+.tpfw-dashboard .tpfw-dashboard-table .tablenav.bottom {
+  border-top: 1px solid #dcdcde;
+}
+.tpfw-dashboard .tpfw-dashboard-table .tablenav .alignleft.actions {
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tpfw-dashboard .tpfw-dashboard-table .tablenav .tpfw-dashboard-filters {
+  gap: 0;
+}
+.tpfw-dashboard .tpfw-dashboard-table .tablenav #tpfw-status-filter {
+  height: 32px;
+  margin-right: 8px;
+}
+.tpfw-dashboard .tpfw-dashboard-table .tablenav #post-search-input {
+  height: 32px;
+  border-radius: 4px 0 0 4px;
+  border-color: #8c8f94;
+}
+.tpfw-dashboard .tpfw-dashboard-table .tablenav #search-submit {
+  height: 32px;
+  border-radius: 0 4px 4px 0 !important;
+  margin: 0 !important;
+}
+.tpfw-dashboard .tpfw-dashboard-table .tablenav .tablenav-pages {
+  margin: 0 0 0 auto;
+  height: auto;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table {
+  width: auto;
+  min-width: 100%;
+  border: none;
+  box-shadow: none;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table thead th,
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tfoot th {
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #646970;
+  background: #fff;
+  border-bottom: 1px solid #dcdcde;
+  white-space: nowrap;
+  text-align: center;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table thead th a,
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tfoot th a {
+  color: inherit;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table thead th.sortable a,
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table thead th.sorted a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tfoot th {
+  border-top: 1px solid #dcdcde;
+  border-bottom: none;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .check-column {
+  width: 2.2em;
+  padding: 12px 0 12px 12px;
+  vertical-align: middle;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-user_id { width: 70px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-buyer_user { width: 160px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-profile_image { width: 60px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-pass_holder_name { width: 140px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-timeslot_id { width: 110px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-nano_id { width: 110px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-status { width: 110px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-valid { width: 100px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-checkins,
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-uses { width: 90px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-order_id { width: 90px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-created { width: 100px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-actions { width: 320px; }
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tbody tr {
+  background: #fff !important;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tbody tr:hover {
+  background: #f6f7f7 !important;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tbody tr:not(:last-child) td {
+  border-bottom: 1px solid #f0f0f1;
+}
+/* WP_List_Table renders the primary column as a <th>, not a <td>, so a "tbody td" selector
+   alone would skip it and leave that one cell left aligned. */
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tbody td,
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tbody th:not(.check-column) {
+  padding: 12px 16px;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.tpfw-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.tpfw-status-pill.tpfw-status-pill--unused  { background: #e7f0fa; color: #1d4f91; }
+.tpfw-status-pill.tpfw-status-pill--partial { background: #fdf0d5; color: #8a5a00; }
+.tpfw-status-pill.tpfw-status-pill--used,
+.tpfw-status-pill.tpfw-status-pill--active  { background: #e6f4ea; color: #1e7e34; }
+.tpfw-status-pill.tpfw-status-pill--expired { background: #eceef0; color: #50575e; }
+.tpfw-status-pill.tpfw-status-pill--pending { background: #ece7f6; color: #5b3ea3; }
+.tpfw-status-pill.tpfw-status-pill--cancelled { background: #fbe7e9; color: #a92323; text-decoration: line-through; }
+
+.tpfw-ticket-id,
+.tpfw-nano-id {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  background: #f6f7f7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #3c434a;
+  cursor: help;
+}
+
+.tpfw-datetime {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.tpfw-datetime.tpfw-datetime--hint {
+  cursor: help;
+  border-bottom: 1px dotted #8c8f94;
+}
+.tpfw-datetime .tpfw-datetime-date { font-size: 12px; color: #1d2327; white-space: nowrap; }
+.tpfw-datetime .tpfw-datetime-time { font-size: 11px; color: #646970; white-space: nowrap; }
+
+.tpfw-product-link {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.tpfw-actions {
+  display: inline-grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: 6px;
+}
+.tpfw-actions .tpfw-btn {
+  font-size: 12px;
+  padding: 0 10px;
+  min-height: 28px;
+  line-height: 26px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.tpfw-actions .tpfw-btn--checkin { border-color: #2e7d32; color: #2e7d32; }
+.tpfw-actions .tpfw-btn--checkin:hover { background: #2e7d32; color: #fff; }
+.tpfw-actions .tpfw-btn--resend { border-color: #5b3ea3; color: #5b3ea3; }
+.tpfw-actions .tpfw-btn--resend:hover { background: #5b3ea3; color: #fff; }
+.tpfw-actions .tpfw-btn--reset,
+.tpfw-actions .tpfw-btn--delete-image { border-color: #8c8f94; color: #3c434a; }
+.tpfw-actions .tpfw-btn--reset:hover,
+.tpfw-actions .tpfw-btn--delete-image:hover { background: #f0f0f1; }
+.tpfw-actions .tpfw-btn--cancel { border-color: #a92323; color: #a92323; }
+.tpfw-actions .tpfw-btn--cancel:hover { background: #a92323; color: #fff; }
+.tpfw-actions .tpfw-btn--transfer { border-color: #2271b1; color: #2271b1; }
+.tpfw-actions .tpfw-btn--transfer:hover { background: #2271b1; color: #fff; }
+/* The one action that is a link rather than a button, so it has to be told not to underline. */
+.tpfw-actions .tpfw-btn--download { border-color: #0f6f6f; color: #0f6f6f; text-decoration: none; }
+.tpfw-actions .tpfw-btn--download:hover { background: #0f6f6f; color: #fff; }
+
+/* Transfer dialog: native <dialog>, styled to sit with the rest of wp-admin. */
+.tpfw-dialog {
+  width: min(92vw, 440px);
+  padding: 0;
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
+}
+.tpfw-dialog::backdrop { background: rgba(0, 0, 0, .45); }
+.tpfw-dialog-form { padding: 20px 24px 22px; }
+.tpfw-dialog-form h2 { margin: 0 0 8px; font-size: 16px; }
+.tpfw-dialog-form p { margin: 0 0 14px; color: #50575e; }
+.tpfw-dialog-form label { display: block; margin-bottom: 6px; font-weight: 600; }
+.tpfw-dialog-form input[type="text"] { width: 100%; }
+.tpfw-dialog-error { margin: 10px 0 0 !important; color: #a92323; font-weight: 600; }
+.tpfw-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }

@@ -1,0 +1,556 @@
+/* Shared look for every TPFW settings tab; the API and Email tabs add their own sheets on top. */
+
+.hide {
+	display: none !important;
+}
+
+.tpfw-settings-wrap .nav-tab-wrapper {
+	margin-bottom: 1.5em;
+}
+
+/* #wpfooter ("Thank you for creating with WordPress.") is "position: absolute; bottom: 0"
+   relative to <body> in WP core. That only resolves correctly once, against whatever
+   body's height happens to be at that moment, and does not recompute as real content grows
+   or shrinks (verified: its resolved position stays pinned to whatever body's height was on
+   load). Taking it out of absolute positioning and letting it sit in normal flow is what
+   actually makes it follow content. Scoped to this page only, since the stylesheet is only
+   enqueued here. */
+#wpfooter {
+	position: static;
+	margin-top: 20px;
+}
+
+.tpfw-settings-page {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 0 20px 20px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.tpfw-general-settings-intro,
+.tpfw-pass-settings-intro,
+.tpfw-ticket-settings-intro,
+.tpfw-timeslot-ticket-settings-intro {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin: 16px 0 20px;
+	padding: 14px 16px;
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	border-radius: 4px;
+}
+
+.tpfw-general-settings-intro .dashicons,
+.tpfw-pass-settings-intro .dashicons,
+.tpfw-ticket-settings-intro .dashicons,
+.tpfw-timeslot-ticket-settings-intro .dashicons {
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	margin-top: 2px;
+	color: #2271b1;
+}
+
+.tpfw-general-settings-intro-lead,
+.tpfw-pass-settings-intro-lead,
+.tpfw-ticket-settings-intro-lead,
+.tpfw-timeslot-ticket-settings-intro-lead {
+	margin: 0 0 4px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.tpfw-general-settings-intro-sub,
+.tpfw-pass-settings-intro-sub,
+.tpfw-ticket-settings-intro-sub,
+.tpfw-timeslot-ticket-settings-intro-sub {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #3c434a;
+}
+
+.tpfw-settings-page .form-table th {
+	width: 260px;
+}
+
+.tpfw-settings-page .submit {
+	padding: 20px 0 10px;
+	margin: 0;
+	border-top: 1px solid #dcdcde;
+}
+
+/* Toggle switch (wraps the real checkbox WordPress/JS already reads via .is(':checked')) */
+.tpfw-toggle {
+	position: relative;
+	display: inline-block;
+	width: 40px;
+	height: 22px;
+	vertical-align: middle;
+}
+
+.tpfw-toggle input {
+	position: absolute;
+	opacity: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	cursor: pointer;
+}
+
+.tpfw-toggle-slider {
+	position: absolute;
+	inset: 0;
+	background-color: #c3c4c7;
+	border-radius: 22px;
+	transition: background-color .15s ease-in-out;
+}
+
+.tpfw-toggle-slider::before {
+	content: "";
+	position: absolute;
+	height: 16px;
+	width: 16px;
+	left: 3px;
+	top: 3px;
+	background-color: #fff;
+	border-radius: 50%;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+	transition: transform .15s ease-in-out;
+}
+
+.tpfw-toggle input:checked + .tpfw-toggle-slider {
+	background-color: #2271b1;
+}
+
+.tpfw-toggle input:checked + .tpfw-toggle-slider::before {
+	transform: translateX(18px);
+}
+
+.tpfw-toggle input:focus-visible + .tpfw-toggle-slider {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+
+.tpfw-pass-hint-text,
+.tpfw-ticket-hint-text,
+.tpfw-timeslot-hint-text {
+	display: block;
+	width: 100%;
+	max-width: 500px;
+	box-sizing: border-box;
+}
+/* ---------------------------------------------------------------- colour rows
+   The three product-type tabs render their colour rows through
+   TPFW_Type_Settings_Tab::print_color_rows(): a swatch, its hex twin, a reset that goes dead
+   once the row is back at its shipped default, and the editor palette underneath.
+
+   Deliberately a separate class from .tpfw-color-field, which the API tab still uses with the
+   older icon-button reset - restyling that one would have changed a tab nobody asked about. */
+.tpfw-colorpicker {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.tpfw-colorpicker-swatch {
+	width: 30px;
+	height: 30px;
+	padding: 2px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	background: none;
+	cursor: pointer;
+}
+
+.tpfw-colorpicker-hex {
+	width: 96px;
+	padding: 5px 7px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.tpfw-colorpicker-hex::placeholder {
+	color: #8c8f94;
+	font-style: italic;
+	opacity: 1;
+}
+
+/* A link rather than a button: putting one row back is a minor action next to Save Settings,
+   and a second real button beside it reads as the thing that saves. */
+.tpfw-colorpicker-reset {
+	padding: 4px 2px;
+	border: 0;
+	background: none;
+	box-shadow: none;
+	color: #2271b1;
+	cursor: pointer;
+	font-size: 12px;
+	line-height: 1.4;
+	text-decoration: underline;
+	white-space: nowrap;
+}
+
+.tpfw-colorpicker-reset:hover {
+	color: #135e96;
+}
+
+.tpfw-colorpicker-reset[disabled] {
+	color: #a7aaad;
+	cursor: default;
+	text-decoration: none;
+}
+
+.tpfw-colorpicker-palette {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 3px;
+	margin-top: 7px;
+}
+
+.tpfw-colorpicker-palette button {
+	width: 17px;
+	height: 17px;
+	padding: 0;
+	border: 1px solid rgba(0, 0, 0, .18);
+	border-radius: 3px;
+	box-shadow: none;
+	cursor: pointer;
+}
+
+.tpfw-colorpicker-palette button:hover {
+	border-color: rgba(0, 0, 0, .45);
+}
+
+/* ---------------------------------------------------------------- live preview
+   The colour rows on the left, a standing preview of the product card on the right. Below
+   1100px the sidebar would squeeze the hex fields into wrapping, so it drops under the table. */
+/* `auto` rather than a fixed second track, so switching the product type off - which hides the
+   preview along with the colour rows - collapses the column instead of leaving a 340px hole. */
+.tpfw-appearance {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 26px;
+	align-items: start;
+}
+
+@media (max-width: 1100px) {
+	.tpfw-appearance {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.tpfw-appearance .form-table {
+	margin-top: 0;
+}
+
+/* Sticky so the preview is still on screen at the Month/Year row, which is the bottom of a
+   seven-row table and exactly where you most want to see what you just changed. */
+.tpfw-preview {
+	position: sticky;
+	top: 46px;
+	width: 340px;
+	max-width: 100%;
+	padding-top: 20px;
+}
+
+.tpfw-preview-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 8px;
+}
+
+.tpfw-preview-head h3 {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: #50575e;
+}
+
+.tpfw-preview-theme {
+	display: flex;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.tpfw-preview-theme button {
+	padding: 4px 9px;
+	border: 0;
+	border-left: 1px solid #c3c4c7;
+	background: #fff;
+	color: #1d2327;
+	font-size: 11px;
+	cursor: pointer;
+}
+
+.tpfw-preview-theme button:first-child {
+	border-left: 0;
+}
+
+.tpfw-preview-theme button.is-on {
+	background: #2271b1;
+	color: #fff;
+}
+
+/* The stage is the theme's page, which these settings do not control - so it is the one thing
+   here that ignores the custom properties and just offers a light and a dark example. */
+.tpfw-preview-stage {
+	padding: 14px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.tpfw-preview-stage[data-theme="light"] {
+	background: #fff;
+}
+
+.tpfw-preview-stage[data-theme="dark"] {
+	background: #14122b;
+}
+
+.tpfw-preview-note {
+	margin: 8px 0 0;
+	color: #646970;
+	font-size: 11px;
+	font-style: italic;
+}
+
+/* ---------------------------------------------------------------- preview card
+   Everything below paints from the same custom properties get_front_color_style() writes onto
+   the real product page, so nothing here has a colour of its own to drift from. */
+.tpfw-pv-card {
+	padding: 12px;
+	border: 1px solid var(--tpfw-border);
+	border-radius: 8px;
+	background: var(--tpfw-bg);
+	color: var(--tpfw-ink);
+}
+
+.tpfw-pv-card + .tpfw-pv-card {
+	margin-top: 10px;
+}
+
+.tpfw-pv-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.tpfw-pv-title {
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.tpfw-pv-hint {
+	margin: 2px 0 0;
+	color: var(--tpfw-hint);
+	font-size: 11px;
+}
+
+.tpfw-pv-pill {
+	flex: 0 0 auto;
+	padding: 3px 9px;
+	border-radius: 999px;
+	background: var(--tpfw-accent);
+	color: var(--tpfw-accent-fg);
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.tpfw-pv-navtitle {
+	margin: 10px 0 6px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid var(--tpfw-border);
+	color: var(--tpfw-navtitle);
+	font-weight: 600;
+	text-align: center;
+}
+
+.tpfw-pv-week {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 2px;
+	text-align: center;
+}
+
+.tpfw-pv-dayname {
+	color: var(--tpfw-dayname);
+	font-size: 10px;
+	font-weight: 700;
+}
+
+.tpfw-pv-day {
+	padding: 4px 0;
+	border-radius: 4px;
+	font-size: 11px;
+}
+
+.tpfw-pv-day.is-chosen {
+	background: var(--tpfw-accent);
+	color: var(--tpfw-accent-fg);
+	font-weight: 700;
+}
+
+/* A day the shop is closed, drawn the way the real calendar draws it: struck through and faded,
+   never a colour of its own, so no setting is expected to control it. */
+.tpfw-pv-day.is-gone {
+	color: var(--tpfw-hint);
+	text-decoration: line-through;
+	opacity: .65;
+}
+
+.tpfw-pv-slot {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-top: 6px;
+	padding: 6px 9px;
+	border: 1px solid var(--tpfw-border);
+	border-radius: 6px;
+	font-size: 11px;
+}
+
+.tpfw-pv-slot.is-chosen {
+	border-color: var(--tpfw-accent);
+	background: var(--tpfw-accent);
+	color: var(--tpfw-accent-fg);
+}
+
+.tpfw-pv-slot b {
+	font-size: 10px;
+}
+
+.tpfw-pv-foot {
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid var(--tpfw-border);
+	color: var(--tpfw-hint);
+	font-size: 11px;
+}
+
+.tpfw-pv-inforow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 5px 0;
+	border-top: 1px solid var(--tpfw-border);
+	font-size: 11px;
+}
+
+.tpfw-pv-inforow:first-child {
+	border-top: 0;
+}
+
+.tpfw-pv-inforow span {
+	color: var(--tpfw-hint);
+}
+
+.tpfw-pv-person {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.tpfw-pv-avatar {
+	flex: 0 0 auto;
+	width: 22px;
+	height: 22px;
+	border: 1px dashed var(--tpfw-border);
+	border-radius: 50%;
+	color: var(--tpfw-hint);
+	font-size: 10px;
+	line-height: 20px;
+	text-align: center;
+}
+
+.tpfw-pv-avatar.is-named {
+	border: 1px solid var(--tpfw-accent);
+	background: var(--tpfw-accent);
+	color: var(--tpfw-accent-fg);
+	font-weight: 700;
+}
+
+.tpfw-pv-field {
+	flex: 1;
+	min-width: 0;
+	padding: 5px 8px;
+	border: 1px solid var(--tpfw-border);
+	border-radius: 5px;
+	color: var(--tpfw-hint);
+	font-size: 11px;
+}
+
+.tpfw-pv-field.is-filled {
+	color: var(--tpfw-ink);
+}
+
+.tpfw-color-field {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.tpfw-color-field input[type="color"] {
+	width: 44px;
+	height: 32px;
+	padding: 2px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	cursor: pointer;
+	background: none;
+}
+
+/* Icon-only reset button next to the picker. WP's .button is sized for a text label, so it
+   is squared off here to match the colour swatch it sits beside. */
+/* Scoped under .wp-core-ui so these beat core's own .wp-core-ui .button rules, which are the
+   ones setting the theme-blue border, the text-label padding and the 30px line-height. */
+.wp-core-ui .tpfw-color-reset {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	min-height: 32px;
+	padding: 0;
+	line-height: 1;
+	border-color: #8c8f94;
+	color: #50575e;
+}
+
+.wp-core-ui .tpfw-color-reset:hover,
+.wp-core-ui .tpfw-color-reset:active {
+	border-color: #787c82;
+	color: #1d2327;
+	background: #f6f7f7;
+}
+
+/* Focus ring is left to core on purpose - it is the only visible focus indicator here. */
+
+.wp-core-ui .tpfw-color-reset .dashicons {
+	font-size: 17px;
+	width: 17px;
+	height: 17px;
+	line-height: 1;
+	color: inherit;
+}

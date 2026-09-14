@@ -1,0 +1,272 @@
+.tpfw-tickets-page {
+  --tpfw-ink: #1a1d1f;
+  --tpfw-ink-soft: #5c6469;
+  --tpfw-line: #e1e4e5;
+  --tpfw-surface: #fff;
+  --tpfw-sunken: #f7f6f3;
+  --tpfw-shadow: 0 1px 2px rgba(16, 21, 23, 0.04), 0 8px 20px -16px rgba(16, 21, 23, 0.4);
+  --tpfw-ticket-accent: #5b3ea3;
+  --tpfw-ticket-accent-soft: #ece7f6;
+  max-width: 760px;
+  margin: 20px 0;
+  color: var(--tpfw-ink);
+}
+
+.tpfw-tickets-header {
+  margin-bottom: 18px;
+}
+.tpfw-tickets-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--tpfw-ink);
+}
+
+.tpfw-tickets-lede {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  color: var(--tpfw-ink-soft);
+}
+
+.tpfw-tickets-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 32px 24px;
+  border: 1px dashed var(--tpfw-line, #dcdcde);
+  border-radius: 10px;
+  color: var(--tpfw-ink-soft, #646970);
+}
+.tpfw-tickets-empty__icon {
+  color: var(--tpfw-ink-soft, #8c9196);
+}
+.tpfw-tickets-empty__text {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.tpfw-tickets-empty__cta {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--tpfw-ticket-accent, #5b3ea3);
+  text-decoration: none;
+}
+.tpfw-tickets-empty__cta:hover, .tpfw-tickets-empty__cta:focus-visible {
+  text-decoration: underline;
+}
+
+.tpfw-tickets-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  container-type: inline-size;
+}
+
+.ticket-container.tpfw-ticket-card {
+  display: flex;
+  align-items: stretch;
+  margin: 0;
+  border: 1px solid var(--tpfw-line);
+  border-radius: 10px;
+  background-color: var(--tpfw-surface);
+  box-shadow: var(--tpfw-shadow);
+  overflow: hidden;
+}
+.ticket-container.tpfw-ticket-card .tpfw-ticket-card-stub {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 148px;
+  padding: 18px 14px;
+  background: var(--tpfw-ticket-accent-soft);
+}
+.ticket-container.tpfw-ticket-card .tpfw-ticket-card-qr img {
+  display: block;
+  width: 92px;
+  height: 92px;
+  padding: 6px;
+  border-radius: 6px;
+  background: var(--tpfw-surface);
+  box-shadow: 0 1px 3px rgba(16, 21, 23, 0.12);
+}
+.ticket-container.tpfw-ticket-card .tpfw-ticket-card-divider {
+  flex: 0 0 auto;
+  width: 0;
+  margin: 14px 0;
+  border-left: 1.5px dashed var(--tpfw-line);
+}
+.ticket-container.tpfw-ticket-card .tpfw-ticket-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 16px 20px;
+}
+.ticket-container.tpfw-ticket-card .tpfw-ticket-card-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-bottom: 6px;
+}
+.ticket-container.tpfw-ticket-card .tpfw-ticket-card-top .tpfw-ticket-card-icon {
+  flex: 0 0 auto;
+  color: var(--tpfw-ticket-accent);
+}
+.ticket-container.tpfw-ticket-card .tpfw-ticket-card-top .variation-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--tpfw-ink);
+}
+.ticket-container.tpfw-ticket-card .price {
+  font-size: 0.9rem;
+  color: var(--tpfw-ink-soft);
+  margin-bottom: 12px;
+}
+.ticket-container.tpfw-ticket-card .valid-dates {
+  display: flex;
+  gap: 28px;
+  margin: 0 0 14px;
+}
+.ticket-container.tpfw-ticket-card .valid-dates .valid-from, .ticket-container.tpfw-ticket-card .valid-dates .valid-to, .ticket-container.tpfw-ticket-card .valid-dates .uses-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ticket-container.tpfw-ticket-card .valid-dates .valid-from dt, .ticket-container.tpfw-ticket-card .valid-dates .valid-to dt, .ticket-container.tpfw-ticket-card .valid-dates .uses-left dt {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tpfw-ink-soft);
+}
+.ticket-container.tpfw-ticket-card .valid-dates .valid-from dd, .ticket-container.tpfw-ticket-card .valid-dates .valid-to dd, .ticket-container.tpfw-ticket-card .valid-dates .uses-left dd {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--tpfw-ink);
+  margin: 0;
+}
+.ticket-container.tpfw-ticket-card .download-ticket-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ticket-container.tpfw-ticket-card .download-ticket-pdf-btn, .ticket-container.tpfw-ticket-card .tpfw-add-to-calendar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: var(--tpfw-surface);
+  color: var(--tpfw-ticket-accent);
+  border: 1px solid var(--tpfw-ticket-accent);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.ticket-container.tpfw-ticket-card .download-ticket-pdf-btn:hover, .ticket-container.tpfw-ticket-card .tpfw-add-to-calendar-btn:hover {
+  background-color: var(--tpfw-ticket-accent);
+  color: #fff;
+}
+.ticket-container.tpfw-ticket-card .download-ticket-pdf-btn:focus-visible, .ticket-container.tpfw-ticket-card .tpfw-add-to-calendar-btn:focus-visible {
+  outline: 2px solid var(--tpfw-ticket-accent);
+  outline-offset: 2px;
+}
+
+.tpfw-tickets-page .tpfw-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  background: var(--tpfw-surface);
+}
+.tpfw-tickets-page .tpfw-status-pill.tpfw-status-pill--active {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+.tpfw-tickets-page .tpfw-status-pill.tpfw-status-pill--expired {
+  background: var(--tpfw-sunken);
+  color: var(--tpfw-ink-soft);
+}
+.tpfw-tickets-page .tpfw-status-pill.tpfw-status-pill--used {
+  background: var(--tpfw-sunken);
+  color: var(--tpfw-ink-soft);
+}
+.tpfw-tickets-page .tpfw-status-pill.tpfw-status-pill--pending {
+  background: var(--tpfw-surface);
+  color: var(--tpfw-ticket-accent);
+}
+.tpfw-tickets-page .tpfw-status-pill.tpfw-status-pill--cancelled {
+  background: #fbe7e9;
+  color: #a92323;
+  text-decoration: line-through;
+}
+
+@media (max-width: 600px) {
+  .ticket-container.tpfw-ticket-card {
+    flex-direction: column;
+  }
+  .ticket-container.tpfw-ticket-card .tpfw-ticket-card-stub {
+    flex-direction: row;
+    width: auto;
+    padding: 14px 16px;
+  }
+  .ticket-container.tpfw-ticket-card .tpfw-ticket-card-qr img {
+    width: 64px;
+    height: 64px;
+  }
+  .ticket-container.tpfw-ticket-card .tpfw-ticket-card-divider {
+    width: auto;
+    height: 0;
+    margin: 0;
+    border-left: 0;
+    border-top: 1.5px dashed var(--tpfw-line);
+  }
+  .valid-dates {
+    gap: 20px !important;
+  }
+}
+@container (max-width: 600px) {
+  .ticket-container.tpfw-ticket-card {
+    flex-direction: column;
+  }
+  .ticket-container.tpfw-ticket-card .tpfw-ticket-card-stub {
+    flex-direction: row;
+    width: auto;
+    padding: 14px 16px;
+  }
+  .ticket-container.tpfw-ticket-card .tpfw-ticket-card-qr img {
+    width: 64px;
+    height: 64px;
+  }
+  .ticket-container.tpfw-ticket-card .tpfw-ticket-card-divider {
+    width: auto;
+    height: 0;
+    margin: 0;
+    border-left: 0;
+    border-top: 1.5px dashed var(--tpfw-line);
+  }
+  .valid-dates {
+    gap: 20px !important;
+  }
+}
+.tpfw-ticket-card-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--tpfw-ticket-accent, #cccccc);
+  background: var(--tpfw-ticket-accent-soft, #f7f7f7);
+  font-size: 13px;
+  line-height: 1.45;
+}

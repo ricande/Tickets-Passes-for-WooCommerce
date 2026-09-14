@@ -1,0 +1,18 @@
+<?php
+/**
+ * @package php-font-lib
+ * @link    https://github.com/dompdf/php-font-lib
+ * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
+ */
+
+namespace FontLib\OpenType;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
+/**
+ * Open Type Table directory entry, the same as a TrueType one.
+ *
+ * @package php-font-lib
+ */
+class TableDirectoryEntry extends \FontLib\TrueType\TableDirectoryEntry {
+
+}

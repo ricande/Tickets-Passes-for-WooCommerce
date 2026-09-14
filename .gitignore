@@ -1,0 +1,12 @@
+# Test artefacts
+tests/.phpunit.cache/
+tests/phpunit.phar
+
+# Local / OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Dependencies that are not bundled in the plugin
+node_modules/
+vendor/

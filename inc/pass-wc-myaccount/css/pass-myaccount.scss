@@ -1,0 +1,542 @@
+// Passes tab on WooCommerce My Account.
+//
+// Same ticket-stub composition as the Tickets tab (see ticket-myaccount.scss): a tinted QR/status
+// stub joined to the details by a tear line, not a generic bordered row. --tpfw-pass-accent and
+// friends are set inline on .tpfw-pass-myaccount-wrap from the Pass settings tab, so they also
+// reach the guest-pass modal, which lives as a sibling of .tpfw-pass-page rather than inside it.
+.tpfw-pass-myaccount-wrap {
+    --tpfw-pass-accent: #000;
+    --tpfw-pass-accent-soft: #e6e6e6;
+    --tpfw-pass-accent-hover: #000;
+}
+
+.tpfw-pass-page {
+    --tpfw-ink: #1a1d1f;
+    --tpfw-ink-soft: #5c6469;
+    --tpfw-line: #e1e4e5;
+    --tpfw-surface: #fff;
+    --tpfw-sunken: #f7f6f3;
+    --tpfw-shadow: 0 1px 2px rgba(16, 21, 23, 0.04), 0 8px 20px -16px rgba(16, 21, 23, 0.4);
+
+    max-width: 760px;
+    margin: 20px 0;
+    color: var(--tpfw-ink);
+}
+
+.tpfw-pass-header {
+    margin-bottom: 18px;
+
+    h1 {
+        margin: 0;
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--tpfw-ink);
+    }
+}
+
+.tpfw-pass-lede {
+    margin: 6px 0 0;
+    font-size: 0.92rem;
+    color: var(--tpfw-ink-soft);
+}
+
+.tpfw-pass-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 32px 24px;
+    border: 1px dashed var(--tpfw-line);
+    border-radius: 10px;
+    color: var(--tpfw-ink-soft);
+
+    &__icon {
+        color: var(--tpfw-ink-soft);
+    }
+
+    &__text {
+        margin: 0;
+        font-size: 0.95rem;
+    }
+
+    &__cta {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--tpfw-pass-accent);
+        text-decoration: none;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+        }
+    }
+}
+
+.tpfw-pass-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    // Lets the @container rule below react to this card's own rendered width - the My
+    // Account sidebar eats a variable amount of horizontal space depending on theme/screen,
+    // so the card can be well below the 600px @media breakpoint even at a tablet-width
+    // viewport. That @media rule stays as a fallback for browsers without container query
+    // support; this is what actually catches the sidebar-narrowed case in modern ones.
+    container-type: inline-size;
+}
+
+.pass-container.tpfw-pass-card {
+    display: flex;
+    align-items: stretch;
+    // The grid's gap is the spacing; a theme's default <li> margin would double it.
+    margin: 0;
+    border: 1px solid var(--tpfw-line);
+    border-radius: 10px;
+    background-color: var(--tpfw-surface);
+    box-shadow: var(--tpfw-shadow);
+    overflow: hidden;
+
+    .tpfw-pass-card-stub {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 148px;
+        padding: 18px 14px;
+        background: var(--tpfw-pass-accent-soft);
+    }
+
+    .tpfw-pass-card-qr img {
+        display: block;
+        width: 92px;
+        height: 92px;
+        padding: 6px;
+        border-radius: 6px;
+        background: var(--tpfw-surface);
+        box-shadow: 0 1px 3px rgba(16, 21, 23, 0.12);
+    }
+
+    // The perforation: a physical pass's tear line, not a coloured accent border.
+    .tpfw-pass-card-divider {
+        flex: 0 0 auto;
+        width: 0;
+        margin: 14px 0;
+        border-left: 1.5px dashed var(--tpfw-line);
+    }
+
+    .tpfw-pass-card-body {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 16px 20px;
+    }
+
+    .tpfw-pass-card-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+
+        .pass-image img {
+            display: block;
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 1px solid var(--tpfw-line);
+        }
+
+        &-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .variation-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--tpfw-ink);
+        }
+
+        .customer-name {
+            font-size: 0.85rem;
+            color: var(--tpfw-ink-soft);
+        }
+    }
+
+    .valid-dates {
+        display: flex;
+        gap: 28px;
+        margin: 0 0 14px;
+
+        .valid-from, .valid-to {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+
+            dt {
+                font-size: 0.7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .04em;
+                color: var(--tpfw-ink-soft);
+            }
+
+            dd {
+                font-size: 0.9rem;
+                font-variant-numeric: tabular-nums;
+                color: var(--tpfw-ink);
+                margin: 0;
+            }
+        }
+    }
+
+    .tpfw-pass-card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        button, a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background-color .15s ease, color .15s ease;
+
+            &:focus-visible {
+                outline: 2px solid var(--tpfw-pass-accent);
+                outline-offset: 2px;
+            }
+        }
+
+        .select-btn, .upload-btn, .download-pass-pdf-btn {
+            background-color: var(--tpfw-pass-accent);
+            border: 1px solid var(--tpfw-pass-accent);
+            color: #fff;
+
+            &:hover {
+                background-color: var(--tpfw-pass-accent-hover);
+            }
+        }
+
+        .remove-btn {
+            background-color: var(--tpfw-surface);
+            border: 1px solid #a92323;
+            color: #a92323;
+
+            &:hover {
+                background-color: #a92323;
+                color: #fff;
+            }
+        }
+
+        .guesspass-btn {
+            background-color: var(--tpfw-surface);
+            border: 1px solid var(--tpfw-pass-accent);
+            color: var(--tpfw-pass-accent);
+
+            &:hover {
+                background-color: var(--tpfw-pass-accent-soft);
+            }
+        }
+    }
+}
+
+// Scoped under .tpfw-pass-page: the Tickets My Account page defines its own
+// ".tpfw-status-pill" with the same modifier names, and a theme that pulls both tabs
+// onto one page would otherwise let whichever stylesheet loads last win for both.
+.tpfw-pass-page .tpfw-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    white-space: nowrap;
+    background: var(--tpfw-surface);
+
+    &.tpfw-status-pill--active {
+        background: #e6f4ea;
+        color: #1e7e34;
+    }
+
+    &.tpfw-status-pill--expired {
+        background: var(--tpfw-sunken);
+        color: var(--tpfw-ink-soft);
+    }
+
+    &.tpfw-status-pill--pending {
+        background: var(--tpfw-surface);
+        color: var(--tpfw-pass-accent);
+    }
+
+    &.tpfw-status-pill--cancelled {
+        background: #fbe7e9;
+        color: #a92323;
+        text-decoration: line-through;
+    }
+}
+
+@media (max-width: 600px) {
+    .pass-container.tpfw-pass-card {
+        flex-direction: column;
+
+        .tpfw-pass-card-stub {
+            flex-direction: row;
+            width: auto;
+            padding: 14px 16px;
+        }
+
+        .tpfw-pass-card-qr img {
+            width: 64px;
+            height: 64px;
+        }
+
+        .tpfw-pass-card-divider {
+            width: auto;
+            height: 0;
+            margin: 0;
+            border-left: 0;
+            border-top: 1.5px dashed var(--tpfw-line);
+        }
+    }
+
+    .valid-dates {
+        gap: 20px !important;
+    }
+}
+
+// Mirrors the @media rule above, keyed to this card's own rendered width instead of the
+// viewport - the My Account sidebar eats horizontal space, so this can be well below
+// 600px even at a tablet-width viewport. The @media rule stays as a fallback for
+// browsers without container query support.
+@container (max-width: 600px) {
+    .pass-container.tpfw-pass-card {
+        flex-direction: column;
+
+        .tpfw-pass-card-stub {
+            flex-direction: row;
+            width: auto;
+            padding: 14px 16px;
+        }
+
+        .tpfw-pass-card-qr img {
+            width: 64px;
+            height: 64px;
+        }
+
+        .tpfw-pass-card-divider {
+            width: auto;
+            height: 0;
+            margin: 0;
+            border-left: 0;
+            border-top: 1.5px dashed var(--tpfw-line);
+        }
+    }
+
+    .valid-dates {
+        gap: 20px !important;
+    }
+}
+
+/****************************************************************************************************************************/
+/*  GUEST PASS MODAL                                                                                                           */
+/****************************************************************************************************************************/
+
+.modal-guest-wrapper {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, .6);
+}
+
+.modal-guest {
+    position: relative;
+    background-color: #fff;
+    margin: 10% auto;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 420px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .3);
+    animation: tpfw-modal-slide-down .2s ease-out;
+}
+
+@keyframes tpfw-modal-slide-down {
+    from {
+        transform: translateY(-24px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-guest-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--tpfw-pass-accent);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+
+    &:hover {
+        background-color: var(--tpfw-pass-accent);
+        color: #fff;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--tpfw-pass-accent);
+        outline-offset: 2px;
+    }
+}
+
+.modal-guest-top {
+    padding: 24px 24px 18px;
+    background-color: var(--tpfw-pass-accent-soft);
+
+    .modal-guest-title {
+        display: block;
+        font-weight: 700;
+        font-size: 1.15rem;
+        color: #1d2327;
+    }
+
+    .modal-guest-subtitle {
+        margin: 4px 0 0;
+        font-size: 0.85rem;
+        color: var(--tpfw-pass-accent-hover);
+    }
+}
+
+.modal-tabs-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 24px 0;
+}
+
+.modal-tab {
+    padding: 6px 16px;
+    background-color: #fff;
+    border: 1px solid var(--tpfw-pass-accent);
+    color: var(--tpfw-pass-accent);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    &:hover {
+        background-color: var(--tpfw-pass-accent-soft);
+    }
+
+    &.active {
+        background-color: var(--tpfw-pass-accent);
+        color: #fff;
+    }
+}
+
+.modal-tabs-content {
+    padding: 18px 24px 24px;
+}
+
+.modal-pass-card {
+    max-width: 260px;
+    margin: 0 auto;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #dcdcde;
+}
+
+.modal-pass-card-header {
+    padding: 12px 16px;
+    background-color: var(--tpfw-pass-accent);
+    color: #fff;
+}
+
+.modal-pass-card-kicker {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    opacity: .85;
+}
+
+.modal-pass-card-name {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    margin-top: 2px;
+}
+
+.modal-pass-card-qr {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    background-color: var(--tpfw-pass-accent-soft);
+
+    .modal-guest-qrcode {
+        display: block;
+        width: 180px;
+        max-width: 100%;
+        height: auto;
+        border-radius: 6px;
+    }
+}
+
+.modal-pass-card-id {
+    padding: 8px 16px;
+    text-align: center;
+    font-size: 11px;
+    font-family: monospace;
+    color: #646970;
+    background-color: #fff;
+    border-top: 1px solid #dcdcde;
+    overflow-wrap: break-word;
+}
+
+@media (max-width: 500px) {
+    .modal-guest {
+        margin: 20% auto;
+    }
+
+    .modal-guest-title {
+        font-size: 1rem;
+    }
+}
+
+.tpfw-pass-card-note {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-left: 3px solid rgba(0, 0, 0, .15);
+    background: rgba(0, 0, 0, .04);
+    font-size: 13px;
+    line-height: 1.45;
+}

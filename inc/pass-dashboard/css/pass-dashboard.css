@@ -1,0 +1,67 @@
+/* Passes dashboard extras on top of the shared dashboard.css: profile thumbnails, the Guest
+   Pass button and the nested guest rows with their tree connector. */
+.tpfw-profile-thumb {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #dcdcde;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table .column-actions {
+  width: 360px;
+  text-align: left;
+}
+.tpfw-actions .tpfw-btn--guestpass {
+  border-color: #5b3cc4;
+  color: #5b3cc4;
+}
+.tpfw-actions .tpfw-btn--guestpass:hover {
+  background: #5b3cc4;
+  color: #fff;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td {
+  background: #fafafb;
+  padding: 0;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row:not(.tpfw-guestpass-row--last) td {
+  border-bottom: none;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-has-guestpass td {
+  border-bottom: none;
+}
+.tpfw-row-inner {
+  display: none;
+  padding: 9px 10px;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td.column-pass_holder_name .tpfw-row-inner {
+  padding-left: 30px;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td.column-pass_holder_name {
+  position: relative;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td.column-pass_holder_name::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  border-left: 2px solid #9296a1;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row td.column-pass_holder_name::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 10px;
+  border-top: 2px solid #9296a1;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row--last td.column-pass_holder_name::before {
+  bottom: 50%;
+  border-bottom: 2px solid #9296a1;
+  border-bottom-left-radius: 6px;
+}
+.tpfw-dashboard .tpfw-dashboard-table table.wp-list-table tr.tpfw-guestpass-row--last td.column-pass_holder_name::after {
+  display: none;
+}
