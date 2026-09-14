@@ -10,8 +10,8 @@ Templates (editable under Ticket & Passes → Email, stored in `tpfw_email_setti
 
 | Key | When |
 |---|---|
-| `wc_confirmation_email` | Processing / on-hold confirmation. Codes are **not** issued yet; default copy says they will arrive when the order completes. |
-| `wc_completed_email` | Completed order, beside the QR images |
+| `wc_confirmation_email` | WooCommerce order emails that are not `customer_completed_order` (processing, on-hold, …). Codes **are** issued on processing, so this mail can already list QR images. On-hold still has none. The shipped default still says codes arrive when the order is completed — edit it if you take payment into Processing (cash on delivery). |
+| `wc_completed_email` | Completed-order email, beside the QR images |
 | `resend_ticket_email` | Dashboard / My Account resend for a ticket or timeslot ticket |
 | `resend_pass_email` | Same for a pass |
 | `gifted_pass_email_new_user` | Pass bought for an email with no account (includes login details) |
@@ -30,7 +30,7 @@ Endpoints are registered from `init` (the classes are constructed on `init`, so 
 | Endpoint | Class | Contents |
 |---|---|---|
 | `/tpfw-tickets` | `TPFW_Ticket_WC_MyAccount` | Ticket **and** timeslot ticket rows for the logged-in user: QR, status pill, uses left, PDF, Add to Calendar (`.ics`) |
-| Passes tab | `TPFW_Pass_WC_MyAccount` | Passes, guest-pass hand-out, photo upload |
+| `/tpfw-pass` | `TPFW_Pass_WC_MyAccount` | Passes, guest-pass hand-out, photo upload |
 
 Queries are scoped to `user_id = get_current_user_id()` in SQL. PDF/QR links on these pages are **unsigned**; `TPFW_File_Access` checks the session, so a forwarded URL is useless.
 
@@ -55,7 +55,7 @@ Analytics (`TPFW_Analytics_Dashboard`) reads `*_stats` joined to row tables (doo
 
 ## Order metabox (`inc/admin`)
 
-On an order that contains a TPFW product: **force issue** (`order_completed()`) or **force cancel** without moving WooCommerce order status. Used when a payment gateway left the order in `processing` but the shop still needs QR codes, or the reverse.
+On an order that contains a TPFW product: **force issue** (`order_completed()`) or **force cancel** without moving WooCommerce order status. Processing now mints on its own; the metabox is for a stuck 1.2.3 order, a missed issue, or cancelling codes without changing WooCommerce status.
 
 ## Settings load order
 

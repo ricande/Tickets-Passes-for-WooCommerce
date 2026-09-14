@@ -83,7 +83,7 @@ An hourly background job generates the next batch of recurring timeslots. A per-
 
 **1. Install and activate**
 
-In wp-admin go to **Plugins > Add New > Upload Plugin**, choose the zip and click **Install Now**, or upload the unzipped folder to `/wp-content/plugins/` over FTP. Activate from the **Plugins** screen with WooCommerce already active. Activation creates the plugin's database tables and refreshes permalinks, so the My Account tabs and the scanner URL work straight away.
+In wp-admin go to **Plugins > Add New > Upload Plugin**, choose the zip and click **Install Now**, or upload the unzipped folder to `/wp-content/plugins/` over FTP. Activate from the **Plugins** screen with WooCommerce already active. Activation creates the plugin's database tables and the private upload folder. Permalinks for `/check-in/` and the My Account tabs refresh on the next page you load (not on the Activate click itself). If the scanner 404s once, open any other page or resave **Settings > Permalinks**.
 
 **2. Turn on the product types you need**
 
@@ -100,6 +100,12 @@ On the **Scanner / API** tab, enable the API and the built-in scanner. The tab t
 **5. Give door staff access**
 
 Edit the user under **Users** and set their role to **Scanner**. They can then open `/check-in/` on a phone and check people in, and see nothing else in wp-admin. Administrators and Shop Managers already have access.
+
+= Upgrading from 1.2.3 =
+
+Replace the plugin folder (or upload the 1.3.0 zip over 1.2.3). Leave the plugin active. The first page load migrates the database. Existing tickets, QR codes and upload files keep working.
+
+Check-in is now POST only. The built-in scanner already uses POST. If you have a separate scanner app that still uses GET, change it to POST or it will get HTTP 405 and will not check anyone in. New guest passes stay inactive until the holder is scanned. Orders that reach Processing (for example cash on delivery) now receive QR codes when they are paid.
 
 = Settings at a glance =
 
@@ -144,7 +150,7 @@ Yes. Each dashboard in wp-admin has a manual check-in action, so you can find th
 
 = Can I use my own scanner app instead? =
 
-Yes. Check-in runs through a REST API, and the endpoints are documented on the **Scanner / API** settings screen. The built-in scanner page and the API are independent switches, so you can run the API on its own.
+Yes. Check-in runs through a REST API, and the endpoints are documented on the **Scanner / API** settings screen. Check-in is an authenticated **POST**; GET is refused and does not let anyone through. History and the calendar file stay GET. The built-in scanner page and the API are independent switches, so you can run the API on its own.
 
 = Can the same ticket be used twice? =
 

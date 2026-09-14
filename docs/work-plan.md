@@ -1,6 +1,8 @@
-# Work plan
+# Work plan (shipped in 1.3.0)
 
-Ordered by severity. Every item includes tests. Tests must run as a normal user (PHPUnit / Node in this project). No `pkexec`, no writing to `/var/www`, no extra OS privileges.
+Items 1–15 and the test harness below are **done** in 1.3.0. The text is kept as the record of what was required, not as a todo list.
+
+Tests: `bash tests/run.sh` as a normal user. No `pkexec`, no writing to `/var/www`.
 
 **Constraints**
 
@@ -135,7 +137,7 @@ After 1–11 so check-in, files and mail have tests.
 
 ---
 
-## Test harness (do this once, before item 1)
+## Test harness (done, used for items 1–15)
 
 - PHPUnit (or WP’s test install **in the project**, not as root) + the existing Node-shaped `parse-checkin-url.js`.
 - DB: the local MariaDB user already in `.wp-credentials`, or a disposable test schema that user can create. No `pkexec`.

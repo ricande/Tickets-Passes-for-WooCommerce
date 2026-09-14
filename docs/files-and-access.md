@@ -6,7 +6,7 @@ Generated QR images, PDFs and pass photos are not public upload URLs. `TPFW_File
 
 ## Layout
 
-Base directory: `wp-content/uploads/{tpfw_upload_slug}/` where the slug is a random value stored in `tpfw_upload_slug`. The slug is **not** the access control (nginx ignores `.htaccess`); it only stops a guessed nano id from mapping to a filesystem path. The option is self-healing if missing.
+Base directory: `wp-content/uploads/tpfw-{slug}/` where `{slug}` is a 10-character hex stored in `tpfw_upload_slug`. The slug is **not** the access control (nginx ignores `.htaccess`); it only stops a guessed nano id from mapping to a filesystem path. The option is self-healing if missing. Profile photos live under the same slug (`profile-images/`), not a custom web-reachable folder.
 
 Subfolders are a fixed map (`TPFW_Functions::FILE_TYPE_FOLDERS`). The request never supplies a path — only a type key, an id and an extension.
 

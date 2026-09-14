@@ -28,7 +28,7 @@ The page never fetches the scanned URL. `parse-checkin-url.js` extracts `{ sNano
 - `/wp-json/tpfw/v1/scanner/checkin/{id}` on **any** host
 - the ugly `?rest_route=/tpfw/v1/scanner/checkin/{id}` form
 
-Scheme and host are ignored so a ticket issued on `woocommerce.local` still checks in from a LAN IP. A random URL that is not this plugin’s check-in path is refused. The page then `GET`s `sCheckinBase + nano_id` on **its own origin** with the `wp_rest` nonce.
+Scheme and host are ignored so a ticket issued on `woocommerce.local` still checks in from a LAN IP. A random URL that is not this plugin’s check-in path is refused. The page then **POST**s `sCheckinBase + nano_id` on **its own origin** with the `wp_rest` nonce.
 
 ## REST auth (`tpfw/v1`)
 
@@ -36,8 +36,9 @@ Scheme and host are ignored so a ticket issued on `woocommerce.local` still chec
 
 | Caller | How |
 |---|---|
-| Built-in scanner | Login cookie **and** valid `X-WP-Nonce`. Core’s `rest_cookie_check_errors()` clears the user if the nonce is missing, so a CSRF GET from another site cannot check anyone in. |
+| Built-in scanner | Login cookie **and** valid `X-WP-Nonce`. Core’s `rest_cookie_check_errors()` clears the user if the nonce is missing, so a CSRF request from another site cannot check anyone in. |
 | External app | `Authorization: Basic` (or `PHP_AUTH_USER` / `PHP_AUTH_PW`). Goes through `wp_authenticate()` (login throttling / locked accounts apply). Only if **Enable API** is on. |
+| Scanner token | Header `X-TPFW-Scanner-Token`. Looked up in `tpfw_scanner_tokens` (`TPFW_Scanner_Tokens`). Also requires **Enable API**. When `tpfw_scanner_tokens_required` is set, Basic Auth with a password is refused. There is no settings form yet; create a token with `TPFW_Scanner_Tokens::create($name, $user_id)` (plaintext is returned once). |
 
 Either path still requires `user_can_scan()`. The resolved user is `wp_set_current_user()` so the stats row records who scanned.
 
@@ -47,13 +48,13 @@ Either path still requires `user_can_scan()`. The resolved user is `wp_set_curre
 
 ## Lookup
 
-`GET /scanner/checkin/{nano_id}` probes, in order: `tpfw_pass`, `tpfw_timeslot_tickets`, `tpfw_tickets` (`TPFW_API::CHECKIN_TABLES`). Soft-deleted rows are ignored.
+`POST /scanner/checkin/{nano_id}` probes, in order: `tpfw_pass`, `tpfw_timeslot_tickets`, `tpfw_tickets` (`TPFW_API::CHECKIN_TABLES`). Soft-deleted rows are ignored. The same path registered as GET calls `scanner_checkin_not_allowed()` and returns **405** with `Allow: POST` — no stats row.
 
 A pass row with `parent_nano_id_fk` is treated as `guestpass` even on the plain route (so dropping `/guest` cannot skip the parent-alive check or apply the wrong cooldown). `/scanner/checkin/{id}/guest` requires a guest row **and** a live parent.
 
 ## Decision order (`checkin_row`)
 
-Wrapped in `with_checkin_lock()`: MySQL `GET_LOCK('tpfw_checkin_{nano_id}', 5)`. Contention answers **202**. `RELEASE_LOCK` runs in `finally` (persistent connections would otherwise wedge that code).
+Wrapped in `with_checkin_lock()` → `TPFW_Named_Lock`: MySQL `GET_LOCK('tpfw_checkin_{nano_id}', 5)`. Only `'1'` / `1` is a held lock. Timeout (`0`) and unavailable (`NULL`) both refuse — **202**, no INSERT. Unavailable is logged once. `RELEASE_LOCK` runs in `finally` (persistent connections would otherwise wedge that code).
 
 Nothing writes until every check passes.
 
@@ -64,15 +65,16 @@ Nothing writes until every check passes.
 5. Cooldown (`*_cooldown_sec` on the product) still running → 202, with `iCooldownOver`
 6. `INSERT` into the type’s `*_stats` table. Query failure → 401 (use is **not** consumed)
 7. Type `pass` → `activate_guest_passes()` (sets guest windows to now + guest duration)
-8. Success array (HTTP 200). Pass/guest include `sPhotoURL`
+8. Success body is `TPFW_Checkin_Payload::allowlist()` (HTTP 200): `sMessage`, `sHexColor`, `sType`, `sHolderName`, `sPhotoURL` (pass/guest), `max_uses`, `iUsesRemaining`, `valid_from`, `valid_to`. No `user_id`, `order_id`, `user_payer_id` or raw `ticket` row.
 
 HTTP meaning, as the API settings screen documents:
 
 | Status | Meaning |
 |---|---|
 | 200 | Valid, use recorded |
-| 202 | Refused for a reason door staff must read (window, uses, cooldown, lock) |
-| 401 | Does not add up (missing code, wrong type, insert failed, auth denied) |
+| 202 | Refused for a reason door staff must read (window, uses, cooldown, lock, guest not yet activated) |
+| 401 | Does not add up (missing code, wrong type, insert failed, auth denied, guest with no live parent) |
+| 405 | GET on a check-in route — nothing written |
 
 Colours `status_200` / `status_202` / `status_406` come from `tpfw_api_settings_options`.
 

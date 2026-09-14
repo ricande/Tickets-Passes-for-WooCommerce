@@ -2,7 +2,7 @@
 
 Sells three product types — **Ticket**, **Timeslot Ticket** and **Pass** — and checks visitors in with a QR code on the shop's own site. No external ticketing service.
 
-Shop-owner documentation (install, FAQ) lives in [`readme.txt`](readme.txt). This is **developer documentation** of the plugin's own code.
+Shop-owner documentation (install, FAQ) lives in [`readme.txt`](readme.txt). Exact install, upgrade and test steps: [`docs/install.md`](docs/install.md). This is **developer documentation** of the plugin's own code.
 
 Changelog: [`changelog.txt`](changelog.txt).
 
@@ -10,6 +10,7 @@ Changelog: [`changelog.txt`](changelog.txt).
 
 | Document | Contents |
 |---|---|
+| [docs/install.md](docs/install.md) | Requirements, activate, 1.2.3 → 1.3.0, uninstall, tests |
 | [docs/architecture.md](docs/architecture.md) | Boot, subsystems, purchase and check-in flow |
 | [docs/file-map.md](docs/file-map.md) | First-party directories and what the files do |
 | [docs/data.md](docs/data.md) | Tables, options, meta, files, REST routes |
@@ -22,7 +23,7 @@ Changelog: [`changelog.txt`](changelog.txt).
 | [docs/check-in.md](docs/check-in.md) | QR payload, `/check-in/`, REST auth, lock, HTTP statuses |
 | [docs/files-and-access.md](docs/files-and-access.md) | Upload layout, HMAC vs session, caching |
 | [docs/emails-and-admin.md](docs/emails-and-admin.md) | Order emails, My Account, dashboards, order metabox |
-| [docs/work-plan.md](docs/work-plan.md) | Prioritised work: integrity, i18n, refactor — tests on every item |
+| [docs/work-plan.md](docs/work-plan.md) | Integrity and refactor items shipped in 1.3.0 |
 
 ## Identity
 

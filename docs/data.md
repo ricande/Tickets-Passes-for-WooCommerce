@@ -17,7 +17,7 @@ Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db
 | `tpfw_timeslots` | Concrete slots (`id`, start/end, `available_slots`) |
 | `tpfw_timeslots_recurring` | Templates that cron rolls out into `tpfw_timeslots` |
 | `tpfw_timeslot_reservations` | Temporary capacity hold in checkout (`valid_to` = expiry) |
-| `tpfw_pass` | Pass or guest pass. Guest has `parent_nano_id_fk`. Photo: `profile_image_type` |
+| `tpfw_pass` | Pass or guest pass. Guest has `parent_nano_id_fk` and `guest_slot` (1…N). Unique `(parent_nano_id_fk, guest_slot)`. Photo: `profile_image_type` |
 | `tpfw_pass_stats` | Check-ins for pass/guest pass |
 
 `nano_id` is unique per row table and is what appears in the QR, emails and filenames.
@@ -34,6 +34,8 @@ Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db
 | `tpfw_scanner_role_version` | Scanner role capability set |
 | `tpfw_upload_slug` | Random part of `uploads/tpfw-{slug}/` |
 | `tpfw_file_secret` | Signing of file links |
+| `tpfw_scanner_tokens` | Hashed per-device scanner tokens (`TPFW_Scanner_Tokens`) |
+| `tpfw_scanner_tokens_required` | When truthy, Basic Auth with a password is refused |
 
 ### Product post meta
 
@@ -60,7 +62,7 @@ Prefix `tpfw_`. Typical keys: `tpfw_start_date`, `tpfw_firstname`, `tpfw_lastnam
 
 ## Files on disk
 
-Base: `wp-content/uploads/{tpfw_upload_slug}/`. Subfolders (keys of `TPFW_Functions::FILE_TYPE_FOLDERS`):
+Base: `wp-content/uploads/tpfw-{slug}/` where `{slug}` is the 10-character hex in `tpfw_upload_slug`. Profile photos use the same base (`profile-images/`); a custom path is no longer used. Subfolders (keys of `TPFW_Functions::FILE_TYPE_FOLDERS`):
 
 | Key | Folder | What |
 |---|---|---|
@@ -76,8 +78,10 @@ All are fetched through `TPFW_File_Access` (`?tpfw_file=`), not as a direct URL.
 
 | Route | Method | Auth | Purpose |
 |---|---|---|---|
-| `/scanner/checkin/{nano_id}` | GET | scanner role, cookie+nonce or Basic Auth | Check-in |
-| `/scanner/checkin/{nano_id}/guest` | GET | same | Guest-pass check-in |
+| `/scanner/checkin/{nano_id}` | POST | scanner role, cookie+nonce, Basic Auth, or `X-TPFW-Scanner-Token` | Check-in |
+| `/scanner/checkin/{nano_id}` | GET | same (then refused) | **405**, `Allow: POST` — does not check anyone in |
+| `/scanner/checkin/{nano_id}/guest` | POST | same as check-in | Guest-pass check-in |
+| `/scanner/checkin/{nano_id}/guest` | GET | same (then refused) | **405** |
 | `/scanner/history` | GET | same | Recent scans |
 | `/timeslot-ticket/ics/{nano_id}` | GET | open (`nano_id` is the secret) | Calendar file |
 
@@ -95,3 +99,7 @@ Both are cleared on deactivation and uninstall.
 ## Role
 
 `tpfw_scanner` — check-in and nothing else in wp-admin. Created by `TPFW_Functions` when `SCANNER_ROLE_VERSION` is bumped.
+
+## Language
+
+Text domain `tickets-passes-for-woocommerce`. `load_plugin_textdomain()` points at `languages/`. WordPress language packs in `WP_LANG_DIR/plugins/` win. The zip ships `sv_SE` (`.po` / `.mo` / `.l10n.php`) as a fallback. There is no plugin language switcher.

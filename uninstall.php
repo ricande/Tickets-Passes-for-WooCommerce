@@ -39,6 +39,8 @@ function tpfw_uninstall_site()
 		'tpfw_scanner_role_version',
 		'tpfw_upload_slug',
 		'tpfw_file_secret',
+		'tpfw_scanner_tokens',
+		'tpfw_scanner_tokens_required',
 	);
 	foreach($aOptions as $sOption)
 	{

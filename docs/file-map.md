@@ -13,7 +13,8 @@ Third-party code under `inc/functions/lib/`, `lib/`, `jsqr.js` and ApexCharts is
 | `uninstall.php` | Removes settings/role/cron; tables and files only with `TPFW_REMOVE_ALL_DATA` |
 | `readme.txt` | Shop-owner text (WordPress.org) |
 | `changelog.txt` | Release history |
-| `languages/` | POT + `index.php` to silence directory listing |
+| `docs/install.md` | Install, upgrade, uninstall, how to run tests |
+| `languages/` | POT, bundled `sv_SE` `.po` / `.mo` / `.l10n.php`, `index.php` |
 
 ## `inc/product-type/`
 
@@ -32,7 +33,8 @@ Third-party code under `inc/functions/lib/`, `lib/`, `jsqr.js` and ApexCharts is
 
 | File | Role |
 |---|---|
-| `class--timeslot-ticket-wc-product.php` | Product type `tpfw-timeslot-ticket`: slots, capacity, reservations, `TPFW_Product_Timeslot_Ticket` |
+| `class--timeslot-ticket-wc-product.php` | Product type `tpfw-timeslot-ticket`: editor, issue/revoke, `TPFW_Product_Timeslot_Ticket` |
+| `class--timeslot-ticket-checkout.php` | Cart validation, reservation, checkout hold (`TPFW_Timeslot_Ticket_Checkout`) |
 | `js/timeslot-ticket-wc-product.js` | Admin: schedule, slots; hides stock management (capacity lives on the slot) |
 | `js/timeslot-ticket-wc-product-frontend.js` | Product page: date and slot picker |
 | `css/timeslot.module.css` / `timeslot.front.css` | Admin vs storefront |
@@ -50,7 +52,7 @@ Third-party code under `inc/functions/lib/`, `lib/`, `jsqr.js` and ApexCharts is
 
 | File | Role |
 |---|---|
-| `class--functions.php` | Shared helper: QR, PDF, check-in + lock, upload paths, nano id, email placeholders, reset/cancel, date format |
+| `class--functions.php` | Facade: QR, PDF, check-in, upload paths, nano id, email placeholders, reset/cancel, date format. Delegates lock, payload, file tokens and issue policy to `inc/support/` |
 | `js/functions-admin.js` | Shared admin QR section (colours, preview, logo) |
 | `js/help-tip-init.js` | Tooltips on settings screens |
 | `css/front-product.css` | Product-page info table |
@@ -66,7 +68,7 @@ Third-party code under `inc/functions/lib/`, `lib/`, `jsqr.js` and ApexCharts is
 
 | File | Role |
 |---|---|
-| `class--api.php` | REST `tpfw/v1`: check-in, guest check-in, history, timeslot `.ics` |
+| `class--api.php` | REST `tpfw/v1`: POST check-in, POST guest check-in, GET 405 on those paths, history, timeslot `.ics` |
 | `class--api-settings.php` | Admin tab Scanner / API |
 | `setting-pages/api-page-content.php` | Template for that tab |
 | `js/api-settings.js` / `css/api-settings.css` | Tab UI |
@@ -76,7 +78,7 @@ Third-party code under `inc/functions/lib/`, `lib/`, `jsqr.js` and ApexCharts is
 | File | Role |
 |---|---|
 | `class--scanner.php` | Standalone page `/check-in/` (+ alias `/checkin`). No admin bar, no theme wrapper. |
-| `js/scanner.js` | Camera, result colours, calls REST |
+| `js/scanner.js` | Camera, result colours, POSTs REST |
 | `js/parse-checkin-url.js` | Extracts `nano_id` from a scanned URL without fetching it |
 | `css/scanner.css` / `access-denied.css` | Scanner vs access denied |
 
@@ -117,7 +119,7 @@ Each type tab has `setting-pages/*-page-content.php`.
 | Directory | Role |
 |---|---|
 | `inc/ticket-wc-myaccount/` | Tab `/tpfw-tickets` — ticket + timeslot, QR, PDF, `.ics` |
-| `inc/pass-wc-myaccount/` | Passes tab, guest-pass hand-out, photo |
+| `inc/pass-wc-myaccount/` | Tab `/tpfw-pass` — passes, guest-pass hand-out, photo |
 
 Both have `class--*.php`, `template/page-content.php`, `js/` and `css/`.
 
@@ -127,5 +129,27 @@ Both have `class--*.php`, `template/page-content.php`, `js/` and `css/`.
 |---|---|
 | `inc/admin/` | Order metabox: force issue or cancel without moving order status (`js/admin-single.js`) |
 | `inc/analytics-dashboard/` | Check-in charts + CSV (reads `*_stats`, not the sales tables) |
-| `inc/db-installer/` | Creates/updates the nine tables (`DB_VERSION`) |
+| `inc/db-installer/` | Creates/updates the nine tables (`DB_VERSION` `1.0.3`) |
 | `inc/cronjobs/` | Hourly: new recurring timeslots. Minutely: release expired reservations |
+| `inc/support/` | Extracted helpers loaded by `load.php` (see below) |
+| `tests/` | PHPUnit + Node; `bash tests/run.sh` |
+
+## `inc/support/`
+
+Loaded unconditionally from `TPFW_Main` before the installer.
+
+| File | Class | Role |
+|---|---|---|
+| `class--issue-policy.php` | `TPFW_Issue_Policy` | Mint on processing/completed; revoke on cancelled/refunded/failed |
+| `class--order-line-upsert.php` | `TPFW_Order_Line_Upsert` | Idempotent issue per order line |
+| `class--guest-pass-issuer.php` | `TPFW_Guest_Pass_Issuer` | Guest quota via `guest_slot` |
+| `class--timeslot-capacity.php` | `TPFW_Timeslot_Capacity` | Named lock around reserve and issue |
+| `class--named-lock.php` | `TPFW_Named_Lock` | `GET_LOCK` fail-closed |
+| `class--checkin-payload.php` | `TPFW_Checkin_Payload` | Scanner success allowlist |
+| `class--image-limits.php` | `TPFW_Image_Limits` | Profile-photo pixel cap before decode |
+| `class--file-paths.php` | `TPFW_File_Paths` | All files under `tpfw-{slug}/` |
+| `class--file-token.php` | `TPFW_File_Token` | HMAC sign/verify |
+| `class--scanner-tokens.php` | `TPFW_Scanner_Tokens` | Revocable `X-TPFW-Scanner-Token` |
+| `class--email-settings.php` | `TPFW_Email_Settings` | Default vs saved templates |
+| `class--datepicker-locale.php` | `TPFW_Datepicker_Locale` | `$wp_locale` for Air Datepicker |
+| `class--bundled-libs.php` | `TPFW_Bundled_Libs` | Versions from `installed.json` |
