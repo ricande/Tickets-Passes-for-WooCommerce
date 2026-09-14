@@ -2,6 +2,19 @@
 
 Full release history for Tickets & Passes for WooCommerce. The three most recent releases are also listed in readme.txt.
 
+= 1.3.0 =
+* Guest passes can no longer be scanned before the holder has checked in, and the guest quota is enforced in the database so two people cannot mint more guests than the product allows.
+* Timeslot seats are reserved and issued under a lock, so the last place in a slot cannot be sold twice.
+* Check-in at the door is POST only. The built-in scanner already uses it. A GET no longer checks anyone in. History and the calendar file stay GET.
+* The check-in API returns only what the door needs (message, colour, holder name, photo, uses, validity). It no longer includes the raw database row.
+* Cash on delivery and other orders that sit in Processing now receive their QR codes when they are paid, not only when the order is marked Completed. The Create button on the order screen still forces a re-issue if something was missed.
+* New guest passes stay inactive until the holder is scanned. Guest passes already issued on 1.2.3 keep the dates they already have.
+* Profile photos are refused if they claim an enormous pixel size, before the server tries to decode them.
+* Check-in fails closed if the database lock cannot be taken, instead of checking someone in without serialisation.
+* Scanner apps can send a revocable X-TPFW-Scanner-Token instead of the WordPress password.
+* Swedish translations ship in the plugin. WordPress language packs still override them when present. The shop language follows the WordPress locale; there is no language switcher in the plugin.
+* Existing tickets, passes, QR codes and the random upload folder keep working after the update. The first page load after 1.2.3 adds a guest-slot column and unique index on existing guest rows.
+
 = 1.2.3 =
 * The colour settings on the Ticket, Timeslot Ticket and Pass tabs now sit beside a live preview of the card the customer actually sees, so a colour can be judged in place instead of by saving and opening a product page. Each tab previews its own product: the details list and start date calendar for tickets, the calendar and time slot list for timeslot tickets, the person cards for passes.
 * The preview can be shown against a light or a dark theme. That is deliberately the only thing about it you can change, because the page behind the card belongs to your theme and not to these settings.

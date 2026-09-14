@@ -571,10 +571,11 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
         }
 
         global $wpdb;
+        $sTicketTable = $wpdb->prefix.$this->sTable;
         $oExistsPrepared = $wpdb->prepare(
             'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY -deleted;',
             array(
-				$wpdb->prefix . 'tpfw_tickets',                 
+				$sTicketTable,
                 $oOrderItem->get_product_id(), 
                 $iOrderID, 
                 $oOrderItem->get_id()                 

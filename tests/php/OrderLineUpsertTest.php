@@ -98,4 +98,12 @@ class OrderLineUpsertTest extends TestCase
 		$iDeleted = (int)$this->wpdb->get_var("SELECT COUNT(*) FROM `{$table}` WHERE deleted IS NOT NULL");
 		$this->assertSame(2, $iDeleted);
 	}
+
+	public function test_sync_rejects_empty_table(): void
+	{
+		$this->expectException(InvalidArgumentException::class);
+		TPFW_Order_Line_Upsert::sync($this->wpdb, '', array(), 1, gmdate('Y-m-d H:i:s'), function() {
+			$this->fail('insert must not run when the table name is empty');
+		});
+	}
 }

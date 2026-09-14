@@ -76,7 +76,12 @@ class TPFW_Test_Wpdb
 			}
 			if($m[0] === '%i')
 			{
-				return '`'.str_replace('`', '``', (string)$v).'`';
+				$sIdent = (string)$v;
+				if($sIdent === '')
+				{
+					throw new InvalidArgumentException('TPFW_Test_Wpdb::prepare empty %i identifier');
+				}
+				return '`'.str_replace('`', '``', $sIdent).'`';
 			}
 			return "'".$mysqli->real_escape_string((string)$v)."'";
 		}, $query);

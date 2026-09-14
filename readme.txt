@@ -5,7 +5,7 @@ Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
 Requires Plugins: woocommerce
-Stable tag: 1.2.3
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,7 +70,7 @@ An hourly background job generates the next batch of recurring timeslots. A per-
 
 * WooCommerce **HPOS** (High-Performance Order Storage) and the **block-based cart and checkout**.
 * **Block themes** and classic themes.
-* **Translation ready** - every string is translatable and the plugin ships a POT file.
+* **Translation ready** - every string is translatable. The plugin ships a POT file and a Swedish catalog; WordPress language packs still win when they are present.
 * **No build step.** All PHP, JavaScript and CSS ships readable and editable.
 
 = Requirements =
@@ -214,6 +214,11 @@ repositories.
 
 The three most recent releases are below. The full history is in `changelog.txt` in the plugin folder.
 
+= 1.3.0 =
+* Guest passes cannot be scanned before the holder checks in, and the guest quota is enforced in the database. Timeslot seats are reserved and issued under a lock so the last place cannot be sold twice.
+* Check-in is POST only (GET no longer lets anyone through). The API response is an allowlist, not the raw database row. Orders that sit in Processing (cash on delivery) now receive QR codes when they are paid.
+* Swedish translations ship in the plugin; WordPress still owns the language. Existing tickets, QR codes and upload files from 1.2.3 keep working — the first load after the update migrates the guest-pass table.
+
 = 1.2.3 =
 * The colour settings on the Ticket, Timeslot Ticket and Pass tabs now sit beside a live preview of the card the customer actually sees, so a colour can be judged in place instead of by saving and opening a product page. Each tab previews its own product, and the preview can be shown against a light or a dark theme.
 * Each colour row is now a swatch, a hex field and a strip of preset swatches from your theme's editor palette, with a "Use default color" link that is only live while the row differs from the colour it shipped with.
@@ -221,17 +226,12 @@ The three most recent releases are below. The full history is in `changelog.txt`
 = 1.2.2 =
 * Every row on the Tickets, Timeslot Tickets and Passes dashboards has a "Download" action, which gives you the holder's printable ticket or pass PDF - the same one they get from My Account. A customer who has lost their email can be helped without leaving the screen. It appears only on rows whose QR code was issued, and guest passes get their own.
 
-= 1.2.1 =
-* Dashboards: the Tickets, Timeslot Tickets and Passes screens can be sorted by column, filtered by status, and rows cancelled or reset in bulk. Tickets and timeslot tickets can be transferred to another customer, which moves the ticket, emails the new holder their QR code, and notes both parties on the original order.
-* Scanner: a code can be typed or pasted when there is no camera, a flashlight button appears where the phone supports one, and a refusal now stays on screen long enough to read.
-* Timeslot capacity is enforced against sold tickets, live reservations and the line's own quantity at add-to-cart, instead of only after payment. Recurring series now land on the right weekday and keep rolling forward as the setting says.
-* Security: the sales window is enforced when an item is added to the cart, not just by hiding the buy button; a pass photo cannot be replaced once uploaded; the analytics CSV export neutralises spreadsheet formulas; a gifted-pass account gets a one-time "choose your password" link rather than a password in an email.
-* Faster admin dashboards and timeslot product pages, and faster My Account tabs, with new database indexes.
-* Many fixes across emails, QR colours, the date pickers, My Account and the settings screens. The full list is in `changelog.txt`.
-
 Older releases: see `changelog.txt`.
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Replace the plugin folder (or upload the new zip over 1.2.3). The first page load migrates the database. Existing tickets, passes and QR codes keep working. Check-in is now POST only — update any external scanner app that still uses GET. New guest passes stay inactive until the holder is scanned.
 
 = 1.2.3 =
 The colour settings on the Ticket, Timeslot Ticket and Pass tabs gain a live preview of the customer's card, preset swatches from your theme's palette, and a reset that shows at a glance which rows you have changed.

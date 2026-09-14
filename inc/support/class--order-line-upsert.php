@@ -20,6 +20,11 @@ class TPFW_Order_Line_Upsert
 	 */
 	public static function sync($wpdb, $sTable, $aExisting, $iQuantity, $sNow, $fnInsert)
 	{
+		if(!is_string($sTable) || $sTable === '')
+		{
+			throw new InvalidArgumentException('TPFW_Order_Line_Upsert::sync needs a prefixed table name');
+		}
+
 		$aKeep   = array();
 		$aDelete = array();
 		$iQty    = max(0, (int)$iQuantity);

@@ -3,7 +3,7 @@ defined('ABSPATH') or die('No script kiddies please!');
     /*
      *  Plugin Name: Tickets & Passes for WooCommerce
      *  Description: Sell tickets, timeslot bookings and passes with WooCommerce, and check visitors in at the door with a built-in QR scanner.
-     *  Version: 1.2.3
+     *  Version: 1.3.0
      *  Requires at least: 6.5
      *  Tested up to: 7.1
      *  Requires PHP: 8.0
@@ -22,7 +22,7 @@ defined('ABSPATH') or die('No script kiddies please!');
     define('TPFW_PLUGIN_URL',  plugin_dir_url(__FILE__));
 
     // Keep in step with the Version: header above - asset cache-busting keys off it.
-    define('TPFW_VERSION', '1.2.3');
+    define('TPFW_VERSION', '1.3.0');
 
     // Bump to force a one-time rewrite flush on existing sites. See tpfw_maybe_flush_rewrites().
     // 4: the My Account endpoints gained the plugin prefix (/pass -> /tpfw-pass).
@@ -31,17 +31,21 @@ defined('ABSPATH') or die('No script kiddies please!');
 
     add_action('plugins_loaded', 'tpfw_load_textdomain', 0);
     /**
-     * Loads translations from WP_LANG_DIR so language packs win.
+     * Loads translations for the current WordPress locale.
      *
-     * No third argument: do not load a .mo from this plugin zip. WordPress already looks in
-     * wp-content/languages/plugins/ for wordpress.org-hosted plugins; this call is for
-     * copies that are not installed that way.
+     * WordPress still checks WP_LANG_DIR/plugins/ first, so language packs win.
+     * Bundled {domain}-{locale}.mo files under languages/ are the fallback — sv_SE
+     * ships in the zip; other locales can be added there later with no PHP change.
      *
      * @return void
      */
     function tpfw_load_textdomain()
     {
-        load_plugin_textdomain('tickets-passes-for-woocommerce');
+        load_plugin_textdomain(
+            'tickets-passes-for-woocommerce',
+            false,
+            dirname(plugin_basename(TPFW_PLUGIN_FILE)).'/languages'
+        );
     }
 
     /**

@@ -47,4 +47,22 @@ class I18nTest extends TestCase
 		$sSrc = file_get_contents(TPFW_PLUGIN_DIR.'inc/functions/class--functions.php');
 		$this->assertNotFalse(strpos($sSrc, "__('Ticket ID: %s'"));
 	}
+
+	public function test_textdomain_loads_bundled_languages_folder(): void
+	{
+		$sSrc = file_get_contents(TPFW_PLUGIN_DIR.'tickets-passes-for-woocommerce.php');
+		$this->assertNotFalse(strpos($sSrc, "dirname(plugin_basename(TPFW_PLUGIN_FILE)).'/languages'"));
+		$this->assertFalse((bool)preg_match('/load_plugin_textdomain\([^;]*sv_SE/', $sSrc));
+	}
+
+	public function test_swedish_catalog_is_bundled(): void
+	{
+		$sDir = TPFW_PLUGIN_DIR.'languages/';
+		$this->assertFileExists($sDir.'tickets-passes-for-woocommerce-sv_SE.po');
+		$this->assertFileExists($sDir.'tickets-passes-for-woocommerce-sv_SE.mo');
+		$this->assertFileExists($sDir.'tickets-passes-for-woocommerce-sv_SE.l10n.php');
+		$sPo = file_get_contents($sDir.'tickets-passes-for-woocommerce-sv_SE.po');
+		$this->assertNotFalse(strpos($sPo, 'Language: sv_SE'));
+		$this->assertNotFalse(strpos($sPo, 'Visas på %s-PDF:en'));
+	}
 }
