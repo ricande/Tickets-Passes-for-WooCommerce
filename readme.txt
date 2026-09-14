@@ -99,7 +99,20 @@ On the **Scanner / API** tab, enable the API and the built-in scanner. The tab t
 
 **5. Give door staff access**
 
-Edit the user under **Users** and set their role to **Scanner**. They can then open `/check-in/` on a phone and check people in, and see nothing else in wp-admin. Administrators and Shop Managers already have access.
+Check-in is a normal WordPress login. The plugin does not have its own user list. On the first page load after you activate it, WordPress gains a **Scanner** role. You attach that role to a person; you do not tick a box in Ticket & Passes settings.
+
+**Administrators and Shop Managers can already scan.** They also see dashboards and settings. Do not give door staff those roles.
+
+To add door staff:
+
+1. **Users → Add New** (or edit an existing account that should only work the door).
+2. Set **Role** to **Scanner**. That is the only extra right they need.
+3. Give them the username and password.
+4. On the phone they open `/check-in/` on your domain (HTTPS), sign in, and use the camera. There is no admin bar and nothing else in wp-admin for them to open.
+
+Use **one WordPress account per door or device**. Each successful scan is stored against the logged-in user, so the check-in history shows which door did what.
+
+A Scanner account can log in and check people in. It cannot open Ticket & Passes settings, dashboards, orders or products. If you later delete the Scanner role in WordPress, the plugin will not silently recreate it.
 
 = Upgrading from 1.2.3 =
 
@@ -142,7 +155,18 @@ No. Every scan is checked against your site as it happens, so the phone needs a 
 
 = Who is allowed to check people in? =
 
-Users with the Scanner role, and users with the `manage_woocommerce` capability, which covers Administrators and Shop Managers. The scanner page turns everyone else away.
+Two kinds of WordPress user:
+
+* **Scanner** - door staff. Create the account under **Users** and set the role to Scanner. They open `/check-in/` on a phone. They cannot use wp-admin.
+* **Administrator or Shop Manager** - they already have `manage_woocommerce`, so they can scan at `/check-in/` and also check people in from the dashboards, without an extra role.
+
+Anyone else who is logged in and opens `/check-in/` is turned away. A visitor who is not logged in is sent to the WordPress login and then back to the scanner.
+
+The Scanner role appears in the Role dropdown by itself after the plugin has loaded once. There is no “create scanner user” screen inside Ticket & Passes.
+
+= How do I add a scanner user? =
+
+**Users → Add New**, choose the **Scanner** role, save, and send that person to `https://your-shop.example/check-in/`. One account per door is enough. Administrators and Shop Managers do not need this step.
 
 = Can I check people in without a phone? =
 

@@ -73,7 +73,7 @@ The same `checkin()` is used by:
 
 The AJAX callback will also accept a logged-in holder of that row, with the validity window still enforced, but My Account has no check-in button.
 
-Permission: the `tpfw_scanner` role, or `manage_woocommerce`.
+Permission: [Who may scan](check-in.md#who-may-scan) — `tpfw_scanner` role, or `manage_woocommerce`. Shop-owner steps: [install.md](install.md#scanner-users).
 
 Guest passes have their own route: `/scanner/checkin/{nano_id}/guest`.
 

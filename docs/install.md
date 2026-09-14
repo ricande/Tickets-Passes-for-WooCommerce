@@ -23,7 +23,32 @@ Activation refuses (and deactivates) if WooCommerce is not active. If WooCommerc
 4. The next normal page load (any front or admin request) flushes rewrite rules once `TPFW_REWRITE_VERSION` is recorded. `/check-in/`, `/checkin`, `/tpfw-tickets` and `/tpfw-pass` work from then on. If the scanner 404s immediately after activate, load any other page or resave **Settings → Permalinks**.
 5. Product types start **off**. Enable the ones you sell under **Ticket & Passes → Settings** on the Ticket, Timeslot Ticket and Pass tabs.
 6. The built-in scanner and the external API default **on** when their keys have never been saved. The **Scanner / API** tab shows the door URL (`/check-in/` on this site).
-7. Give door staff the **Scanner** role (`tpfw_scanner`). Administrators and Shop Managers already have `manage_woocommerce` and can scan. Staff open `/check-in/` on a phone; they do not need wp-admin.
+7. Add door staff as WordPress users with the **Scanner** role — see [Scanner users](#scanner-users) below.
+
+## Scanner users
+
+Check-in rights are WordPress roles, not a plugin setting. There is no “add scanner” screen under Ticket & Passes.
+
+**Who may scan** (`TPFW_Functions::user_can_scan()`):
+
+| WordPress user | `/check-in/` and REST check-in | Dashboards, settings, order Create/Cancel |
+|---|---|---|
+| Role **Scanner** (`tpfw_scanner`) | Yes | No — capability is only `read` |
+| Administrator or Shop Manager (`manage_woocommerce`) | Yes | Yes |
+| Anyone else | No (403 on the page, 401 on REST) | No |
+
+**How the role appears.** `maybe_register_scanner_role()` runs from `TPFW_Functions` on plugin load. When option `tpfw_scanner_role_version` is not `SCANNER_ROLE_VERSION` (`2`), it calls `add_role('tpfw_scanner', 'Scanner', array('read' => true))` and stores the version. That is a one-time write. Deleting the role in WordPress does **not** recreate it on the next request.
+
+**How to add a door person**
+
+1. Wait until the plugin has loaded at least once (so **Scanner** exists in the Role dropdown).
+2. **Users → Add New**, or edit an existing user.
+3. Set **Role** to **Scanner**. Save.
+4. They sign in at `/check-in/` (HTTPS). They never need wp-admin.
+
+Use one account per door or device: `*_stats.user_id` is the scanner, not the ticket holder. The **Scanner** submenu under Ticket & Passes requires `manage_woocommerce`, so door staff do not see it — they type the URL.
+
+External apps authenticate as the same kind of user (Basic Auth or `X-TPFW-Scanner-Token` bound to a user id that already `user_can_scan()`). Tokens have no settings UI; see [check-in.md](check-in.md).
 
 ## Upgrade from 1.2.3 to 1.3.0
 

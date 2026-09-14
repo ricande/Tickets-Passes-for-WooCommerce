@@ -10,7 +10,7 @@ Changelog: [`changelog.txt`](changelog.txt).
 
 | Document | Contents |
 |---|---|
-| [docs/install.md](docs/install.md) | Requirements, activate, 1.2.3 → 1.3.0, uninstall, tests |
+| [docs/install.md](docs/install.md) | Requirements, activate, scanner users, 1.2.3 → 1.3.0, uninstall, tests |
 | [docs/architecture.md](docs/architecture.md) | Boot, subsystems, purchase and check-in flow |
 | [docs/file-map.md](docs/file-map.md) | First-party directories and what the files do |
 | [docs/data.md](docs/data.md) | Tables, options, meta, files, REST routes |
@@ -20,7 +20,7 @@ Changelog: [`changelog.txt`](changelog.txt).
 | Document | Contents |
 |---|---|
 | [docs/product-types.md](docs/product-types.md) | Ticket, timeslot and pass: stock vs uses, reservations, guest passes, idempotent issue |
-| [docs/check-in.md](docs/check-in.md) | QR payload, `/check-in/`, REST auth, lock, HTTP statuses |
+| [docs/check-in.md](docs/check-in.md) | Who may scan, QR payload, `/check-in/`, REST auth, lock, HTTP statuses |
 | [docs/files-and-access.md](docs/files-and-access.md) | Upload layout, HMAC vs session, caching |
 | [docs/emails-and-admin.md](docs/emails-and-admin.md) | Order emails, My Account, dashboards, order metabox |
 | [docs/work-plan.md](docs/work-plan.md) | Integrity and refactor items shipped in 1.3.0 |

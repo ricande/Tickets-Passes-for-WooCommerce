@@ -98,7 +98,7 @@ Both are cleared on deactivation and uninstall.
 
 ## Role
 
-`tpfw_scanner` — check-in and nothing else in wp-admin. Created by `TPFW_Functions` when `SCANNER_ROLE_VERSION` is bumped.
+`tpfw_scanner` — display name **Scanner**. Capability `read` only. Created by `TPFW_Functions::maybe_register_scanner_role()` when option `tpfw_scanner_role_version` is not `SCANNER_ROLE_VERSION` (`2`). Check-in permission is that role **or** `manage_woocommerce`. How to attach it to a user: [install.md](install.md#scanner-users), [check-in.md](check-in.md#who-may-scan). Uninstall calls `remove_role('tpfw_scanner')`.
 
 ## Language
 

@@ -2,7 +2,24 @@
 
 Overview: [architecture.md](architecture.md). REST table: [data.md](data.md).
 
-There is **one** implementation: `TPFW_Functions::checkin()`. The door page, REST clients, admin dashboards and My Account all end there.
+There is **one** implementation: `TPFW_Functions::checkin()`. The door page, REST clients and admin dashboards all end there. My Account has no check-in button.
+
+## Who may scan
+
+Check-in is always a WordPress user. The plugin does not ship a separate staff directory.
+
+`TPFW_Functions::user_can_scan()` returns true when the user:
+
+- has the role `tpfw_scanner` (shown in wp-admin as **Scanner**), or
+- can `manage_woocommerce` (Administrator and Shop Manager by default; a custom role with that capability also works)
+
+Everyone else is refused: `/check-in/` answers 403, REST answers 401.
+
+The role is created in `maybe_register_scanner_role()`, on the first request after `tpfw_scanner_role_version` disagrees with `SCANNER_ROLE_VERSION` (currently `2`). It is **not** an option on the Scanner / API tab. `add_role('tpfw_scanner', …, array('read' => true))` — they can log in, nothing else in wp-admin. The version option is what stops this running on every request. If an administrator deletes the role, it stays gone until that version is bumped in code.
+
+How a shop adds door staff: **Users → Add New** (or edit), set Role to **Scanner**, then open `/check-in/` on a phone. Administrators and Shop Managers skip that step; they can already scan and they can use the dashboards. One account per door: each stats row stores the scanner’s `user_id`.
+
+Shop-owner wording: [`readme.txt`](../readme.txt) installation step 5 and the FAQ. Install notes: [install.md](install.md#scanner-users).
 
 ## What a QR contains
 
