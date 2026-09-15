@@ -220,8 +220,10 @@ This plugin ships no compiled or obfuscated code. Every PHP, JavaScript and CSS 
 written for this plugin is included in readable, editable form, and no build step
 (npm, webpack, Composer, etc.) is required to run or modify it.
 
-The following third-party libraries are bundled unmodified. Each is the upstream
-distribution file, at the version listed:
+The following third-party libraries are bundled at the versions listed. The
+runtime library code is the upstream distribution. Two Composer `require-dev`
+pins (development tools, not used when the plugin runs) have local security
+patches; see docs/vendor-patches.md in the source checkout:
 
 * dompdf 3.1.6 - PDF rendering - https://github.com/dompdf/dompdf - LGPL-2.1
   (bundled in inc/functions/lib/dompdf/, installed with Composer, together with its

@@ -31,6 +31,8 @@ Pull requests should explain the behaviour change and include tests when the cha
 
 See [SECURITY.md](SECURITY.md). Do not file public issues for vulnerabilities.
 
+Local `require-dev` patches on bundled Composer manifests are listed in [docs/vendor-patches.md](docs/vendor-patches.md). Do not install those libraries’ development dependencies into the plugin tree.
+
 ## Authorship
 
 Keep the original author attribution: **Magnus V.** (`macvej`) in the plugin header and `readme.txt` `Contributors:` field. Do not rewrite provenance to the current maintainer.

@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# Downloads PHPUnit 11.5.42 into tests/phpunit.phar when missing or checksum-stale.
-# The phar is gitignored. Official URL + pinned SHA-256; no Composer required.
+# Downloads PHPUnit 11.5.56 into tests/phpunit.phar when missing or checksum-stale.
+# 11.5.56 is a current 11.5.x release after the GHSA-vvj3-c3rp-c85p / CVE-2026-24765
+# fix (first patched 11.5.x is 11.5.50). The phar is gitignored.
+# Official URL + pinned SHA-256 from https://phar.phpunit.de/; no Composer required.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PHAR="$ROOT/tests/phpunit.phar"
-VERSION="11.5.42"
+VERSION="11.5.56"
 URL="https://phar.phpunit.de/phpunit-${VERSION}.phar"
-# sha256 of the official phpunit-11.5.42.phar
-SHA256="894c651ee0fd38533649e92756022aa46a093d94c78652a4615aae23c846db60"
+# sha256 of the official phpunit-11.5.56.phar (phar.phpunit.de listing)
+SHA256="915fa161f496dc04a45cd6032855879bca0bab644048cd0516982dffe678e9f1"
 
 have_hash() {
 	if command -v sha256sum >/dev/null 2>&1; then

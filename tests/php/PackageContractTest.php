@@ -8,11 +8,55 @@ class PackageContractTest extends TestCase
 		$sRun = file_get_contents(TPFW_PLUGIN_DIR.'tests/run.sh');
 		$sEns = file_get_contents(TPFW_PLUGIN_DIR.'tests/ensure-phpunit.sh');
 		$this->assertNotFalse(strpos($sRun, 'ensure-phpunit.sh'));
-		$this->assertNotFalse(strpos($sEns, 'VERSION="11.5.42"'));
-		$this->assertNotFalse(strpos($sEns, '894c651ee0fd38533649e92756022aa46a093d94c78652a4615aae23c846db60'));
+		$this->assertNotFalse(strpos($sEns, 'VERSION="11.5.56"'));
+		$this->assertNotFalse(strpos($sEns, '915fa161f496dc04a45cd6032855879bca0bab644048cd0516982dffe678e9f1'));
 		$this->assertNotFalse(strpos($sEns, 'https://phar.phpunit.de/phpunit-${VERSION}.phar'));
 		$sIgnore = file_get_contents(TPFW_PLUGIN_DIR.'.gitignore');
 		$this->assertNotFalse(strpos($sIgnore, 'tests/phpunit.phar'));
+	}
+
+	public function test_vendored_require_dev_pins_match_documented_patches(): void
+	{
+		$sCss = file_get_contents(TPFW_PLUGIN_DIR.'inc/functions/lib/dompdf/sabberworm/php-css-parser/composer.json');
+		$aCss = json_decode($sCss, true);
+		$this->assertIsArray($aCss);
+		$this->assertSame('4.0.2', $aCss['require-dev']['squizlabs/php_codesniffer']);
+
+		$sBacon = file_get_contents(TPFW_PLUGIN_DIR.'inc/functions/lib/qrcodegen/bacon/bacon-qr-code/composer.json');
+		$aBacon = json_decode($sBacon, true);
+		$this->assertIsArray($aBacon);
+		$this->assertSame('^8.5.52 || ^9.6.33', $aBacon['require-dev']['phpunit/phpunit']);
+
+		$aDompdfInstalled = json_decode(file_get_contents(TPFW_PLUGIN_DIR.'inc/functions/lib/dompdf/composer/installed.json'), true);
+		$aQrInstalled     = json_decode(file_get_contents(TPFW_PLUGIN_DIR.'inc/functions/lib/qrcodegen/composer/installed.json'), true);
+		$aCssInst         = $this->installedPackage($aDompdfInstalled, 'sabberworm/php-css-parser');
+		$aBaconInst       = $this->installedPackage($aQrInstalled, 'bacon/bacon-qr-code');
+		$this->assertSame('v9.4.0', $aCssInst['version']);
+		$this->assertSame('4.0.2', $aCssInst['require-dev']['squizlabs/php_codesniffer']);
+		$this->assertSame('2.0.8', $aBaconInst['version']);
+		$this->assertSame('^8.5.52 || ^9.6.33', $aBaconInst['require-dev']['phpunit/phpunit']);
+
+		$sDoc = file_get_contents(TPFW_PLUGIN_DIR.'docs/vendor-patches.md');
+		$this->assertNotFalse(strpos($sDoc, 'CVE-2026-67434'));
+		$this->assertNotFalse(strpos($sDoc, 'GHSA-vvj3-c3rp-c85p'));
+		$this->assertNotFalse(strpos($sDoc, '11.5.56'));
+	}
+
+	/**
+	 * @param array<string,mixed> $aInstalled
+	 * @param string              $sName
+	 * @return array<string,mixed>
+	 */
+	private function installedPackage(array $aInstalled, $sName)
+	{
+		foreach($aInstalled['packages'] as $aPkg)
+		{
+			if(($aPkg['name'] ?? '') === $sName)
+			{
+				return $aPkg;
+			}
+		}
+		$this->fail('missing installed.json package '.$sName);
 	}
 
 	public function test_tests_do_not_read_deploy_or_host_trees(): void

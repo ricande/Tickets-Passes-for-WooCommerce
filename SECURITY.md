@@ -25,3 +25,12 @@ Please include:
 - Impact (what an attacker can do)
 
 Do not attach credentials, dumps, or live customer codes.
+
+## Development tools and bundled manifests
+
+The plugin runtime does not install or execute PHPUnit or PHP_CodeSniffer. Those tools appear only as:
+
+- the gitignored PHPUnit phar fetched by `tests/ensure-phpunit.sh` (pinned SHA-256)
+- `require-dev` entries in bundled third-party `composer.json` files
+
+Known local `require-dev` patches, the CVEs they address, and when an official library release can replace them are documented in [docs/vendor-patches.md](docs/vendor-patches.md).
