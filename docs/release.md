@@ -10,7 +10,7 @@ From a clean checkout of this plugin directory (PHP 8.0+, `curl` or `wget`, Node
 bash tests/run.sh
 ```
 
-`tests/run.sh` calls `tests/ensure-phpunit.sh`, which downloads the official **PHPUnit 11.5.42** phar into `tests/phpunit.phar` when it is missing or the SHA-256 does not match. The phar is gitignored. No Composer install is required.
+`tests/run.sh` calls `tests/ensure-phpunit.sh`, which downloads the official **PHPUnit 11.5.56** phar into `tests/phpunit.phar` when it is missing or the SHA-256 does not match. The phar is gitignored. No Composer install is required. Local `require-dev` patches on two bundled Composer manifests are listed in [vendor-patches.md](vendor-patches.md).
 
 The suite is PHPUnit under `tests/php/` (including package-contract and documentation-contract checks), concurrency workers under `tests/bin/`, and `node --test tests/js/*.test.js`.
 

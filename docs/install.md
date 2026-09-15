@@ -96,7 +96,7 @@ Tests do **not** boot WordPress. From the plugin directory, as a normal user:
 bash tests/run.sh
 ```
 
-That fetches PHPUnit 11.5.42 into `tests/phpunit.phar` if needed (`tests/ensure-phpunit.sh`), then runs PHPUnit (including concurrency workers under `tests/bin/` and package-contract checks) and `node --test tests/js/*.test.js`. No `pkexec`, no writes under `/var/www`. See [release.md](release.md).
+That fetches PHPUnit 11.5.56 into `tests/phpunit.phar` if needed (`tests/ensure-phpunit.sh`), then runs PHPUnit (including concurrency workers under `tests/bin/` and package-contract checks) and `node --test tests/js/*.test.js`. No `pkexec`, no writes under `/var/www`. See [release.md](release.md). Local `require-dev` patches on two bundled Composer manifests are listed in [vendor-patches.md](vendor-patches.md).
 
 Database-backed tests (guest quota, timeslot capacity) open MariaDB through `.wp-credentials` (`DB_NAME`, `DB_USER`, `DB_PASSWORD`, optional `DB_HOST`). The file is looked up at `../.wp-credentials` or `../../.wp-credentials` from the plugin root, or at `TPFW_TEST_CREDENTIALS`. Do not commit it.
 

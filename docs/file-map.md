@@ -15,6 +15,7 @@ Third-party code under `inc/functions/lib/`, `lib/`, `jsqr.js` and ApexCharts is
 | `changelog.txt` | Release history |
 | `docs/install.md` | Install, upgrade, uninstall, how to run tests and build the ZIP |
 | `docs/release.md` | Source/review tests vs production ZIP |
+| `docs/vendor-patches.md` | Local `require-dev` patches on bundled Composer manifests |
 | `docs/server-config/` | nginx deny snippet for `uploads/tpfw-*`; Apache/IIS notes |
 | `languages/` | POT, bundled `sv_SE` and `da_DK` `.po` / `.mo` / `.l10n.php`, `index.php` |
 
