@@ -12,7 +12,7 @@ Changelog: [`changelog.txt`](changelog.txt).
 
 This repository continues development from **Tickets & Passes for WooCommerce 1.2.3**. It is not a rewrite that replaces the original work.
 
-**Current development / maintenance:** [ricande/Ticket-Passes-plugin](https://github.com/ricande/Ticket-Passes-plugin).
+**Current development / maintenance:** [ricande/Tickets-Passes-for-WooCommerce](https://github.com/ricande/Tickets-Passes-for-WooCommerce).
 
 License: GPLv2 or later (`LICENSE`).
 
@@ -52,3 +52,9 @@ License: GPLv2 or later (`LICENSE`).
 - `inc/analytics-dashboard/lib/apexcharts.min.js` — charts
 
 No build step. First-party PHP, JavaScript and CSS ship readable. Some folders also have `.scss` as the source of the shipped `.css`.
+
+## Download
+
+**[Download here](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/latest)** — WordPress plugin zip from the latest GitHub Release.
+
+Use the attached `tickets-passes-for-woocommerce-*.zip`. Do not use GitHub’s **Source code (zip)**; that archive includes tests and other development files.
