@@ -55,6 +55,6 @@ No build step. First-party PHP, JavaScript and CSS ship readable. Some folders a
 
 ## Download
 
-**[Download here](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/latest)** — WordPress plugin zip from the latest GitHub Release.
+**[Download here](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.0-RC/tickets-passes-for-woocommerce-1.3.0.zip)** — WordPress plugin zip (`tickets-passes-for-woocommerce-1.3.0.zip`).
 
-Use the attached `tickets-passes-for-woocommerce-*.zip`. Do not use GitHub’s **Source code (zip)**; that archive includes tests and other development files.
+Do not use GitHub’s **Source code (zip)**; that archive includes tests and other development files.
