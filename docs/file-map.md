@@ -13,7 +13,9 @@ Third-party code under `inc/functions/lib/`, `lib/`, `jsqr.js` and ApexCharts is
 | `uninstall.php` | Removes settings/role/cron; tables and files only with `TPFW_REMOVE_ALL_DATA` |
 | `readme.txt` | Shop-owner text (WordPress.org) |
 | `changelog.txt` | Release history |
-| `docs/install.md` | Install, upgrade, uninstall, how to run tests |
+| `docs/install.md` | Install, upgrade, uninstall, how to run tests and build the ZIP |
+| `docs/release.md` | Source/review tests vs production ZIP |
+| `docs/server-config/` | nginx deny snippet for `uploads/tpfw-*`; Apache/IIS notes |
 | `languages/` | POT, bundled `sv_SE` `.po` / `.mo` / `.l10n.php`, `index.php` |
 
 ## `inc/product-type/`
@@ -129,10 +131,11 @@ Both have `class--*.php`, `template/page-content.php`, `js/` and `css/`.
 |---|---|
 | `inc/admin/` | Order metabox: force issue or cancel without moving order status (`js/admin-single.js`) |
 | `inc/analytics-dashboard/` | Check-in charts + CSV (reads `*_stats`, not the sales tables) |
-| `inc/db-installer/` | Creates/updates the nine tables (`DB_VERSION` `1.0.3`) |
+| `inc/db-installer/` | Creates/updates the nine tables (`DB_VERSION` `1.0.4`) |
 | `inc/cronjobs/` | Hourly: new recurring timeslots. Minutely: release expired reservations |
 | `inc/support/` | Extracted helpers loaded by `load.php` (see below) |
-| `tests/` | PHPUnit + Node; `bash tests/run.sh` |
+| `tests/` | PHPUnit + Node; `bash tests/run.sh` fetches PHPUnit via `tests/ensure-phpunit.sh` |
+| `scripts/build-plugin-zip.sh` | Production plugin ZIP (see [release.md](release.md)) |
 
 ## `inc/support/`
 
@@ -140,16 +143,20 @@ Loaded unconditionally from `TPFW_Main` before the installer.
 
 | File | Class | Role |
 |---|---|---|
-| `class--issue-policy.php` | `TPFW_Issue_Policy` | Mint on processing/completed; revoke on cancelled/refunded/failed |
+| `class--issue-policy.php` | `TPFW_Issue_Policy` | Mint on payment_complete / completed / force; revoke on cancelled/refunded/failed |
+| `class--refund-policy.php` | `TPFW_Refund_Policy` | Target issued qty = purchased − refunded item qty; amount-only does not revoke |
 | `class--order-line-upsert.php` | `TPFW_Order_Line_Upsert` | Idempotent issue per order line |
-| `class--guest-pass-issuer.php` | `TPFW_Guest_Pass_Issuer` | Guest quota via `guest_slot` |
+| `class--guest-pass-issuer.php` | `TPFW_Guest_Pass_Issuer` | Guest quota via `guest_slot`; legacy backfill including deleted rows |
 | `class--timeslot-capacity.php` | `TPFW_Timeslot_Capacity` | Named lock around reserve and issue |
 | `class--named-lock.php` | `TPFW_Named_Lock` | `GET_LOCK` fail-closed |
+| `class--issue-lock.php` | `TPFW_Issue_Lock` | Named lock around ticket/pass issue per order line |
+| `class--db-write.php` | `TPFW_Db_Write` | `$wpdb` false vs 0 for fail-closed writes |
 | `class--checkin-payload.php` | `TPFW_Checkin_Payload` | Scanner success allowlist |
 | `class--image-limits.php` | `TPFW_Image_Limits` | Profile-photo pixel cap before decode |
 | `class--file-paths.php` | `TPFW_File_Paths` | All files under `tpfw-{slug}/` |
 | `class--file-token.php` | `TPFW_File_Token` | HMAC sign/verify |
-| `class--scanner-tokens.php` | `TPFW_Scanner_Tokens` | Revocable `X-TPFW-Scanner-Token` |
+| `class--scanner-tokens.php` | `TPFW_Scanner_Tokens` | Revocable `{token_id}.{secret}` header; one hash verify |
+| `class--scanner-auth.php` | `TPFW_Scanner_Auth` | Capability / Enable API after WordPress or token auth |
 | `class--email-settings.php` | `TPFW_Email_Settings` | Default vs saved templates |
 | `class--datepicker-locale.php` | `TPFW_Datepicker_Locale` | `$wp_locale` for Air Datepicker |
 | `class--bundled-libs.php` | `TPFW_Bundled_Libs` | Versions from `installed.json` |

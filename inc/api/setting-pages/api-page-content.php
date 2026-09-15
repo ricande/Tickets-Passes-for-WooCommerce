@@ -50,7 +50,7 @@ $aEndpoints = array(
         'sMethod'    => 'POST',
         'sPath'      => '/scanner/checkin/{nano_id}',
         'sSummary'   => __('Checks in a ticket, timeslot ticket or pass. One nano id namespace covers all three - the endpoint works out which type the scanned code belongs to.', 'tickets-passes-for-woocommerce'),
-        'sAuth'      => __('Scanner role or manage_woocommerce. Optional X-TPFW-Scanner-Token header instead of a password.', 'tickets-passes-for-woocommerce'),
+        'sAuth'      => __('Scanner role or manage_woocommerce. External: WordPress Application Password (HTTP Basic) or X-TPFW-Scanner-Token. Not the account password.', 'tickets-passes-for-woocommerce'),
         'aResponses' => array(
             '200' => __('Checked in. Body carries sMessage, sType, sHolderName, valid_from, valid_to, max_uses, iUsesRemaining, sPhotoURL (passes) and sHexColor. It does not include the raw database row.', 'tickets-passes-for-woocommerce'),
             '202' => __('Refused for a reason the door staff needs to read: outside its validity window, on cooldown after a previous scan (iCooldown, iCooldownOver), already at its maximum uses, guest pass before the holder checked in, or being scanned at another door at the same moment. Body carries sMessage and sHexColor.', 'tickets-passes-for-woocommerce'),
@@ -63,7 +63,7 @@ $aEndpoints = array(
         'sMethod'    => 'POST',
         'sPath'      => '/scanner/checkin/{nano_id}/guest',
         'sSummary'   => __('Checks in a guest pass - a pass issued under a parent pass. Same responses as the endpoint above, plus sPhotoURL on success when the guest has a profile photo.', 'tickets-passes-for-woocommerce'),
-        'sAuth'      => __('Scanner role or manage_woocommerce. Optional X-TPFW-Scanner-Token header instead of a password.', 'tickets-passes-for-woocommerce'),
+        'sAuth'      => __('Scanner role or manage_woocommerce. External: WordPress Application Password (HTTP Basic) or X-TPFW-Scanner-Token. Not the account password.', 'tickets-passes-for-woocommerce'),
         'aResponses' => array(
             '200' => __('Checked in. Body carries sMessage, sPhotoURL and sHexColor.', 'tickets-passes-for-woocommerce'),
             '202' => __('Outside its validity window, on cooldown, at its maximum uses, not yet activated by the holder\'s check-in, or being scanned at another door at the same moment.', 'tickets-passes-for-woocommerce'),
@@ -76,7 +76,7 @@ $aEndpoints = array(
         'sMethod'    => 'GET',
         'sPath'      => '/scanner/history',
         'sSummary'   => __('The 50 most recent check-ins performed by the authenticated scanner account, newest first. Use it to fill a history list in your app. Each entry has sTypeKey (ticket, timeslot, pass or guestpass), sHolderName and sCreatedUTC, an ISO-8601 timestamp carrying the site timezone offset.', 'tickets-passes-for-woocommerce'),
-        'sAuth'      => __('Scanner role or manage_woocommerce', 'tickets-passes-for-woocommerce'),
+        'sAuth'      => __('Scanner role or manage_woocommerce. External: Application Password or X-TPFW-Scanner-Token.', 'tickets-passes-for-woocommerce'),
         'aResponses' => array(
             '200' => __('Body carries aHistory, an array of entries. An account that has scanned nothing gets an empty array.', 'tickets-passes-for-woocommerce'),
             '401' => __('No valid credentials.', 'tickets-passes-for-woocommerce'),
@@ -138,8 +138,12 @@ $aEndpoints = array(
                         <p class="description"><?php echo esc_html__('Every path below is relative to that. Check-in is POST. History is GET. The calendar file is GET and is not JSON.', 'tickets-passes-for-woocommerce'); ?></p>
 
                         <h3><?php echo esc_html__('Authentication', 'tickets-passes-for-woocommerce'); ?></h3>
-                        <p><?php echo esc_html__('HTTP Basic authentication with a WordPress account on this site that holds the Scanner role, or any account that can manage WooCommerce. Create one account per device so the check-in history tells you which door did what. External apps may send X-TPFW-Scanner-Token instead of a password; tokens can be revoked without changing the WordPress user password.', 'tickets-passes-for-woocommerce'); ?></p>
-                        <p><?php echo esc_html__('Use an Application Password rather than the real account password - WordPress generates them under Users, they only work for API requests and can be revoked one at a time. Send requests over HTTPS: Basic authentication puts the credentials in a header on every single request.', 'tickets-passes-for-woocommerce'); ?></p>
+                        <p><?php echo esc_html__('External apps authenticate as a WordPress user who may scan (Scanner role or manage_woocommerce), using one of:', 'tickets-passes-for-woocommerce'); ?></p>
+                        <ol>
+                            <li><?php echo esc_html__('A WordPress Application Password (Users → Application Passwords) sent as HTTP Basic username + application password. WordPress authenticates the request; this plugin only checks that the current user may scan. Do not store or send the account login password.', 'tickets-passes-for-woocommerce'); ?></li>
+                            <li><?php echo esc_html__('Header X-TPFW-Scanner-Token as {token_id}.{secret}. Tokens are revoked without changing the WordPress user password. Create one with TPFW_Scanner_Tokens::create() — the full token is shown once.', 'tickets-passes-for-woocommerce'); ?></li>
+                        </ol>
+                        <p><?php echo esc_html__('Send requests over HTTPS. Create one scanner user per device so the check-in history tells you which door did what.', 'tickets-passes-for-woocommerce'); ?></p>
                         <p><?php echo esc_html__('Outside callers are only accepted while Enable API is on above. The built-in scanner page authenticates with its own login session instead, so it keeps working either way.', 'tickets-passes-for-woocommerce'); ?></p>
 
                         <h3><?php echo esc_html__('Endpoints', 'tickets-passes-for-woocommerce'); ?></h3>

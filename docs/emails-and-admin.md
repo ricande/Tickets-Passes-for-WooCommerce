@@ -10,11 +10,11 @@ Templates (editable under Ticket & Passes → Email, stored in `tpfw_email_setti
 
 | Key | When |
 |---|---|
-| `wc_confirmation_email` | WooCommerce order emails that are not `customer_completed_order` (processing, on-hold, …). Codes **are** issued on processing, so this mail can already list QR images. On-hold still has none. The shipped default still says codes arrive when the order is completed — edit it if you take payment into Processing (cash on delivery). |
+| `wc_confirmation_email` | WooCommerce order emails that are not `customer_completed_order` (processing, on-hold, …). Orders that have already fired `payment_complete` can list QR images here. A Processing order that was never marked paid still has none until Completed. The shipped default talks about waiting for completion. |
 | `wc_completed_email` | Completed-order email, beside the QR images |
 | `resend_ticket_email` | Dashboard / My Account resend for a ticket or timeslot ticket |
 | `resend_pass_email` | Same for a pass |
-| `gifted_pass_email_new_user` | Pass bought for an email with no account (includes login details) |
+| `gifted_pass_email_new_user` | Pass bought for an email with no account (username + set-password link; no password in the mail) |
 | `gifted_pass_email_existing_user` | Pass bought for an existing user |
 
 `get_default_email_texts()` is used until an admin saves their own copy, so an empty template never sends a blank mail.
@@ -57,7 +57,7 @@ Each list also has **Download CSV** for the current search and status filter (al
 
 ## Order metabox (`inc/admin`)
 
-On an order that contains a TPFW product: **Create** (`order_completed()`) or **Cancel** without moving WooCommerce order status. Processing now mints on its own; Create is for a stuck 1.2.3 order, a missed issue, or a re-issue. Cancel drops the codes without changing the order.
+On an order that contains a TPFW product: **Create** (`order_completed()` → `order_force_issue()`) or **Cancel** without moving WooCommerce order status. Use Create for an unpaid Processing order, a missed issue, or a re-issue. Cancel drops the codes without changing the order. Automatic revocation on refund needs a refunded **item quantity**; an amount-only refund leaves issued rows in place.
 
 ## Settings load order
 

@@ -13,7 +13,7 @@ Sell tickets, timeslot bookings and season passes in WooCommerce. Staff scan the
 
 == Description ==
 
-Tickets & Passes adds three product types to WooCommerce: **Ticket**, **Timeslot Ticket** and **Pass**. Customers buy them like anything else in your shop, every purchase issues a QR code, and staff scan that code at the door from a phone browser.
+Tickets & Passes adds three product types to WooCommerce: **Ticket**, **Timeslot Ticket** and **Pass**. Customers buy them like anything else in your shop. Paid orders, and orders marked Completed, receive a QR code; staff scan that code at the door from a phone browser. Processing alone (typical unpaid cash on delivery) does not issue codes until Completed or you press Create on the order.
 
 Everything runs on your own site. There is no ticketing service to sign up for, no fee per ticket sold, and no account with anyone else.
 
@@ -60,7 +60,7 @@ Built for venues, attractions, museums, escape rooms, festivals, clubs and anyon
 
 = Customer files stay private =
 
-QR codes, ticket PDFs and pass photos are not reachable at a guessable public URL. They live in a folder with a random name and are served through the plugin, which checks on every request that the caller holds a signed link from their own email or is signed in as the person the ticket belongs to. Responses are marked private and per-visitor, so a page cache or CDN can never hand one customer's ticket to the next visitor. Nothing to configure, and it behaves the same on Apache, nginx and IIS.
+QR codes, ticket PDFs and pass photos are not meant to be public upload URLs. They live under `wp-content/uploads/tpfw-*` and are served through the plugin (`?tpfw_file=`), which checks a signed link or the signed-in owner. Responses are marked private and per-visitor, so a page cache or CDN cannot hand one customer's ticket to the next visitor. Apache/LiteSpeed can honour the plugin's `.htaccess` deny. nginx ignores `.htaccess` — the shop must add the deny location from `docs/server-config/nginx-deny-tpfw-uploads.conf` so direct `/wp-content/uploads/tpfw-*` is blocked. IIS also ignores `.htaccess` and needs an equivalent server rule. The plugin route is not replaced by those rules.
 
 = Nothing to maintain =
 
@@ -118,7 +118,7 @@ A Scanner account can log in and check people in. It cannot open Ticket & Passes
 
 Replace the plugin folder (or upload the 1.3.0 zip over 1.2.3). Leave the plugin active. The first page load migrates the database. Existing tickets, QR codes and upload files keep working.
 
-Check-in is now POST only. The built-in scanner already uses POST. If you have a separate scanner app that still uses GET, change it to POST or it will not check anyone in (HTTP 405 when the app is authenticated). New guest passes stay inactive until the holder is scanned. Orders that reach Processing (for example cash on delivery) now receive QR codes when they are paid.
+Check-in is now POST only. The built-in scanner already uses POST. If you have a separate scanner app that still uses GET, change it to POST or it will not check anyone in (HTTP 405 when the app is authenticated). New guest passes stay inactive until the holder is scanned. Paid orders receive QR codes when WooCommerce marks the payment complete. An order that only goes to Processing (for example cash on delivery) waits until Completed, or until you press Create on the order. Refunding an item quantity removes that many issued codes; refunding an amount only does not.
 
 = Settings at a glance =
 
@@ -175,6 +175,8 @@ Yes. Each dashboard in wp-admin has a manual check-in action, so you can find th
 = Can I use my own scanner app instead? =
 
 Yes. Check-in runs through a REST API, and the endpoints are documented on the **Scanner / API** settings screen. Check-in is an authenticated **POST**; GET is refused and does not let anyone through. History and the calendar file stay GET. The built-in scanner page and the API are independent switches, so you can run the API on its own.
+
+External apps should authenticate as a Scanner (or Shop Manager) user with a WordPress **Application Password** (HTTP Basic) or an `X-TPFW-Scanner-Token` in the form `token_id.secret`. Do not send the account login password.
 
 = Can the same ticket be used twice? =
 
@@ -246,7 +248,8 @@ The three most recent releases are below. The full history is in `changelog.txt`
 
 = 1.3.0 =
 * Guest passes cannot be scanned before the holder checks in, and the guest quota is enforced in the database. Timeslot seats are reserved and issued under a lock so the last place cannot be sold twice.
-* Check-in is POST only (GET no longer lets anyone through). The API response is an allowlist, not the raw database row. Orders that sit in Processing (cash on delivery) now receive QR codes when they are paid.
+* Check-in is POST only (GET no longer lets anyone through). The API response is an allowlist, not the raw database row. Paid orders receive QR codes on WooCommerce payment complete; Processing alone does not issue, so unpaid checkouts wait until Completed. A refund with item quantity drops that many issued codes; an amount-only refund does not.
+* External scanner apps use a WordPress Application Password or an X-TPFW-Scanner-Token (`token_id.secret`), not the account login password. nginx/IIS must deny direct `/wp-content/uploads/tpfw-*` (snippet in `docs/server-config/`).
 * Swedish translations ship in the plugin; WordPress still owns the language. Existing tickets, QR codes and upload files from 1.2.3 keep working — the first load after the update migrates the guest-pass table.
 
 = 1.2.3 =

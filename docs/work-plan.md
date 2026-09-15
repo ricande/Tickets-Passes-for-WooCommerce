@@ -1,6 +1,6 @@
-# Work plan (shipped in 1.3.0)
+# Work plan (historical)
 
-Items 1–15 and the test harness below are **done** in 1.3.0. The text is kept as the record of what was required, not as a todo list.
+This is the original integrity/refactor list written for the 1.2.3 → 1.3.0 work. Items 1–15 and the test harness below were implemented. The text is kept as the record of what was required, not as a current todo. Current behaviour lives in [architecture.md](architecture.md) and the other `docs/` pages.
 
 Tests: `bash tests/run.sh` as a normal user. No `pkexec`, no writing to `/var/www`.
 

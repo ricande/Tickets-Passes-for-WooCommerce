@@ -6,7 +6,19 @@ Generated QR images, PDFs and pass photos are not public upload URLs. `TPFW_File
 
 ## Layout
 
-Base directory: `wp-content/uploads/tpfw-{slug}/` where `{slug}` is a 10-character hex stored in `tpfw_upload_slug`. The slug is **not** the access control (nginx ignores `.htaccess`); it only stops a guessed nano id from mapping to a filesystem path. The option is self-healing if missing. Profile photos live under the same slug (`profile-images/`), not a custom web-reachable folder.
+Base directory: `wp-content/uploads/tpfw-{slug}/` where `{slug}` is a 10-character hex stored in `tpfw_upload_slug`. The slug is **not** the access control; it only stops a guessed nano id from mapping to a filesystem path. The option is self-healing if missing. Profile photos live under the same slug (`profile-images/`), not a custom web-reachable folder.
+
+### Web server (direct static access)
+
+`TPFW_File_Access` (`?tpfw_file=`) is the plugin route. The physical folder still needs a server deny:
+
+| Server | What happens |
+|---|---|
+| Apache / LiteSpeed | Plugin writes deny-all `.htaccess` under `tpfw-*` when `AllowOverride` allows it. |
+| nginx | **Ignores `.htaccess`.** Include [server-config/nginx-deny-tpfw-uploads.conf](server-config/nginx-deny-tpfw-uploads.conf) so `/wp-content/uploads/tpfw-*` is `deny all`. Do not deny all of `/wp-content/uploads/`. |
+| IIS | **Ignores `.htaccess`.** Block static `/wp-content/uploads/tpfw-*` with URL Rewrite or equivalent. See [server-config/README.md](server-config/README.md). |
+
+The random slug is extra obscurity on nginx/IIS until that rule is in place, not a substitute for it.
 
 Subfolders are a fixed map (`TPFW_Functions::FILE_TYPE_FOLDERS`). The request never supplies a path — only a type key, an id and an extension.
 
@@ -26,7 +38,7 @@ Anything else, any failed auth, and any path that `realpath()` would take outsid
 |---|---|
 | `qr`, `guest` | HMAC only. These go in emails and onto guest phones; there is no session. |
 | `preview` | `edit_products` or `manage_woocommerce`. Admin-only artefact. |
-| `pdf`, `profile` | Logged-in owner (`user_id` on the row) **or** `manage_woocommerce` **or** a valid HMAC. HMAC is how an external scanner shows a pass photo over Basic Auth. |
+| `pdf`, `profile` | Logged-in owner (`user_id` on the row) **or** `manage_woocommerce` **or** a valid HMAC. HMAC is how an external scanner `<img>` works without a login cookie (the app authenticates to REST separately). |
 
 `file_owner_id()` looks up `nano_id` in `tpfw_tickets`, `tpfw_timeslot_tickets`, `tpfw_pass`. A guest pass row already stores the parent holder’s `user_id`, so the holder reaches guest files without a special case.
 

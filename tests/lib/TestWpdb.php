@@ -151,6 +151,27 @@ class TPFW_Test_Wpdb
 	 * @param string $sql
 	 * @return array
 	 */
+	public function get_col($sql)
+	{
+		$m = $this->mysqli->query($sql);
+		if($m === false)
+		{
+			$this->last_error = $this->mysqli->error;
+			return array();
+		}
+		$a = array();
+		while($row = $m->fetch_row())
+		{
+			$a[] = $row[0];
+		}
+		$m->free();
+		return $a;
+	}
+
+	/**
+	 * @param string $sql
+	 * @return array
+	 */
 	public function get_results($sql)
 	{
 		$m = $this->mysqli->query($sql);

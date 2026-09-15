@@ -2,15 +2,26 @@
 
 Sells three product types — **Ticket**, **Timeslot Ticket** and **Pass** — and checks visitors in with a QR code on the shop's own site. No external ticketing service.
 
-Shop-owner documentation (install, FAQ) lives in [`readme.txt`](readme.txt). Exact install, upgrade and test steps: [`docs/install.md`](docs/install.md). This is **developer documentation** of the plugin's own code.
+Shop-owner documentation (install, FAQ) lives in [`readme.txt`](readme.txt). Exact install, upgrade and test steps: [`docs/install.md`](docs/install.md). Tests and the production ZIP: [`docs/release.md`](docs/release.md). This is **developer documentation** of the plugin's own code.
 
 Changelog: [`changelog.txt`](changelog.txt).
+
+## Provenance
+
+**Original author:** Magnus V. (WordPress.org contributor [macvej](https://profiles.wordpress.org/macvej/)). The plugin header `Author:` and `readme.txt` `Contributors:` field keep that attribution.
+
+This repository continues development from **Tickets & Passes for WooCommerce 1.2.3**. It is not a rewrite that replaces the original work.
+
+**Current development / maintenance:** [ricande/Ticket-Passes-plugin](https://github.com/ricande/Ticket-Passes-plugin).
+
+License: GPLv2 or later (`LICENSE`).
 
 ## Overview
 
 | Document | Contents |
 |---|---|
 | [docs/install.md](docs/install.md) | Requirements, activate, scanner users, 1.2.3 → 1.3.0, uninstall, tests |
+| [docs/release.md](docs/release.md) | Clean-checkout tests and production ZIP |
 | [docs/architecture.md](docs/architecture.md) | Boot, subsystems, purchase and check-in flow |
 | [docs/file-map.md](docs/file-map.md) | First-party directories and what the files do |
 | [docs/data.md](docs/data.md) | Tables, options, meta, files, REST routes |
@@ -23,7 +34,7 @@ Changelog: [`changelog.txt`](changelog.txt).
 | [docs/check-in.md](docs/check-in.md) | Who may scan, QR payload, `/check-in/`, REST auth, lock, HTTP statuses |
 | [docs/files-and-access.md](docs/files-and-access.md) | Upload layout, HMAC vs session, caching |
 | [docs/emails-and-admin.md](docs/emails-and-admin.md) | Order emails, My Account, dashboards, order metabox |
-| [docs/work-plan.md](docs/work-plan.md) | Integrity and refactor items shipped in 1.3.0 |
+| [docs/work-plan.md](docs/work-plan.md) | Original 1.2.3→1.3.0 integrity/refactor list (historical, not a current todo) |
 
 ## Identity
 

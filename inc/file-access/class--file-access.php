@@ -6,8 +6,9 @@ defined('ABSPATH') or die('No script kiddies please!');
  * QR images, pass profile photos and generated ticket PDFs all live in wp_upload_dir(), and
  * none of them is reachable as a static URL: TPFW_Functions writes them into a folder whose
  * name carries a random suffix, and every link the plugin emits points here instead. Access is
- * therefore decided in PHP, which is the only way to get the same answer on Apache, nginx and
- * IIS without asking a shop owner to edit a server config file.
+ * therefore decided in PHP for every `?tpfw_file=` link. Apache may also honour the folder
+ * `.htaccess`; nginx and IIS ignore it and need a server deny on `/wp-content/uploads/tpfw-*`
+ * (see docs/server-config/). That deny does not replace this PHP route.
  *
  * Loaded unconditionally, unlike TPFW_API - the scanner and REST toggles govern who may check
  * people in, and must never be able to switch off the delivery of a customer's own ticket.
@@ -75,8 +76,8 @@ class TPFW_File_Access
 	 * Serves one stored file, if the caller is allowed it.
 	 *
 	 * Everything this plugin writes into wp_upload_dir() is served through here rather than as a
-	 * static URL, so that access is decided in PHP and does not depend on the web server
-	 * honouring an .htaccess - nginx and IIS do not. Runs on init, before the query is parsed,
+	 * static URL, so that access is decided in PHP. nginx and IIS ignore .htaccess and still
+	 * need a server deny on the physical tpfw-* path. Runs on init, before the query is parsed,
 	 * because there is no template to render and no reason to boot the rest of the request.
 	 *
 	 * Access differs per type, and each one is the loosest rule that still works:

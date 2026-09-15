@@ -52,6 +52,7 @@ class OrderLineUpsertTest extends TestCase
 		};
 
 		$aFirst = TPFW_Order_Line_Upsert::sync($this->wpdb, $table, array(), 3, $sNow, $fnInsert);
+		$this->assertTrue($aFirst['ok']);
 		$this->assertCount(3, $aFirst['keep']);
 		$aOriginal = $aFirst['keep'];
 
@@ -105,5 +106,59 @@ class OrderLineUpsertTest extends TestCase
 		TPFW_Order_Line_Upsert::sync($this->wpdb, '', array(), 1, gmdate('Y-m-d H:i:s'), function() {
 			$this->fail('insert must not run when the table name is empty');
 		});
+	}
+
+	public function test_shrink_qty_three_to_two_revokes_last_id_only(): void
+	{
+		$table = $this->wpdb->prefix.'tpfw_tickets';
+		$sNow  = gmdate('Y-m-d H:i:s');
+		$fnInsert = function() use ($table, $sNow) {
+			$sNano = 'n'.bin2hex(random_bytes(8));
+			$this->wpdb->query($this->wpdb->prepare(
+				'INSERT INTO %i (nano_id, product_id, user_id, order_id, order_line_id, valid_duration, max_uses, created, updated)
+				VALUES (%s, %d, %d, %d, %d, %d, %d, %s, %s)',
+				array($table, $sNano, 1, 1, 10, 20, 86400, 1, $sNow, $sNow)
+			));
+			return $sNano;
+		};
+		$aFirst = TPFW_Order_Line_Upsert::sync($this->wpdb, $table, array(), 3, $sNow, $fnInsert);
+		$aLive  = $this->wpdb->get_results($this->wpdb->prepare(
+			'SELECT * FROM %i WHERE order_id = %d AND order_line_id = %d AND deleted IS NULL ORDER BY id ASC',
+			$table, 10, 20
+		));
+		$this->assertCount(3, $aLive);
+		$aSync = TPFW_Order_Line_Upsert::shrink($this->wpdb, $table, $aLive, 2, $sNow);
+		$this->assertSame(array($aFirst['keep'][0], $aFirst['keep'][1]), $aSync['keep']);
+		$this->assertSame(array($aFirst['keep'][2]), $aSync['deleted']);
+		$this->assertSame(array(), $aSync['inserted']);
+		$iLive = (int)$this->wpdb->get_var("SELECT COUNT(*) FROM `{$table}` WHERE deleted IS NULL");
+		$iDel  = (int)$this->wpdb->get_var("SELECT COUNT(*) FROM `{$table}` WHERE deleted IS NOT NULL");
+		$this->assertSame(2, $iLive);
+		$this->assertSame(1, $iDel);
+	}
+
+	public function test_shrink_is_idempotent_and_never_inserts(): void
+	{
+		$table = $this->wpdb->prefix.'tpfw_tickets';
+		$sNow  = gmdate('Y-m-d H:i:s');
+		$fnInsert = function() use ($table, $sNow) {
+			$sNano = 'n'.bin2hex(random_bytes(8));
+			$this->wpdb->query($this->wpdb->prepare(
+				'INSERT INTO %i (nano_id, product_id, user_id, order_id, order_line_id, valid_duration, max_uses, created, updated)
+				VALUES (%s, %d, %d, %d, %d, %d, %d, %s, %s)',
+				array($table, $sNano, 1, 1, 10, 20, 86400, 1, $sNow, $sNow)
+			));
+			return $sNano;
+		};
+		TPFW_Order_Line_Upsert::sync($this->wpdb, $table, array(), 3, $sNow, $fnInsert);
+		$aLive = $this->wpdb->get_results("SELECT * FROM `{$table}` WHERE deleted IS NULL ORDER BY id ASC");
+		TPFW_Order_Line_Upsert::shrink($this->wpdb, $table, $aLive, 1, $sNow);
+		$aKeep = $this->wpdb->get_col("SELECT nano_id FROM `{$table}` WHERE deleted IS NULL ORDER BY id ASC");
+		$aLive2 = $this->wpdb->get_results("SELECT * FROM `{$table}` WHERE deleted IS NULL ORDER BY id ASC");
+		$aAgain = TPFW_Order_Line_Upsert::shrink($this->wpdb, $table, $aLive2, 1, $sNow);
+		$this->assertSame($aKeep, $aAgain['keep']);
+		$this->assertSame(array(), $aAgain['deleted']);
+		$this->assertSame(array(), $aAgain['inserted']);
+		$this->assertSame(3, (int)$this->wpdb->get_var("SELECT COUNT(*) FROM `{$table}`"));
 	}
 }

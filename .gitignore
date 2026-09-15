@@ -2,6 +2,9 @@
 tests/.phpunit.cache/
 tests/phpunit.phar
 
+# Production zip output
+dist/
+
 # Local / OS
 *.log
 .DS_Store

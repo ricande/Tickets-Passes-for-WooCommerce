@@ -45,7 +45,7 @@ sequenceDiagram
 
     Customer->>Product: add to cart
     Product->>Order: line + item meta
-    Order->>Type: status processing or completed
+    Order->>Type: payment_complete or completed
     Type->>DB: create_entry (idempotent per line)
     Type->>Files: QR (and PDF when needed)
 ```
@@ -54,9 +54,27 @@ sequenceDiagram
 - **Timeslot Ticket**: a concrete time slot with capacity. Unpaid reservations are released by cron. Cart/checkout lives in `TPFW_Timeslot_Ticket_Checkout`.
 - **Pass**: period entitlement, optional guest passes (`parent_nano_id_fk`, `guest_slot` 1…N), photo, cooldown.
 
-Issuing uses one `TPFW_Issue_Policy`: mint on `processing` and `completed` (`order_maybe_issue()` → `order_completed()` → `create_entry()`). Cash-on-delivery and other paid orders that sit in Processing therefore get QR codes without waiting for Completed. `pending` / `on-hold` do not mint.
+Issuing uses one `TPFW_Issue_Policy` of **events**, not payment-method IDs. Automatic mint is `woocommerce_payment_complete` → `order_payment_complete()` and `woocommerce_order_status_completed` → `order_status_completed()`. Both share `issue_order_lines()` → `create_entry()`. `woocommerce_order_status_processing` is not an issue trigger: an unpaid Processing order (typical cash-on-delivery checkout) waits until Completed or the admin **Create** metabox (`order_completed()` → `order_force_issue()`). `pending` / `on-hold` do not mint. The same `nano_id` is kept if payment_complete later reaches completed (upsert).
 
 Cancelled / refunded / failed orders call `cancel_entry` (soft delete: `deleted` is set, the row is not removed), via `TPFW_Issue_Policy::should_revoke()`.
+
+Partial refunds use `woocommerce_order_refunded` → `order_refunded()` → `TPFW_Refund_Policy`. Target active quantity is **purchased item qty minus refunded ITEM qty**. Surplus rows are soft-deleted in `id ASC` order (keep the earliest, revoke the last). Amount-only refunds (refunded item qty = 0) do not change issued rows; a full-order status of `refunded` still revokes everything. The same math is used when issuing, so a later Create does not remint refunded items. Quantity is never inferred from money. Soft-deleting a timeslot ticket frees that seat.
+
+## Locks
+
+Integrity-critical writes take a MySQL named lock (`TPFW_Named_Lock` / `GET_LOCK`). Anything other than a held lock is a refusal (**fail-closed**). There is no wrapping transaction across database + filesystem + mail.
+
+| Area | Lock | Protects |
+|---|---|---|
+| Check-in | `tpfw_checkin_{nano_id}` | Stats INSERT and guest activation |
+| Ticket issue | `tpfw_ticket_issue_{order_line_id}` | Upsert for that line |
+| Pass issue | `tpfw_pass_issue_{order_line_id}` | Upsert for that line |
+| Guest quota | `tpfw_guest_{parent_nano_id}` | Slot assign / mint under `UNIQUE(parent, guest_slot)` |
+| Timeslot capacity | `tpfw_timeslot_{timeslot_id}` | Reserve and issue |
+
+## Writes vs artefacts
+
+Critical issue/revoke `$wpdb` results are checked (`TPFW_Db_Write`). `false` is not treated as success: no QR file, order-line nano-id meta or gift mail is produced for a row that did not land. That is fail-closed on the database step, not a two-phase commit.
 
 ## Check-in
 
@@ -79,4 +97,4 @@ Guest passes have their own route: `/scanner/checkin/{nano_id}/guest`.
 
 ## Files
 
-Generated files live under `uploads/tpfw-{random}/` and are **never** served as static URLs. Every link goes through `TPFW_File_Access`. QR and guest images require a signed HMAC; PDFs and profile photos accept the owner’s session, `manage_woocommerce`, or HMAC.
+Generated files live under `uploads/tpfw-{random}/`. Every link the plugin emits goes through `TPFW_File_Access` (`?tpfw_file=`). QR and guest images require a signed HMAC; PDFs and profile photos accept the owner’s session, `manage_woocommerce`, or HMAC. Apache may honour the folder `.htaccess`. nginx and IIS ignore it — they need the deny rule in [server-config/](server-config/README.md).

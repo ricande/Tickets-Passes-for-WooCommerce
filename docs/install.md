@@ -48,16 +48,17 @@ Check-in rights are WordPress roles, not a plugin setting. There is no “add sc
 
 Use one account per door or device: `*_stats.user_id` is the scanner, not the ticket holder. The **Scanner** submenu under Ticket & Passes requires `manage_woocommerce`, so door staff do not see it — they type the URL.
 
-External apps authenticate as the same kind of user (Basic Auth or `X-TPFW-Scanner-Token` bound to a user id that already `user_can_scan()`). Tokens have no settings UI; see [check-in.md](check-in.md).
+External apps authenticate as the same kind of user via a WordPress **Application Password** (HTTP Basic) or `X-TPFW-Scanner-Token` bound to a user id that already `user_can_scan()`. Do not store the account login password. Tokens have no settings UI; see [check-in.md](check-in.md).
 
 ## Upgrade from 1.2.3 to 1.3.0
 
 Replace the plugin folder (or upload the new zip over the old one). Do not deactivate first.
 
-The first request after the swap runs the installer because `tpfw_db_version` is not `1.0.3` yet:
+The first request after the swap runs the installer because `tpfw_db_version` is not `1.0.4` yet:
 
 - `CREATE TABLE IF NOT EXISTS` — no-op on tables that already exist
-- `guest_slot` column on `tpfw_pass`, backfill `1…N` on live guest rows, unique index `(parent_nano_id_fk, guest_slot)`
+- `guest_slot` column on `tpfw_pass`, deterministic backfill of slots on **all** guest rows (including soft-deleted 1.2.3 rows), unique index `(parent_nano_id_fk, guest_slot)`. A failed backfill leaves the version unchanged.
+- Restoring a parent pass reconciles guests to the **current** product quota (slots `1…N`); leftover historical guests stay deleted.
 - extra indexes on stats, row tables and timeslots if they are missing
 
 Existing tickets, passes, QR codes, PDFs and `tpfw_upload_slug` keep working. Guest rows that already have `valid_from` stay valid. **New** guest passes stay inactive until the holder is scanned.
@@ -65,8 +66,9 @@ Existing tickets, passes, QR codes, PDFs and `tpfw_upload_slug` keep working. Gu
 Behaviour changes the shop should know:
 
 - Check-in is **POST only**. An authenticated GET answers **405** and does not write a stats row. The built-in scanner already POSTs. An external app that still GETs must switch.
-- Orders that reach **Processing** (cash on delivery, most virtual checkouts) now mint QR codes. Orders that sat in Processing under 1.2.3 without rows are not backfilled; change status or use the order metabox **Create**.
-- External apps may send `X-TPFW-Scanner-Token` instead of a WordPress password. WordPress Basic Auth still works unless `tpfw_scanner_tokens_required` is set.
+- WooCommerce `payment_complete` (paid) and **Completed** mint QR rows. Processing alone does not, so an unpaid cash-on-delivery checkout waits until Completed or the order metabox **Create**. Orders that sat in Processing under 1.2.3 without rows are not backfilled.
+- A refund that includes **item quantity** reduces the number of live tickets/passes to purchased minus refunded items. A refund of amount only (no item quantity) does not remove codes; mark the order Refunded or use Cancel if every code should drop.
+- External apps use a WordPress Application Password (HTTP Basic; WordPress authenticates) or `X-TPFW-Scanner-Token` as `{token_id}.{secret}`. The account login password is not accepted. Tokens created during 1.3.0 development as an opaque hex secret (no `token_id.` prefix) no longer work; create new ones. The secret is never stored.
 
 Swedish ships as a fallback under `languages/`. A language pack in `wp-content/languages/plugins/` still wins. The shop language is the WordPress locale; there is no plugin language switcher.
 
@@ -86,14 +88,24 @@ That drops the nine tables, `_tpfw_*` product meta, `tpfw_*` order-item meta, an
 
 The plugin is ordinary PHP/JS/CSS. A local WordPress install can symlink the folder into `wp-content/plugins/`.
 
+On **nginx**, include `docs/server-config/nginx-deny-tpfw-uploads.conf` in the WordPress `server` block so `/wp-content/uploads/tpfw-*` cannot be fetched as a static file. `.htaccess` is ignored. On **IIS**, add an equivalent deny. Apache can use the plugin-written `.htaccess`. See [files-and-access.md](files-and-access.md) and [server-config/README.md](server-config/README.md). The plugin’s `?tpfw_file=` route is unchanged.
+
 Tests do **not** boot WordPress. From the plugin directory, as a normal user:
 
 ```bash
 bash tests/run.sh
 ```
 
-That runs PHPUnit (`tests/phpunit.phar -c phpunit.xml`) and `node --test tests/js/*.test.js`. No `pkexec`, no writes under `/var/www`.
+That fetches PHPUnit 11.5.42 into `tests/phpunit.phar` if needed (`tests/ensure-phpunit.sh`), then runs PHPUnit (including concurrency workers under `tests/bin/` and package-contract checks) and `node --test tests/js/*.test.js`. No `pkexec`, no writes under `/var/www`. See [release.md](release.md).
 
 Database-backed tests (guest quota, timeslot capacity) open MariaDB through `.wp-credentials` (`DB_NAME`, `DB_USER`, `DB_PASSWORD`, optional `DB_HOST`). The file is looked up at `../.wp-credentials` or `../../.wp-credentials` from the plugin root, or at `TPFW_TEST_CREDENTIALS`. Do not commit it.
+
+Production ZIP (runtime only, no tests or credentials):
+
+```bash
+bash scripts/build-plugin-zip.sh
+```
+
+Writes `dist/tickets-passes-for-woocommerce-1.3.0.zip`. See [release.md](release.md).
 
 Regenerate the POT after string changes with `wp i18n make-pot`. Bundled library versions in `readme.txt` must match `inc/functions/lib/*/composer/installed.json`.

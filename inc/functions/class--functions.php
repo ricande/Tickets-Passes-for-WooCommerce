@@ -2296,15 +2296,16 @@ class TPFW_Functions
 		wp_enqueue_script($this->sPrefix.'help-tip-init', plugins_url('js/help-tip-init.js', __FILE__), array('jquery', 'wc-jquery-tiptip'), filemtime(dirname(__FILE__).'/js/help-tip-init.js'), true);
 	}
 	/**
-	 * Returns the authenticated scanner/admin WP_User for a Basic auth header, or false.
+	 * Returns the scanner user WordPress (or a plugin token) already authenticated, or false.
 	 *
-	 * The REST callbacks used to re-decode the header themselves and then read $oUser->data->ID
-	 * without checking the lookup succeeded - resolving the user once here keeps the decode in a
-	 * single place and makes that impossible. With no header at all it falls back to the
-	 * logged-in cookie user, which is how the built-in scanner page authenticates; see the inline
-	 * notes for why that is not a CSRF hole.
+	 * Cookie + X-WP-Nonce and Application Passwords are owned by WordPress REST: this method
+	 * reads wp_get_current_user() and only checks user_can_scan() (and Enable API for external
+	 * Basic). It does not decode Authorization passwords or call wp_authenticate().
 	 *
-	 * @param string $sBasicAuth     Raw Authorization header value, or empty for the cookie path.
+	 * X-TPFW-Scanner-Token is the plugin's own external method. The built-in /check-in/ page
+	 * uses the cookie path; rest_cookie_check_errors() clears the user without a valid nonce.
+	 *
+	 * @param string $sBasicAuth     Raw Authorization header value, used only to detect Basic.
 	 * @param string $sScannerToken  Optional X-TPFW-Scanner-Token header value.
 	 * @return WP_User|false The user, when they are allowed to scan.
 	 */
@@ -2315,70 +2316,36 @@ class TPFW_Functions
 			$sScannerToken = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_TPFW_SCANNER_TOKEN']));
 		}
 
+		$bHasBasic = (is_string($sBasicAuth) && preg_match('/^Basic\s+/i', $sBasicAuth) === 1)
+			|| !empty($_SERVER['PHP_AUTH_USER']);
+
+		$oTokenUser  = false;
+		$bTokenValid = false;
 		if($sScannerToken !== '')
 		{
-			if(!$this->is_api_enabled())
-			{
-				return false;
-			}
 			$aHit = TPFW_Scanner_Tokens::verify_against_option($sScannerToken);
-			if(!$aHit || empty($aHit['user_id']))
+			if($aHit && !empty($aHit['user_id']) && function_exists('get_user_by'))
 			{
-				return false;
+				$oTokenUser  = get_user_by('id', (int)$aHit['user_id']);
+				$bTokenValid = (bool)$oTokenUser;
 			}
-			$oTokenUser = get_user_by('id', (int)$aHit['user_id']);
-			return $this->user_can_scan($oTokenUser) ? $oTokenUser : false;
 		}
 
-		if(empty($sBasicAuth) && !empty($_SERVER['PHP_AUTH_USER']))
-		{
-			$sBasicAuth = 'Basic ' . base64_encode(sanitize_text_field(wp_unslash($_SERVER['PHP_AUTH_USER'])) . ':' . wp_unslash($_SERVER['PHP_AUTH_PW'] ?? '')); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- RFC 7617 header rebuilt from the server vars; the password is handed to wp_authenticate() verbatim, as it must be.
-		}
+		$oCurrent = (function_exists('is_user_logged_in') && is_user_logged_in() && function_exists('wp_get_current_user'))
+			? wp_get_current_user()
+			: false;
+		$bLoggedIn = is_object($oCurrent) && !empty($oCurrent->ID);
 
-		if(empty($sBasicAuth))
-		{
-			// No Basic header: fall back to the logged-in cookie user, which is how the
-			// built-in scanner page at /check-in/ authenticates - it is same-origin and
-			// already logged in, so making door staff type a password into localStorage
-			// would be strictly worse than the session they already have.
-			//
-			// This is not a CSRF hole even though check-in is a POST. WP core's
-			// rest_cookie_check_errors() runs before any REST callback: a request carrying a
-			// login cookie but no X-WP-Nonce gets wp_set_current_user(0) (so the check below
-			// fails), and one carrying a bad nonce is rejected outright with a 403. Reaching
-			// this line with is_user_logged_in() true therefore means a valid wp_rest nonce
-			// was presented, which a third-party site cannot obtain.
-			if(!is_user_logged_in()) return false;
-
-			$oUser = wp_get_current_user();
-			return $this->user_can_scan($oUser) ? $oUser : false;
-		}
-
-		// A Basic Auth header is by definition an outside caller - the built-in scanner page is
-		// same-origin and comes in on the cookie path above. This is the single gate the "Enable
-		// API" toggle closes, and it lives here rather than in the permission callbacks so every
-		// route resolving a user through this method is covered by it.
-		if(!$this->is_api_enabled()) return false;
-
-		if(TPFW_Scanner_Tokens::is_required())
-		{
-			return false;
-		}
-
-		$sBase64AuthDecoded = base64_decode(str_replace('Basic ', '', $sBasicAuth)); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- decoding a standard RFC 7617 Basic Auth header, not obfuscated code.
-		if($sBase64AuthDecoded === false || strpos($sBase64AuthDecoded, ':') === false) return false;
-
-		list($sLogin, $sPassword) = explode(':', $sBase64AuthDecoded, 2);
-
-		// wp_authenticate() rather than get_user_by() + wp_check_password(): the manual pair
-		// skips the whole authenticate/wp_login_failed filter chain, so this endpoint accepted
-		// unlimited password guesses even on sites running a login-throttling plugin - a
-		// brute-force oracle against every account, reachable without a nonce. Going through
-		// core also honours locked/blocked accounts those plugins mark.
-		$oUser = wp_authenticate($sLogin, $sPassword);
-		if(is_wp_error($oUser)) return false;
-
-		return $this->user_can_scan($oUser) ? $oUser : false;
+		return TPFW_Scanner_Auth::resolve(array(
+			'sScannerToken'   => $sScannerToken,
+			'bTokenValid'     => $bTokenValid,
+			'oTokenUser'      => $oTokenUser,
+			'bLoggedIn'       => $bLoggedIn,
+			'oCurrentUser'    => $oCurrent,
+			'bHasBasicHeader' => $bHasBasic,
+			'bApiEnabled'     => $this->is_api_enabled(),
+			'fnCanScan'       => array($this, 'user_can_scan'),
+		));
 	}
 	/**
 	 * Single definition of who is allowed to check people in, so the REST endpoints and the
@@ -3761,6 +3728,16 @@ class TPFW_Functions
 		global $wpdb;
 		$sCurrentDatetime = current_time('mysql');
 
+		$mRestore = $wpdb->query($wpdb->prepare('UPDATE %i SET deleted = NULL, updated = %s WHERE nano_id = %s', $wpdb->prefix . $aRules['sTable'], $sCurrentDatetime, $sNanoID));
+		if(TPFW_Db_Write::failed($mRestore))
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('Could not reset the ticket because the database write failed.', 'tickets-passes-for-woocommerce'),
+			);
+		}
+		$wpdb->query($wpdb->prepare('DELETE FROM %i WHERE nano_id_fk = %s', $wpdb->prefix . $aRules['sStatsTable'], $sNanoID));
+
 		// wc_get_order() returns false when the order has since been deleted. The ticket row
 		// still has to be reset in that case, so the order bookkeeping is simply skipped.
 		$oOrder = wc_get_order((int) $oRow->order_id);
@@ -3780,9 +3757,6 @@ class TPFW_Functions
 				$oOrder->save();
 			}
 		}
-
-		$wpdb->query($wpdb->prepare('UPDATE %i SET deleted = NULL, updated = %s WHERE nano_id = %s', $wpdb->prefix . $aRules['sTable'], $sCurrentDatetime, $sNanoID));
-		$wpdb->query($wpdb->prepare('DELETE FROM %i WHERE nano_id_fk = %s', $wpdb->prefix . $aRules['sStatsTable'], $sNanoID));
 
 		$this->write_scanner_qr((int) $oRow->product_id, $aRules['sQRType'], $sNanoID);
 
@@ -3809,6 +3783,16 @@ class TPFW_Functions
 
 		global $wpdb;
 		$sCurrentDatetime = current_time('mysql');
+
+		$mCancel = $wpdb->query($wpdb->prepare('UPDATE %i SET deleted = %s, updated = %s WHERE nano_id = %s', $wpdb->prefix . $aRules['sTable'], $sCurrentDatetime, $sCurrentDatetime, $sNanoID));
+		if(TPFW_Db_Write::failed($mCancel))
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('Could not cancel the ticket because the database write failed.', 'tickets-passes-for-woocommerce'),
+			);
+		}
+		$wpdb->query($wpdb->prepare('UPDATE %i SET deleted = %s, updated = %s WHERE nano_id_fk = %s', $wpdb->prefix . $aRules['sStatsTable'], $sCurrentDatetime, $sCurrentDatetime, $sNanoID));
 
 		$oOrder = wc_get_order((int) $oRow->order_id);
 		if($oOrder && !empty($oOrder->get_items()))
@@ -3839,9 +3823,6 @@ class TPFW_Functions
 				$oOrder->save();
 			}
 		}
-
-		$wpdb->query($wpdb->prepare('UPDATE %i SET deleted = %s, updated = %s WHERE nano_id = %s', $wpdb->prefix . $aRules['sTable'], $sCurrentDatetime, $sCurrentDatetime, $sNanoID));
-		$wpdb->query($wpdb->prepare('UPDATE %i SET deleted = %s, updated = %s WHERE nano_id_fk = %s', $wpdb->prefix . $aRules['sStatsTable'], $sCurrentDatetime, $sCurrentDatetime, $sNanoID));
 
 		$this->delete_qr_code($sNanoID);
 
@@ -3937,7 +3918,13 @@ class TPFW_Functions
 													SET deleted = null, updated = %s
 													WHERE nano_id = %s OR parent_nano_id_fk = %s', $sPassTableName, $sCurrentDatetime, $sNanoID, $sNanoID);
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sUpdatePassSQL is the return value of $wpdb->prepare() above.
-		$wpdb->query($sUpdatePassSQL);
+		if(TPFW_Db_Write::failed($wpdb->query($sUpdatePassSQL)))
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('Could not reset the pass because the database write failed.', 'tickets-passes-for-woocommerce'),
+			);
+		}
 
 		$sPassStatisticDeleteSQL 		= $wpdb->prepare('	DELETE FROM %i
 													WHERE nano_id_fk = %s OR nano_id_fk IN (SELECT nano_id FROM %i WHERE parent_nano_id_fk = %s)', $sPassStatisticTableName, $sNanoID, $sPassTableName, $sNanoID);
@@ -4034,7 +4021,13 @@ class TPFW_Functions
 																	SET deleted = %s, updated = %s
 																	WHERE nano_id = %s OR parent_nano_id_fk = %s', $sPassTableName, $sCurrentDatetime, $sCurrentDatetime, $sNanoID, $sNanoID);
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sUpdatePassSQL is the return value of $wpdb->prepare() above.
-		$wpdb->query($sUpdatePassSQL);
+		if(TPFW_Db_Write::failed($wpdb->query($sUpdatePassSQL)))
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('Could not cancel the pass because the database write failed.', 'tickets-passes-for-woocommerce'),
+			);
+		}
 		
 		$sPassStatisticUpdateSQL 			= $wpdb->prepare('	UPDATE %i
 																	SET deleted = %s, updated = %s

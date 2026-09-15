@@ -56,8 +56,9 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
 		// One pass per line - the quantity is expressed by the number of person rows instead.
 		add_filter('woocommerce_is_sold_individually',              array($this, 'wc_remove_quantity_field_from_cart'),         10, 2);
 
-		add_action('woocommerce_order_status_processing',            array($this, 'order_maybe_issue'), 10, 1);
-		add_action('woocommerce_order_status_completed',            array($this, 'order_maybe_issue'), 10, 1);
+		add_action('woocommerce_payment_complete',                   array($this, 'order_payment_complete'), 10, 1);
+		add_action('woocommerce_order_status_completed',            array($this, 'order_status_completed'), 10, 1);
+		add_action('woocommerce_order_refunded',                    array($this, 'order_refunded'), 10, 2);
 
 		// Cancelled / refunded / failed must all revoke the pass, otherwise a refunded customer
 		// keeps a scannable QR code. cancel_annual_pass() is idempotent.
@@ -618,9 +619,16 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
             );                    
         }
 
+        $oIssueOrder = function_exists('wc_get_order') ? wc_get_order($iOrderID) : null;
+        if(!empty($oIssueOrder) && TPFW_Refund_Policy::issue_quantity($oIssueOrder, $oOrderItem) <= 0)
+        {
+            return $this->cancel_annual_pass($iOrderID, $iCustomerID, $oOrderItem);
+        }
+
         global $wpdb;
+        $mIssued = TPFW_Issue_Lock::with_line($wpdb, 'pass', (int)$oOrderItem->get_id(), function() use ($wpdb, $iOrderID, $iCustomerID, $oOrderItem, $iProductValidDuration, $iPassMaxUses) {
         $oExistsPrepared = $wpdb->prepare(
-            'SELECT * FROM %i WHERE parent_nano_id_fk IS NULL AND product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY -deleted;',
+            'SELECT * FROM %i WHERE parent_nano_id_fk IS NULL AND product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY (deleted IS NULL) DESC, id ASC;',
             array(
 				$wpdb->prefix . 'tpfw_pass',                 
                 $oOrderItem->get_product_id(),                 
@@ -639,12 +647,11 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
             $sPassStatisticTableName = $wpdb->prefix . "tpfw_pass_stats";
             $sCurrentDatetime              = current_time('mysql');
 
-            // Reinstates the guest passes along with the parent (cancel soft-deletes both), so the
-            // guest QR codes the customer already handed out keep working instead of My Account
-            // minting a fresh set.
+            // Restore the parent only. Guest children are reconciled to the current product
+            // quota (slots 1…N) so a 1.2.3 overflow of soft-deleted guests is not all undeleted.
             $sUpdatePassSQL 		        = $wpdb->prepare('	UPDATE %i
                                                                     SET deleted = null, updated = %s
-                                                                    WHERE nano_id = %s OR parent_nano_id_fk = %s', $sPassTableName, $sCurrentDatetime, $oExistsResult->nano_id, $oExistsResult->nano_id);
+                                                                    WHERE nano_id = %s', $sPassTableName, $sCurrentDatetime, $oExistsResult->nano_id);
                                                                 
             $sPassStatisticDeleteSQL 		= $wpdb->prepare('	DELETE FROM %i
                                                                     WHERE nano_id_fk = %s', $sPassStatisticTableName, $oExistsResult->nano_id);
@@ -653,11 +660,23 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
                                                                     WHERE nano_id_fk IN (SELECT nano_id FROM %i WHERE parent_nano_id_fk = %s)', $sPassStatisticTableName, $sPassTableName, $oExistsResult->nano_id);
 
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sUpdatePassSQL is the return value of $wpdb->prepare() above.
-            $wpdb->get_results($sUpdatePassSQL);
+            $mRestore = $wpdb->query($sUpdatePassSQL);
+            if(TPFW_Db_Write::failed($mRestore))
+            {
+                return array(
+                    'sMessage' => __('Could not restore the pass because the database write failed.', 'tickets-passes-for-woocommerce'),
+                    'bStatus'  => false,
+                );
+            }
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sPassStatisticDeleteSQL is the return value of $wpdb->prepare() above.
-            $wpdb->get_results($sPassStatisticDeleteSQL);
+            $wpdb->query($sPassStatisticDeleteSQL);
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sGuestPassStatisticDeleteSQL is the return value of $wpdb->prepare() above.
-            $wpdb->get_results($sGuestPassStatisticDeleteSQL);
+            $wpdb->query($sGuestPassStatisticDeleteSQL);
+
+            $iGuestQuota = function_exists('get_post_meta') ? (int)get_post_meta($iProductID, '_tpfw_pass_guest_pass_quantity', true) : 0;
+            $iGuestDur   = function_exists('get_post_meta') ? (int)get_post_meta($iProductID, '_tpfw_pass_guest_pass_valid_duration', true) : 0;
+            $oIssuer     = new TPFW_Guest_Pass_Issuer(array($this->oFunctions, 'generateNanoId'));
+            $oIssuer->ensure_quota($wpdb, $oExistsResult, $iGuestQuota, $iGuestDur, max(1, (int)$oExistsResult->max_uses));
 
             $oOrderItem->update_meta_data('tpfw_pass_id_1', $oExistsResult->nano_id);                                            
             $oOrderItem->save();
@@ -666,9 +685,12 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
         }
         else
         {            
-            $oCustomerUser    = get_user_by('ID', $iCustomerID);
-            $sGeneratedNanoID = $this->oFunctions->generateNanoId();
-            $iUserID          = $iCustomerID;
+            $oCustomerUser       = get_user_by('ID', $iCustomerID);
+            $sGeneratedNanoID    = $this->oFunctions->generateNanoId();
+            $iUserID             = $iCustomerID;
+            $sPendingGiftEmail   = '';
+            $sPendingGiftSubject = '';
+            $sPendingGiftMessage = '';
             if($oOrderItem->get_meta('tpfw_email') !== null && $oOrderItem->get_meta('tpfw_email') != "" && filter_var($oOrderItem->get_meta('tpfw_email'), FILTER_VALIDATE_EMAIL))
             {
                 $oUser   = $this->oFunctions->get_pass_user($oOrderItem->get_meta('tpfw_email'));
@@ -706,13 +728,12 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
 
                     // A missing/unconfigured email template must not block the pass
                     // itself from being created - just skip sending the notification.
+                    // Send only after the INSERT below has been verified.
                     if($sMessage != "" && $sMessage != null && $sMessage != false)
                     {
-                        $aHeaders = array(
-                            'Content-Type: text/html; charset=UTF-8',
-                        );
-
-                        $this->oFunctions->tpfw_custom_enmail($sEmail, $gifted_pass_email_new_user_subject, $sMessage, $aHeaders);
+                        $sPendingGiftEmail   = $sEmail;
+                        $sPendingGiftSubject = $gifted_pass_email_new_user_subject;
+                        $sPendingGiftMessage = $sMessage;
                     }
                 }
                 // $oCustomerUser is false on a guest order (customer id 0), so its email has to be
@@ -742,13 +763,12 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
 
                     // A missing/unconfigured email template must not block the pass
                     // itself from being created - just skip sending the notification.
+                    // Send only after the INSERT below has been verified.
                     if($sMessage != "" && $sMessage != null && $sMessage != false)
                     {
-                        $aHeaders = array(
-                            'Content-Type: text/html; charset=UTF-8',
-                        );
-
-                        $this->oFunctions->tpfw_custom_enmail($sEmail, $gifted_pass_email_existing_user_subject, $sMessage, $aHeaders);
+                        $sPendingGiftEmail   = $sEmail;
+                        $sPendingGiftSubject = $gifted_pass_email_existing_user_subject;
+                        $sPendingGiftMessage = $sMessage;
                     }
                 }
             }
@@ -789,7 +809,22 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
                 )            
             );        
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $oCreatePassPrepared is the return value of $wpdb->prepare() above.
-            $wpdb->query($oCreatePassPrepared);
+            $mInsert = $wpdb->query($oCreatePassPrepared);
+            if(!TPFW_Db_Write::inserted_row($mInsert))
+            {
+                return array(
+                    'sMessage' => __('Could not create the pass because the database write failed.', 'tickets-passes-for-woocommerce'),
+                    'bStatus'  => false,
+                );
+            }
+
+            if($sPendingGiftMessage != '' && $sPendingGiftMessage != null)
+            {
+                $aHeaders = array(
+                    'Content-Type: text/html; charset=UTF-8',
+                );
+                $this->oFunctions->tpfw_custom_enmail($sPendingGiftEmail, $sPendingGiftSubject, $sPendingGiftMessage, $aHeaders);
+            }
             
             $oOrderItem->update_meta_data('tpfw_pass_id_1', $sGeneratedNanoID);                                            
             $oOrderItem->save();
@@ -797,12 +832,19 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
             $this->oFunctions->write_scanner_qr($oOrderItem->get_product_id(), 'pass', $sGeneratedNanoID);
         }
 
-    
-        
         return array(
             'sMessage' => __('Pass(\'s) for order line created', 'tickets-passes-for-woocommerce'),
             'bStatus' => true,
-        );    
+        );
+        });
+        if($mIssued === null)
+        {
+            return array(
+                'sMessage' => __('Could not issue a pass for this order line because another request is in progress. No extra passes were created.', 'tickets-passes-for-woocommerce'),
+                'bStatus'  => false,
+            );
+        }
+        return $mIssued;
     }
 
     /**
@@ -866,13 +908,25 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
 					)            
 				);
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $oDeletePassPrepared is the return value of $wpdb->prepare() above.
-			$wpdb->query($oDeletePassPrepared);            
+			if(TPFW_Db_Write::failed($wpdb->query($oDeletePassPrepared)))
+			{
+				return array(
+					'sMessage' => __('Could not cancel the pass because the database write failed.', 'tickets-passes-for-woocommerce'),
+					'bStatus'  => false,
+				);
+			}
             
             $sUpdatePassSQL 	= $wpdb->prepare('	UPDATE %i
                                 SET deleted = %s
                                 WHERE nano_id = %s OR parent_nano_id_fk = %s', $sPassTableName, $sCurrentDatetime, $oExistResult->nano_id, $oExistResult->nano_id);
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sUpdatePassSQL is the return value of $wpdb->prepare() above.
-            $wpdb->get_results($sUpdatePassSQL);
+            if(TPFW_Db_Write::failed($wpdb->query($sUpdatePassSQL)))
+            {
+                return array(
+                    'sMessage' => __('Could not cancel the pass because the database write failed.', 'tickets-passes-for-woocommerce'),
+                    'bStatus'  => false,
+                );
+            }
 
             $sPassStatisticUpdateSQL 		= $wpdb->prepare('	UPDATE %i
                                                 SET deleted = %s, updated = %s
@@ -944,6 +998,46 @@ class TPFW_Pass_WC_Product extends TPFW_Product_Type
     {
         return $this->cancel_annual_pass($iOrderID, $iCustomerID, $oOrderItem);
     }
+
+	/**
+	 * Guest rows share the parent's order line; refund math counts parents only.
+	 *
+	 * @return bool
+	 */
+	protected function issued_rows_are_parents_only()
+	{
+		return true;
+	}
+
+	/**
+	 * Revokes guests and guest stats with the parent, same as cancel_annual_pass().
+	 *
+	 * @param string $sNanoId Parent nano id.
+	 * @return void
+	 */
+	protected function after_revoke_row($sNanoId)
+	{
+		global $wpdb;
+		$sNow  = current_time('mysql');
+		$sPass = $wpdb->prefix.'tpfw_pass';
+		$sStats = $wpdb->prefix.'tpfw_pass_stats';
+		$wpdb->query($wpdb->prepare(
+			'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id = %s OR parent_nano_id_fk = %s',
+			$sPass, $sNow, $sNow, $sNanoId, $sNanoId
+		));
+		$wpdb->query($wpdb->prepare(
+			'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id_fk = %s',
+			$sStats, $sNow, $sNow, $sNanoId
+		));
+		$wpdb->query($wpdb->prepare(
+			'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id_fk IN (SELECT nano_id FROM %i WHERE parent_nano_id_fk = %s)',
+			$sStats, $sNow, $sNow, $sPass, $sNanoId
+		));
+		if($this->oFunctions && method_exists($this->oFunctions, 'delete_qr_code'))
+		{
+			$this->oFunctions->delete_qr_code($sNanoId);
+		}
+	}
 
 	/**
 	 * Copies the person's name and optional email from the cart item onto the order line item.

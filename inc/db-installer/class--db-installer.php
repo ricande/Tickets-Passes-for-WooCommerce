@@ -9,7 +9,7 @@ defined('ABSPATH') or die('No script kiddies please!');
  */
 class TPFW_DB_Installer
 {
-	const DB_VERSION = '1.0.3';
+	const DB_VERSION = '1.0.4';
 
 	/**
 	 * Runs the schema check immediately - the class is only ever instantiated on plugin load.
@@ -31,7 +31,14 @@ class TPFW_DB_Installer
 			return;
 		}
 
-		$this->install();
+		if($this->install() === false)
+		{
+			if(function_exists('error_log'))
+			{
+				error_log('TPFW: database install/backfill failed; leaving tpfw_db_version unchanged');
+			}
+			return;
+		}
 		update_option('tpfw_db_version', self::DB_VERSION);
 	}
 
@@ -42,7 +49,7 @@ class TPFW_DB_Installer
 	 * CREATE TABLE IF NOT EXISTS never alters a table that already exists, so a schema change
 	 * has to go with a DB_VERSION bump and a matching ALTER.
 	 *
-	 * @return void
+	 * @return bool False when guest-slot backfill or the unique index cannot be applied.
 	 */
 	public function install()
 	{
@@ -241,8 +248,15 @@ class TPFW_DB_Installer
 		$this->maybe_add_index($sPrefix.'tpfw_timeslots', 'product_start', '(`product_id`, `start`)');
 
 		$this->maybe_add_column($sPrefix.'tpfw_pass', 'guest_slot', 'TINYINT UNSIGNED NULL DEFAULT NULL AFTER `parent_nano_id_fk`');
-		$this->backfill_guest_slots($sPrefix);
-		$this->maybe_add_unique_index($sPrefix.'tpfw_pass', 'parent_guest_slot', '(`parent_nano_id_fk`, `guest_slot`)');
+		if(!TPFW_Guest_Pass_Issuer::backfill_legacy_slots($wpdb))
+		{
+			return false;
+		}
+		if(!$this->maybe_add_unique_index($sPrefix.'tpfw_pass', 'parent_guest_slot', '(`parent_nano_id_fk`, `guest_slot`)'))
+		{
+			return false;
+		}
+		return true;
 	}
 
 
@@ -268,44 +282,12 @@ class TPFW_DB_Installer
 	}
 
 	/**
-	 * Assigns guest_slot 1…N on existing guest rows so the unique index can be added.
-	 *
-	 * @param string $sPrefix Table prefix.
-	 * @return void
-	 */
-	private function backfill_guest_slots($sPrefix)
-	{
-		global $wpdb;
-
-		$sTable = $sPrefix.'tpfw_pass';
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching -- $sTable is prefix + literal.
-		$aGuests = $wpdb->get_results("SELECT id, parent_nano_id_fk FROM `{$sTable}` WHERE parent_nano_id_fk IS NOT NULL AND parent_nano_id_fk != '' AND deleted IS NULL AND (guest_slot IS NULL OR guest_slot = 0) ORDER BY parent_nano_id_fk, id");
-		if(empty($aGuests)) return;
-
-		$sLast = '';
-		$iSlot = 0;
-		foreach($aGuests as $oGuest)
-		{
-			if($oGuest->parent_nano_id_fk !== $sLast)
-			{
-				$sLast = $oGuest->parent_nano_id_fk;
-				$iSlot = 1;
-			}
-			else
-			{
-				$iSlot++;
-			}
-			$wpdb->update($sTable, array('guest_slot' => $iSlot), array('id' => (int)$oGuest->id));
-		}
-	}
-
-	/**
 	 * Adds a UNIQUE index unless it is already there.
 	 *
 	 * @param string $sTable   Full table name, prefix included.
 	 * @param string $sIndex   Index name.
 	 * @param string $sColumns Column list, parentheses included.
-	 * @return void
+	 * @return bool False when the ALTER fails.
 	 */
 	private function maybe_add_unique_index($sTable, $sIndex, $sColumns)
 	{
@@ -313,10 +295,14 @@ class TPFW_DB_Installer
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching -- $sTable and $sIndex are literals from install(); identifiers cannot be placeholders.
 		$aExisting = $wpdb->get_results("SHOW INDEX FROM `{$sTable}` WHERE Key_name = '{$sIndex}'");
-		if(!empty($aExisting)) return;
+		if(!empty($aExisting))
+		{
+			return true;
+		}
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching -- schema DDL; see above.
-		$wpdb->query("ALTER TABLE `{$sTable}` ADD UNIQUE KEY `{$sIndex}` {$sColumns}");
+		$m = $wpdb->query("ALTER TABLE `{$sTable}` ADD UNIQUE KEY `{$sIndex}` {$sColumns}");
+		return $m !== false;
 	}
 
 

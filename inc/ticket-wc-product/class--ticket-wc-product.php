@@ -37,8 +37,9 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
 
 		add_filter('woocommerce_get_item_data',                     array($this, 'tpfw_cart_display_ticket_meta_data'),                 10, 2);
 
-		add_action('woocommerce_order_status_processing',            array($this, 'order_maybe_issue'), 10, 1);
-		add_action('woocommerce_order_status_completed',            array($this, 'order_maybe_issue'), 10, 1);
+		add_action('woocommerce_payment_complete',                   array($this, 'order_payment_complete'), 10, 1);
+		add_action('woocommerce_order_status_completed',            array($this, 'order_status_completed'), 10, 1);
+		add_action('woocommerce_order_refunded',                    array($this, 'order_refunded'), 10, 2);
 
 		// Cancelled / refunded / failed must all revoke the ticket, otherwise a refunded
 		// customer keeps a scannable QR code. cancel_ticket() is idempotent.
@@ -572,8 +573,15 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
 
         global $wpdb;
         $sTicketTable = $wpdb->prefix.$this->sTable;
+        $oIssueOrder = function_exists('wc_get_order') ? wc_get_order($iOrderID) : null;
+        $iIssueQty   = TPFW_Refund_Policy::issue_quantity($oIssueOrder, $oOrderItem);
+        if($iIssueQty <= 0)
+        {
+            return $this->cancel_ticket($iOrderID, $iCustomerID, $oOrderItem);
+        }
+
         $oExistsPrepared = $wpdb->prepare(
-            'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY -deleted;',
+            'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY (deleted IS NULL) DESC, id ASC;',
             array(
 				$sTicketTable,
                 $oOrderItem->get_product_id(), 
@@ -581,9 +589,7 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
                 $oOrderItem->get_id()                 
             )            
         );
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $oExistsPrepared is the return value of $wpdb->prepare() above.
-        $aExistsResult = $wpdb->get_results($oExistsPrepared);
-        $aSync = TPFW_Order_Line_Upsert::sync($wpdb, $sTicketTable, $aExistsResult, (int)$oOrderItem->get_quantity(), $sCurrentDatetime, function() use ($wpdb, $sTicketTable, $oOrderItem, $iCustomerID, $iOrderID, $iProductValidDuration, $iTicketMaxUses, $sCurrentDatetime, $oParentProduct) {
+        $aSync = TPFW_Issue_Lock::sync_line($wpdb, 'ticket', $sTicketTable, $oExistsPrepared, (int)$oOrderItem->get_id(), $iIssueQty, $sCurrentDatetime, function() use ($wpdb, $sTicketTable, $oOrderItem, $iCustomerID, $iOrderID, $iProductValidDuration, $iTicketMaxUses, $sCurrentDatetime, $oParentProduct) {
                 $sStartDate = current_time('mysql');            
                 if(get_post_meta($oParentProduct->get_id(), '_tpfw_ticket_predefined_start_date_enable', true) == 'yes')
                 {                
@@ -597,7 +603,7 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
                 $sEndDate = gmdate('Y-m-d H:i:s', (strtotime($sStartDate)+(int)$iProductValidDuration));
 
                 $sGeneratedNanoID = $this->oFunctions->generateNanoId();
-                $wpdb->query($wpdb->prepare(
+                $mInsert = $wpdb->query($wpdb->prepare(
                     'INSERT INTO %i (nano_id, product_id, user_id, order_id, order_line_id, valid_duration, valid_from, valid_to, max_uses, created, updated)
                     VALUES (%s, %d, %d, %d, %d, %d, %s, %s, %d, %s, %s);',
                     array(
@@ -615,8 +621,26 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
                         $sCurrentDatetime,
                     )
                 ));
+                if(!TPFW_Db_Write::inserted_row($mInsert))
+                {
+                    return false;
+                }
                 return $sGeneratedNanoID;
         });
+        if($aSync === null)
+        {
+            return array(
+                'sMessage' => __('Could not issue tickets for this order line because another request is in progress. No extra tickets were created.', 'tickets-passes-for-woocommerce'),
+                'bStatus'  => false,
+            );
+        }
+        if(empty($aSync['ok']))
+        {
+            return array(
+                'sMessage' => __('Could not issue tickets for this order line because the database write failed. No extra tickets were created.', 'tickets-passes-for-woocommerce'),
+                'bStatus'  => false,
+            );
+        }
         $aTempTicketReset = $aSync['keep'];
         
         if(!empty($oOrderItem->get_meta_data()))
@@ -694,7 +718,13 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
                                                         SET deleted = %s, updated = %s
                                                         WHERE nano_id = %s', $sTicketTableName, $sCurrentDatetime, $sCurrentDatetime, $oExistResult->nano_id);
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sUpdateTicketSQL is the return value of $wpdb->prepare() above.
-            $wpdb->get_results($sUpdateTicketSQL);
+            if(TPFW_Db_Write::failed($wpdb->query($sUpdateTicketSQL)))
+            {
+                return array(
+                    'sMessage' => __('Could not cancel tickets for this order line because the database write failed.', 'tickets-passes-for-woocommerce'),
+                    'bStatus'  => false,
+                );
+            }
 
             $sTicketStatisticUpdateSQL 		= $wpdb->prepare('	UPDATE %i
                                                                 SET deleted = %s, updated = %s

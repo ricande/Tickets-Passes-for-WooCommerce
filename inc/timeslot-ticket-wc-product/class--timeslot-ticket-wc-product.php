@@ -91,8 +91,9 @@ class TPFW_Timeslot_Ticket_WC_Product extends TPFW_Product_Type
         // Issuing and revoking. Cancelled / refunded / failed must all revoke the ticket,
         // otherwise a refunded customer keeps a scannable QR code. cancel_timeslot_ticket()
         // is idempotent.
-		add_action('woocommerce_order_status_processing',                            array($this, 'order_maybe_issue'), 10, 1);
-		add_action('woocommerce_order_status_completed',                            array($this, 'order_maybe_issue'), 10, 1);
+		add_action('woocommerce_payment_complete',                                   array($this, 'order_payment_complete'), 10, 1);
+		add_action('woocommerce_order_status_completed',                            array($this, 'order_status_completed'), 10, 1);
+		add_action('woocommerce_order_refunded',                                    array($this, 'order_refunded'), 10, 2);
 		add_action('woocommerce_order_status_cancelled',                            array($this, 'order_cancelled'),   10, 1);
 		add_action('woocommerce_order_status_refunded',                             array($this, 'order_cancelled'),   10, 1);
 		add_action('woocommerce_order_status_failed',                               array($this, 'order_cancelled'),   10, 1);
@@ -1956,14 +1957,22 @@ class TPFW_Timeslot_Ticket_WC_Product extends TPFW_Product_Type
             );
         }
 
+        $aSync = null;
         try
         {
+            $oIssueOrder = function_exists('wc_get_order') ? wc_get_order($iOrderID) : null;
+            $iIssueQty   = TPFW_Refund_Policy::issue_quantity($oIssueOrder, $oOrderItem);
+            if($iIssueQty <= 0)
+            {
+                return $this->cancel_timeslot_ticket($iOrderID, $iCustomerID, $oOrderItem);
+            }
+
             $iTimeslotTicketsSold = (int)$wpdb->get_var($wpdb->prepare(
                 'SELECT COUNT(*) FROM %i WHERE timeslot_id = %s AND deleted IS NULL AND NOT (order_id = %d AND order_line_id = %d);',
                 $sTable, $sTimeslotID, $iOrderID, $oOrderItem->get_id()
             ));
 
-            if(!TPFW_Timeslot_Capacity::quantity_fits($iTimeslotTicketsSold, (int)$oOrderItem->get_quantity(), (int)$oCurrentTimeslot->available_slots))
+            if(!TPFW_Timeslot_Capacity::quantity_fits($iTimeslotTicketsSold, $iIssueQty, (int)$oCurrentTimeslot->available_slots))
             {
                 return array(
                     'sMessage' => __('Seems like the maximum number of tickets already created for the following timeslot', 'tickets-passes-for-woocommerce').': '.$sTimeslotID,
@@ -1972,15 +1981,15 @@ class TPFW_Timeslot_Ticket_WC_Product extends TPFW_Product_Type
             }
 
             $oTimeslotExistsPrepared = $wpdb->prepare(
-                'SELECT * FROM %i WHERE timeslot_id = %s AND product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY -deleted;',
+                'SELECT * FROM %i WHERE timeslot_id = %s AND product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY (deleted IS NULL) DESC, id ASC;',
                 array($sTable, $sTimeslotID, $oOrderItem->get_product_id(), $iOrderID, $oOrderItem->get_id())
             );
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $oTimeslotExistsPrepared is the return value of $wpdb->prepare() above.
             $aTimeslotExistsResult = $wpdb->get_results($oTimeslotExistsPrepared);
 
-            $aSync = TPFW_Order_Line_Upsert::sync($wpdb, $sTable, $aTimeslotExistsResult, (int)$oOrderItem->get_quantity(), $sCurrentDatetime, function() use ($wpdb, $sTable, $sTimeslotID, $oOrderItem, $iCustomerID, $iOrderID, $iProductBeforeCheckinDuration, $oCurrentTimeslot, $iTimeslotTicketMaxUses, $sCurrentDatetime) {
+            $aSync = TPFW_Order_Line_Upsert::sync($wpdb, $sTable, $aTimeslotExistsResult, $iIssueQty, $sCurrentDatetime, function() use ($wpdb, $sTable, $sTimeslotID, $oOrderItem, $iCustomerID, $iOrderID, $iProductBeforeCheckinDuration, $oCurrentTimeslot, $iTimeslotTicketMaxUses, $sCurrentDatetime) {
                 $sGeneratedNanoID = $this->oFunctions->generateNanoId();
-                $wpdb->query($wpdb->prepare(
+                $mInsert = $wpdb->query($wpdb->prepare(
                     'INSERT INTO %i (timeslot_id, nano_id, product_id, user_id, order_id, order_line_id, before_checkin_duration, valid_from, valid_to, max_uses, created, updated)
                     VALUES (%s, %s, %d, %d, %d, %d, %d, %s, %s, %d, %s, %s);',
                     array(
@@ -1999,12 +2008,24 @@ class TPFW_Timeslot_Ticket_WC_Product extends TPFW_Product_Type
                         $sCurrentDatetime,
                     )
                 ));
+                if(!TPFW_Db_Write::inserted_row($mInsert))
+                {
+                    return false;
+                }
                 return $sGeneratedNanoID;
             });
         }
         finally
         {
             $oLock->release();
+        }
+
+        if($aSync === null || empty($aSync['ok']))
+        {
+            return array(
+                'sMessage' => __('Could not issue this timeslot ticket because the database write failed. No extra tickets were created.', 'tickets-passes-for-woocommerce'),
+                'bStatus'  => false,
+            );
         }
 
         $aTempTicketReset = $aSync['keep'];
@@ -2100,7 +2121,13 @@ class TPFW_Timeslot_Ticket_WC_Product extends TPFW_Product_Type
                                                         SET deleted = %s, updated = %s
                                                         WHERE nano_id = %s', $sTicketTableName, $sCurrentDatetime, $sCurrentDatetime, $oExistResult->nano_id);
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sUpdateTicketSQL is the return value of $wpdb->prepare() above.
-            $wpdb->get_results($sUpdateTicketSQL);
+            if(TPFW_Db_Write::failed($wpdb->query($sUpdateTicketSQL)))
+            {
+                return array(
+                    'sMessage' => __('Could not cancel timeslot tickets for this order line because the database write failed.', 'tickets-passes-for-woocommerce'),
+                    'bStatus'  => false,
+                );
+            }
 
             $sTicketStatisticUpdateSQL 		= $wpdb->prepare('	UPDATE %i
                                                                 SET deleted = %s, updated = %s
@@ -2474,6 +2501,31 @@ class TPFW_Timeslot_Ticket_WC_Product extends TPFW_Product_Type
     {
         return $this->cancel_timeslot_ticket($iOrderID, $iCustomerID, $oOrderItem);
     }
+
+	/**
+	 * Scope live rows to the line's timeslot when the meta is present.
+	 *
+	 * @param object $wpdb
+	 * @param int    $iOrderID
+	 * @param object $oOrderItem
+	 * @return array
+	 */
+	protected function select_live_issued_rows($wpdb, $iOrderID, $oOrderItem)
+	{
+		$sTimeslotID = method_exists($oOrderItem, 'get_meta') ? $oOrderItem->get_meta('tpfw_timeslot_id', true) : '';
+		if($sTimeslotID === '' || $sTimeslotID === null)
+		{
+			return parent::select_live_issued_rows($wpdb, $iOrderID, $oOrderItem);
+		}
+		return $wpdb->get_results($wpdb->prepare(
+			'SELECT * FROM %i WHERE timeslot_id = %s AND product_id = %d AND order_id = %d AND order_line_id = %d AND deleted IS NULL ORDER BY id ASC',
+			$wpdb->prefix.$this->sTable,
+			$sTimeslotID,
+			$oOrderItem->get_product_id(),
+			$iOrderID,
+			$oOrderItem->get_id()
+		));
+	}
 
     /**
      * Renders the timeslot picker above the add-to-cart button on a timeslot product page.

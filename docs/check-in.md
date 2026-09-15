@@ -54,8 +54,8 @@ Scheme and host are ignored so a ticket issued on `woocommerce.local` still chec
 | Caller | How |
 |---|---|
 | Built-in scanner | Login cookie **and** valid `X-WP-Nonce`. Core’s `rest_cookie_check_errors()` clears the user if the nonce is missing, so a CSRF request from another site cannot check anyone in. |
-| External app | `Authorization: Basic` (or `PHP_AUTH_USER` / `PHP_AUTH_PW`). Goes through `wp_authenticate()` (login throttling / locked accounts apply). Only if **Enable API** is on. |
-| Scanner token | Header `X-TPFW-Scanner-Token`. Looked up in `tpfw_scanner_tokens` (`TPFW_Scanner_Tokens`). Also requires **Enable API**. When `tpfw_scanner_tokens_required` is set, Basic Auth with a password is refused. There is no settings form yet; create a token with `TPFW_Scanner_Tokens::create($name, $user_id)` (plaintext is returned once). |
+| External: Application Password | `Authorization: Basic` with `username` + a WordPress **Application Password**. WordPress REST authenticates and sets the current user. The plugin does **not** call `wp_authenticate()` and does not accept the account login password. Requires **Enable API**. |
+| External: scanner token | Header `X-TPFW-Scanner-Token` as `{token_id}.{secret}`. `token_id` is a public lookup key; only `hash(secret)` is stored (`tpfw_scanner_tokens`). One lookup, at most one `password_verify()`. Also requires **Enable API**. There is no settings form yet; create a token with `TPFW_Scanner_Tokens::create($name, $user_id)` (the full `{id}.{secret}` string is returned once). Opaque 1.3.0-dev secrets without a `token_id.` prefix are invalid — recreate them. |
 
 Either path still requires `user_can_scan()`. The resolved user is `wp_set_current_user()` so the stats row records who scanned.
 
@@ -71,7 +71,7 @@ A pass row with `parent_nano_id_fk` is treated as `guestpass` even on the plain 
 
 ## Decision order (`checkin_row`)
 
-Wrapped in `with_checkin_lock()` → `TPFW_Named_Lock`: MySQL `GET_LOCK('tpfw_checkin_{nano_id}', 5)`. Only `'1'` / `1` is a held lock. Timeout (`0`) and unavailable (`NULL`) both refuse — **202**, no INSERT. Unavailable is logged once. `RELEASE_LOCK` runs in `finally` (persistent connections would otherwise wedge that code).
+Wrapped in `with_checkin_lock()` → `TPFW_Named_Lock`: MySQL `GET_LOCK('tpfw_checkin_{nano_id}', 5)`. Only `'1'` / `1` is a held lock. Timeout (`0`) and unavailable (`NULL`) both refuse — **202**, no INSERT. Unavailable is logged once. `RELEASE_LOCK` runs in `finally` (persistent connections would otherwise wedge that code). Ticket/pass issue, guest quota and timeslot capacity use the same fail-closed lock helper; names are in [architecture.md](architecture.md#locks).
 
 Nothing writes until every check passes.
 

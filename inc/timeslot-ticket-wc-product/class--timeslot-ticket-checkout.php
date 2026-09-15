@@ -49,6 +49,11 @@ class TPFW_Timeslot_Ticket_Checkout
 	{
 		self::$aPendingReservation = null;
 
+		if(!$passed)
+		{
+			return false;
+		}
+
 		$oProduct = wc_get_product($product_id);
 		if(empty($oProduct) || !is_a($oProduct, 'TPFW_Product_Timeslot_Ticket'))
 		{

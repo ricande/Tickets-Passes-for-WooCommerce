@@ -6,7 +6,7 @@ How those records are written: [product-types.md](product-types.md), [check-in.m
 
 ## Tables
 
-Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db-installer.php` (`DB_VERSION` `1.0.3`). Rows are soft-deleted with `deleted` (timestamp); they are not removed.
+Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db-installer.php` (`DB_VERSION` `1.0.4`). Rows are soft-deleted with `deleted` (timestamp); they are not removed.
 
 | Table | Contents |
 |---|---|
@@ -34,8 +34,8 @@ Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db
 | `tpfw_scanner_role_version` | Scanner role capability set |
 | `tpfw_upload_slug` | Random part of `uploads/tpfw-{slug}/` |
 | `tpfw_file_secret` | Signing of file links |
-| `tpfw_scanner_tokens` | Hashed per-device scanner tokens (`TPFW_Scanner_Tokens`) |
-| `tpfw_scanner_tokens_required` | When truthy, Basic Auth with a password is refused |
+| `tpfw_scanner_tokens` | Per-device scanner tokens keyed by `token_id`; stores `hash(secret)` only (`TPFW_Scanner_Tokens`) |
+| `tpfw_scanner_tokens_required` | Legacy option; account-password Basic Auth is no longer used |
 
 ### Product post meta
 
@@ -72,13 +72,13 @@ Base: `wp-content/uploads/tpfw-{slug}/` where `{slug}` is the 10-character hex i
 | `pdf` | `qr-pdf/` | Printable PDF |
 | `profile` | `profile-images/` | Pass photo |
 
-All are fetched through `TPFW_File_Access` (`?tpfw_file=`), not as a direct URL. Allowed extensions: webp, png, jpg, jpeg, gif, pdf.
+All are fetched through `TPFW_File_Access` (`?tpfw_file=`), not as a direct URL. Allowed extensions: webp, png, jpg, jpeg, gif, pdf. nginx/IIS must still deny static `/wp-content/uploads/tpfw-*` — see [server-config/](server-config/README.md).
 
 ## REST (`tpfw/v1`)
 
 | Route | Method | Auth | Purpose |
 |---|---|---|---|
-| `/scanner/checkin/{nano_id}` | POST | scanner role, cookie+nonce, Basic Auth, or `X-TPFW-Scanner-Token` | Check-in |
+| `/scanner/checkin/{nano_id}` | POST | scanner capability; cookie+nonce, Application Password, or `X-TPFW-Scanner-Token` (`token_id.secret`; not the account password) | Check-in |
 | `/scanner/checkin/{nano_id}` | GET | same (then refused) | **405** after auth; **401** with no credentials |
 | `/scanner/checkin/{nano_id}/guest` | POST | same as check-in | Guest-pass check-in |
 | `/scanner/checkin/{nano_id}/guest` | GET | same (then refused) | **405** after auth; **401** with no credentials |

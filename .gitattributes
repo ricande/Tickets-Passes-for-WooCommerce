@@ -1,0 +1,4 @@
+# Existing first-party files in this tree use CRLF. Treat CR as part of the
+# line ending so `git diff --check` does not rewrite whole files to LF.
+# Do not enable indent-with-non-tab: first-party PHP already indents with spaces.
+* whitespace=trailing-space,space-before-tab,cr-at-eol

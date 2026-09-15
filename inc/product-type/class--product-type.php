@@ -462,35 +462,74 @@ abstract class TPFW_Product_Type
 	}
 
 	/**
-	 * Mints rows when the order is paid (processing or completed).
+	 * WooCommerce payment_complete — the order is paid. Shared mint path after the policy.
 	 *
-	 * @param int $order_id WooCommerce order id supplied by the status hook.
+	 * @param int $order_id
 	 * @return void
 	 */
-	public function order_maybe_issue($order_id)
+	public function order_payment_complete($order_id)
+	{
+		$this->issue_for_intent($order_id, TPFW_Issue_Policy::PAYMENT_COMPLETE);
+	}
+
+	/**
+	 * Order moved to completed — including offline checkouts the merchant finishes.
+	 *
+	 * @param int $order_id
+	 * @return void
+	 */
+	public function order_status_completed($order_id)
+	{
+		$this->issue_for_intent($order_id, TPFW_Issue_Policy::COMPLETED);
+	}
+
+	/**
+	 * Admin Create metabox. Mints without waiting for payment_complete or completed.
+	 *
+	 * @param int $order_id
+	 * @return void
+	 */
+	public function order_force_issue($order_id)
+	{
+		$this->issue_for_intent($order_id, TPFW_Issue_Policy::FORCE);
+	}
+
+	/**
+	 * @param int    $order_id
+	 * @param string $sIntent
+	 * @return void
+	 */
+	private function issue_for_intent($order_id, $sIntent)
 	{
 		$oOrder = wc_get_order($order_id);
 		if(empty($oOrder))
 		{
 			return;
 		}
-		if(!TPFW_Issue_Policy::should_issue($oOrder->get_status()))
+		$sStatus = method_exists($oOrder, 'get_status') ? $oOrder->get_status() : '';
+		if(!TPFW_Issue_Policy::should_issue_for_intent($sIntent, $sStatus))
 		{
 			return;
 		}
-		$this->order_completed($order_id);
+		$this->issue_order_lines($order_id);
 	}
 
 	/**
-	 * Issues this type's rows for every matching line on a paid order.
+	 * Issues this type's rows for every matching line. Idempotent per line (upsert).
 	 *
-	 * Hooked on processing and completed via order_maybe_issue(), so priorities stay
-	 * per-type. Also called directly by TPFW_Admin's force-create metabox action.
-	 *
-	 * @param int $order_id WooCommerce order id supplied by the status hook.
+	 * @param int $order_id WooCommerce order id.
 	 * @return void
 	 */
 	public function order_completed($order_id)
+	{
+		$this->order_force_issue($order_id);
+	}
+
+	/**
+	 * @param int $order_id
+	 * @return void
+	 */
+	private function issue_order_lines($order_id)
 	{
 		$iOrderID     = $order_id;
 		$oOrder       = wc_get_order($iOrderID);
@@ -512,6 +551,166 @@ abstract class TPFW_Product_Type
 				$oOrder->add_order_note($aResult['sMessage']);
 				$oOrder->save();
 			}
+		}
+	}
+
+	/**
+	 * Partial or full refund created. Reconciles issued rows to purchased minus refunded ITEM qty.
+	 *
+	 * Amount-only refunds (item qty 0) are ignored here. A later status of refunded/cancelled/failed
+	 * still goes through order_cancelled() and revokes everything.
+	 *
+	 * @param int $order_id  WooCommerce order id.
+	 * @param int $refund_id Unused; WooCommerce supplies it on woocommerce_order_refunded.
+	 * @return void
+	 */
+	public function order_refunded($order_id, $refund_id = 0)
+	{
+		$this->reconcile_order_lines($order_id);
+	}
+
+	/**
+	 * @param int $order_id
+	 * @return void
+	 */
+	private function reconcile_order_lines($order_id)
+	{
+		$oOrder = wc_get_order($order_id);
+		if(empty($oOrder))
+		{
+			return;
+		}
+		$iOrderUserID = $oOrder->get_user_id();
+
+		foreach($oOrder->get_items() as $oOrderItem)
+		{
+			$oOrderItemProduct = wc_get_product($oOrderItem->get_product_id());
+			if(empty($oOrderItemProduct)) continue;
+			if(!is_a($oOrderItemProduct, $this->sProductClass)) continue;
+			if(!TPFW_Refund_Policy::should_reconcile($oOrder, $oOrderItem)) continue;
+
+			$iTarget = TPFW_Refund_Policy::target_active_quantity($oOrder, $oOrderItem);
+			$aResult = $this->reconcile_entry($order_id, $iOrderUserID, $oOrderItem, $iTarget);
+			if(!empty($aResult['sMessage']))
+			{
+				$oOrder->add_order_note($aResult['sMessage']);
+				$oOrder->save();
+			}
+		}
+	}
+
+	/**
+	 * @param int           $iOrderID
+	 * @param int           $iCustomerID
+	 * @param object        $oOrderItem
+	 * @param int           $iTarget
+	 * @return array{sMessage:string,bStatus:bool}
+	 */
+	protected function reconcile_entry($iOrderID, $iCustomerID, $oOrderItem, $iTarget)
+	{
+		if((int)$iTarget <= 0)
+		{
+			return $this->cancel_entry($iOrderID, $iCustomerID, $oOrderItem);
+		}
+		return $this->shrink_issued_rows($iOrderID, $oOrderItem, (int)$iTarget);
+	}
+
+	/**
+	 * Live issued rows for this line, deterministic id ASC. Passes exclude guest children.
+	 *
+	 * @param object $wpdb
+	 * @param int    $iOrderID
+	 * @param object $oOrderItem
+	 * @return array
+	 */
+	protected function select_live_issued_rows($wpdb, $iOrderID, $oOrderItem)
+	{
+		$sSql = 'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d AND deleted IS NULL';
+		$aArgs = array(
+			$wpdb->prefix.$this->sTable,
+			$oOrderItem->get_product_id(),
+			$iOrderID,
+			$oOrderItem->get_id(),
+		);
+		if($this->issued_rows_are_parents_only())
+		{
+			$sSql .= ' AND parent_nano_id_fk IS NULL';
+		}
+		$sSql .= ' ORDER BY id ASC';
+		return $wpdb->get_results($wpdb->prepare($sSql, $aArgs));
+	}
+
+	/**
+	 * @return bool
+	 */
+	protected function issued_rows_are_parents_only()
+	{
+		return false;
+	}
+
+	/**
+	 * Soft-deletes surplus live rows. Does not insert. Remaining nano_ids stay.
+	 *
+	 * @param int    $iOrderID
+	 * @param object $oOrderItem
+	 * @param int    $iTarget
+	 * @return array{sMessage:string,bStatus:bool}
+	 */
+	protected function shrink_issued_rows($iOrderID, $oOrderItem, $iTarget)
+	{
+		global $wpdb;
+		$sNow  = current_time('mysql');
+		$aLive = $this->select_live_issued_rows($wpdb, $iOrderID, $oOrderItem);
+		$aSync = TPFW_Order_Line_Upsert::shrink($wpdb, $wpdb->prefix.$this->sTable, $aLive, $iTarget, $sNow);
+		if(empty($aSync['ok']))
+		{
+			return array(
+				'sMessage' => __('Could not reconcile issued quantity because the database write failed.', 'tickets-passes-for-woocommerce'),
+				'bStatus'  => false,
+			);
+		}
+		foreach($aSync['deleted'] as $sNano)
+		{
+			$this->after_revoke_row($sNano);
+		}
+		if(empty($aSync['deleted']))
+		{
+			return array(
+				'sMessage' => '',
+				'bStatus'  => true,
+			);
+		}
+		return array(
+			'sMessage' => sprintf(
+				/* translators: 1: product type label, 2: comma-separated nano ids */
+				__('%1$s quantity reconciled; cancelled: %2$s', 'tickets-passes-for-woocommerce'),
+				$this->sType,
+				implode(', ', $aSync['deleted'])
+			),
+			'bStatus'  => true,
+		);
+	}
+
+	/**
+	 * Per-row cleanup after a refund shrink (stats + QR). Passes also revoke guests.
+	 *
+	 * @param string $sNanoId
+	 * @return void
+	 */
+	protected function after_revoke_row($sNanoId)
+	{
+		global $wpdb;
+		$sNow = current_time('mysql');
+		$wpdb->query($wpdb->prepare(
+			'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id_fk = %s',
+			$wpdb->prefix.$this->sStatsTable,
+			$sNow,
+			$sNow,
+			$sNanoId
+		));
+		if($this->oFunctions && method_exists($this->oFunctions, 'delete_qr_code'))
+		{
+			$this->oFunctions->delete_qr_code($sNanoId);
 		}
 	}
 

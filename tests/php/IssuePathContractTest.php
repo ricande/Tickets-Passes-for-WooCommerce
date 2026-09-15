@@ -78,6 +78,42 @@ PHP;
 		}
 	}
 
+	public function test_ticket_issue_is_fail_closed_before_qr_and_meta(): void
+	{
+		$sSrc = file_get_contents(TPFW_PLUGIN_DIR.'inc/ticket-wc-product/class--ticket-wc-product.php');
+		$this->assertNotFalse(strpos($sSrc, 'TPFW_Db_Write::inserted_row'));
+		$this->assertNotFalse(strpos($sSrc, "empty(\$aSync['ok'])"));
+		$iOk = strpos($sSrc, "empty(\$aSync['ok'])");
+		$iQr = strpos($sSrc, 'write_scanner_qr');
+		$this->assertNotFalse($iQr);
+		$this->assertLessThan($iQr, $iOk);
+	}
+
+	public function test_timeslot_issue_is_fail_closed_before_qr_and_meta(): void
+	{
+		$sSrc = file_get_contents(TPFW_PLUGIN_DIR.'inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php');
+		$this->assertNotFalse(strpos($sSrc, 'TPFW_Db_Write::inserted_row'));
+		$this->assertNotFalse(strpos($sSrc, "empty(\$aSync['ok'])"));
+		$iOk = strpos($sSrc, "empty(\$aSync['ok'])");
+		$iQr = strpos($sSrc, 'write_scanner_qr');
+		$this->assertNotFalse($iQr);
+		$this->assertLessThan($iQr, $iOk);
+		$iRelease = strpos($sSrc, '$oLock->release()');
+		$this->assertNotFalse($iRelease);
+		$this->assertLessThan($iOk, $iRelease);
+	}
+
+	public function test_pass_gift_mail_is_after_verified_insert(): void
+	{
+		$sSrc = file_get_contents(TPFW_PLUGIN_DIR.'inc/pass-wc-product/class--pass-wc-product.php');
+		$iInsert = strpos($sSrc, 'TPFW_Db_Write::inserted_row($mInsert)');
+		$iMail   = strpos($sSrc, 'tpfw_custom_enmail');
+		$this->assertNotFalse($iInsert);
+		$this->assertNotFalse($iMail);
+		$this->assertLessThan($iMail, $iInsert);
+		$this->assertNotFalse(strpos($sSrc, 'TPFW_Db_Write::failed($mRestore)'));
+	}
+
 	public function test_test_wpdb_rejects_empty_identifier(): void
 	{
 		$mysqli = TPFW_Test_Credentials::mysqli();

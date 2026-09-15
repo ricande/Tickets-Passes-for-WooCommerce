@@ -154,11 +154,10 @@ class TPFW_API
 	/**
 	 * Permission callback for all three scanner routes.
 	 *
-	 * A door scanner authenticates with Basic Auth, the built-in /check-in/ page with its
-	 * login cookie plus the wp_rest nonce; get_basic_auth_user() resolves either into a user
-	 * that holds the scanner role. The resolved user is promoted to the current user so the
-	 * callbacks can record who performed the check-in via get_current_user_id() - a Basic Auth
-	 * request has no current user of its own.
+	 * Cookie + X-WP-Nonce (built-in /check-in/) and Application Passwords are authenticated
+	 * by WordPress before this runs. X-TPFW-Scanner-Token is the plugin token path.
+	 * get_basic_auth_user() only checks capability (and Enable API for external callers).
+	 * The resolved user is set current so stats rows record who scanned.
 	 *
 	 * This lives here rather than at the top of each callback so the REST server rejects an
 	 * unauthenticated request before the callback (and its database work) is ever reached,

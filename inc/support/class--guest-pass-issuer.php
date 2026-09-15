@@ -64,11 +64,121 @@ class TPFW_Guest_Pass_Issuer
 	}
 
 	/**
-	 * Ensures slots 1…$iQuota exist for the parent. Existing rows are left alone.
+	 * Assigns unique guest_slot values to every guest row, including soft-deleted ones.
+	 *
+	 * Per parent, existing slots are kept; NULL/0 rows get the next free slot in id ASC order.
+	 * Safe to run more than once. Returns false on a database error and does not invent success.
+	 *
+	 * @param object $wpdb Database handle.
+	 * @return bool
+	 */
+	public static function backfill_legacy_slots($wpdb)
+	{
+		if(is_object($wpdb) && property_exists($wpdb, 'last_error'))
+		{
+			$wpdb->last_error = '';
+		}
+		$sTable = $wpdb->prefix.'tpfw_pass';
+		$aGuests = $wpdb->get_results($wpdb->prepare(
+			'SELECT id, parent_nano_id_fk, guest_slot FROM %i
+			WHERE parent_nano_id_fk IS NOT NULL AND parent_nano_id_fk != %s
+			ORDER BY parent_nano_id_fk ASC, id ASC',
+			$sTable,
+			''
+		));
+		if(is_object($wpdb) && !empty($wpdb->last_error))
+		{
+			return false;
+		}
+		$aByParent = array();
+		foreach((array)$aGuests as $oGuest)
+		{
+			$sParent = (string)$oGuest->parent_nano_id_fk;
+			if(!isset($aByParent[$sParent]))
+			{
+				$aByParent[$sParent] = array();
+			}
+			$aByParent[$sParent][] = $oGuest;
+		}
+		foreach($aByParent as $sParent => $aRows)
+		{
+			if(!self::assign_slots_for_parent($wpdb, $sTable, $sParent, $aRows))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * @param object      $wpdb
+	 * @param string      $sTable
+	 * @param string      $sParent
+	 * @param object[]|null $aRows Optional preloaded rows (id, guest_slot).
+	 * @return bool
+	 */
+	public static function assign_slots_for_parent($wpdb, $sTable, $sParent, $aRows = null)
+	{
+		if($aRows === null)
+		{
+			$aRows = $wpdb->get_results($wpdb->prepare(
+				'SELECT id, guest_slot FROM %i WHERE parent_nano_id_fk = %s ORDER BY id ASC',
+				$sTable,
+				$sParent
+			));
+			if(is_object($wpdb) && !empty($wpdb->last_error))
+			{
+				return false;
+			}
+		}
+		$aClaimed = array();
+		foreach((array)$aRows as $oRow)
+		{
+			$iSlot = (int)$oRow->guest_slot;
+			if($iSlot > 0 && !isset($aClaimed[$iSlot]))
+			{
+				$aClaimed[$iSlot] = (int)$oRow->id;
+			}
+		}
+		$iNext = 1;
+		foreach((array)$aRows as $oRow)
+		{
+			$iId   = (int)$oRow->id;
+			$iSlot = (int)$oRow->guest_slot;
+			if($iSlot > 0 && isset($aClaimed[$iSlot]) && $aClaimed[$iSlot] === $iId)
+			{
+				continue;
+			}
+			while(isset($aClaimed[$iNext]))
+			{
+				$iNext++;
+			}
+			$m = $wpdb->query($wpdb->prepare(
+				'UPDATE %i SET guest_slot = %d WHERE id = %d',
+				$sTable,
+				$iNext,
+				$iId
+			));
+			if($m === false)
+			{
+				return false;
+			}
+			$aClaimed[$iNext] = $iId;
+			$iNext++;
+		}
+		return true;
+	}
+
+	/**
+	 * Reconciles guest rows to the current product quota.
+	 *
+	 * Slots 1…N are made live (reusing legacy nano ids, including previously deleted rows).
+	 * Overflow stays or becomes soft-deleted. Missing allowed slots are inserted. Never
+	 * derived from how many historical rows exist.
 	 *
 	 * @param object $wpdb      Database handle.
 	 * @param object $oParent   Parent pass row.
-	 * @param int    $iQuota    Guest quantity from product meta.
+	 * @param int    $iQuota    Guest quantity from current product meta.
 	 * @param int    $iDuration Stored on the row; the window itself stays NULL until parent check-in.
 	 * @param int    $iMaxUses  Guest max uses.
 	 * @return object[] Live guest rows after the call.
@@ -88,7 +198,25 @@ class TPFW_Guest_Pass_Issuer
 
 		try
 		{
+			if(!self::assign_slots_for_parent($wpdb, $sTable, $sParent))
+			{
+				return $this->list_guests($wpdb, $sTable, $sParent, (int)$oParent->user_id);
+			}
+
 			$sNow = function_exists('current_time') ? current_time('mysql') : gmdate('Y-m-d H:i:s');
+			if($iQuota > 0)
+			{
+				$mUndelete = $wpdb->query($wpdb->prepare(
+					'UPDATE %i SET deleted = NULL, updated = %s
+					WHERE parent_nano_id_fk = %s AND guest_slot >= 1 AND guest_slot <= %d',
+					array($sTable, $sNow, $sParent, $iQuota)
+				));
+				if(TPFW_Db_Write::failed($mUndelete))
+				{
+					return $this->list_guests($wpdb, $sTable, $sParent, (int)$oParent->user_id);
+				}
+			}
+
 			for($iSlot = 1; $iSlot <= $iQuota; $iSlot++)
 			{
 				$sNano = call_user_func($this->fnNanoId);
@@ -114,8 +242,18 @@ class TPFW_Guest_Pass_Issuer
 					)
 				);
 				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $oPrepared is the return value of $wpdb->prepare() above.
-				$wpdb->query($oPrepared);
+				if(TPFW_Db_Write::failed($wpdb->query($oPrepared)))
+				{
+					return $this->list_guests($wpdb, $sTable, $sParent, (int)$oParent->user_id);
+				}
 			}
+
+			$wpdb->query($wpdb->prepare(
+				'UPDATE %i SET deleted = %s, updated = %s
+				WHERE parent_nano_id_fk = %s AND deleted IS NULL
+				AND (guest_slot IS NULL OR guest_slot < 1 OR guest_slot > %d)',
+				array($sTable, $sNow, $sNow, $sParent, $iQuota)
+			));
 		}
 		finally
 		{
