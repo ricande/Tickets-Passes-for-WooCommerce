@@ -65,4 +65,15 @@ class I18nTest extends TestCase
 		$this->assertNotFalse(strpos($sPo, 'Language: sv_SE'));
 		$this->assertNotFalse(strpos($sPo, 'Visas på %s-PDF:en'));
 	}
+
+	public function test_danish_catalog_is_bundled(): void
+	{
+		$sDir = TPFW_PLUGIN_DIR.'languages/';
+		$this->assertFileExists($sDir.'tickets-passes-for-woocommerce-da_DK.po');
+		$this->assertFileExists($sDir.'tickets-passes-for-woocommerce-da_DK.mo');
+		$this->assertFileExists($sDir.'tickets-passes-for-woocommerce-da_DK.l10n.php');
+		$sPo = file_get_contents($sDir.'tickets-passes-for-woocommerce-da_DK.po');
+		$this->assertNotFalse(strpos($sPo, 'Language: da_DK'));
+		$this->assertNotFalse(strpos($sPo, 'Gyldig fra'));
+	}
 }

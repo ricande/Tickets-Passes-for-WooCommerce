@@ -102,4 +102,4 @@ Both are cleared on deactivation and uninstall.
 
 ## Language
 
-Text domain `tickets-passes-for-woocommerce`. `load_plugin_textdomain()` points at `languages/`. WordPress language packs in `WP_LANG_DIR/plugins/` win. The zip ships `sv_SE` (`.po` / `.mo` / `.l10n.php`) as a fallback. There is no plugin language switcher.
+Text domain `tickets-passes-for-woocommerce`. `load_plugin_textdomain()` points at `languages/`. WordPress language packs in `WP_LANG_DIR/plugins/` win. The zip ships `sv_SE` and `da_DK` (`.po` / `.mo` / `.l10n.php`) as fallbacks. There is no plugin language switcher.

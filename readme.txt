@@ -70,7 +70,7 @@ An hourly background job generates the next batch of recurring timeslots. A per-
 
 * WooCommerce **HPOS** (High-Performance Order Storage) and the **block-based cart and checkout**.
 * **Block themes** and classic themes.
-* **Translation ready** - every string is translatable. The plugin ships a POT file and a Swedish catalog; WordPress language packs still win when they are present.
+* **Translation ready** - every string is translatable. The plugin ships a POT file plus Swedish and Danish catalogs; WordPress language packs still win when they are present.
 * **No build step.** All PHP, JavaScript and CSS ships readable and editable.
 
 = Requirements =
@@ -250,7 +250,7 @@ The three most recent releases are below. The full history is in `changelog.txt`
 * Guest passes cannot be scanned before the holder checks in, and the guest quota is enforced in the database. Timeslot seats are reserved and issued under a lock so the last place cannot be sold twice.
 * Check-in is POST only (GET no longer lets anyone through). The API response is an allowlist, not the raw database row. Paid orders receive QR codes on WooCommerce payment complete; Processing alone does not issue, so unpaid checkouts wait until Completed. A refund with item quantity drops that many issued codes; an amount-only refund does not.
 * External scanner apps use a WordPress Application Password or an X-TPFW-Scanner-Token (`token_id.secret`), not the account login password. nginx/IIS must deny direct `/wp-content/uploads/tpfw-*` (snippet in `docs/server-config/`).
-* Swedish translations ship in the plugin; WordPress still owns the language. Existing tickets, QR codes and upload files from 1.2.3 keep working — the first load after the update migrates the guest-pass table.
+* Swedish and Danish translations ship in the plugin; WordPress still owns the language. Existing tickets, QR codes and upload files from 1.2.3 keep working — the first load after the update migrates the guest-pass table.
 
 = 1.2.3 =
 * The colour settings on the Ticket, Timeslot Ticket and Pass tabs now sit beside a live preview of the card the customer actually sees, so a colour can be judged in place instead of by saving and opening a product page. Each tab previews its own product, and the preview can be shown against a light or a dark theme.

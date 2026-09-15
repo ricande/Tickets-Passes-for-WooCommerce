@@ -33,6 +33,18 @@ Shop-owner FAQ also lives in [`readme.txt`](readme.txt). Changelog: [`changelog.
 | **Refunds** | Item-quantity refunds reduce live codes; amount-only refunds do not |
 | **Self-hosted** | No ticketing SaaS, no per-ticket fee, files stay on your WordPress host |
 
+## Languages
+
+The plugin follows the WordPress locale. There is no language switcher.
+
+| Locale | In this repository |
+|---|---|
+| English | Source strings |
+| Swedish (`sv_SE`) | Bundled catalog (`languages/`) |
+| Danish (`da_DK`) | Bundled catalog (`languages/`) |
+
+A WordPress language pack in `wp-content/languages/plugins/` still wins over the bundled files.
+
 ## How it works
 
 1. **Sell** — the customer buys a ticket or pass in WooCommerce.

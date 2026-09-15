@@ -35,7 +35,7 @@ defined('ABSPATH') or die('No script kiddies please!');
      *
      * WordPress still checks WP_LANG_DIR/plugins/ first, so language packs win.
      * Bundled {domain}-{locale}.mo files under languages/ are the fallback — sv_SE
-     * ships in the zip; other locales can be added there later with no PHP change.
+     * and da_DK ship in the zip; other locales can be added there later with no PHP change.
      *
      * @return void
      */

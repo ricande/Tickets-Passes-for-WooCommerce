@@ -14,7 +14,7 @@ Full release history for Tickets & Passes for WooCommerce. The three most recent
 * Named locks for check-in, ticket/pass issue, guest quota and timeslot capacity fail closed if the lock cannot be taken (no check-in or issue without serialisation).
 * External scanner apps authenticate with a WordPress Application Password (HTTP Basic; WordPress authenticates) or a revocable `X-TPFW-Scanner-Token` as `token_id.secret`. The secret is stored as a hash only. The account login password is not accepted.
 * A failed issue/revoke database write does not create a QR file, order-line meta or gift mail for that row.
-* Swedish translations ship in the plugin. WordPress language packs still override them when present. The shop language follows the WordPress locale; there is no language switcher in the plugin.
+* Swedish and Danish translations ship in the plugin. WordPress language packs still override them when present. The shop language follows the WordPress locale; there is no language switcher in the plugin.
 * Existing tickets, passes, QR codes and the random upload folder keep working after the update. The first page load after 1.2.3 adds a guest-slot column and unique index on existing guest rows.
 * nginx must deny direct `/wp-content/uploads/tpfw-*` (snippet in `docs/server-config/`). `.htaccess` is not read by nginx or IIS. The plugin file route is unchanged.
 

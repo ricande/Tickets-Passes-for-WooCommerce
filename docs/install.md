@@ -70,7 +70,7 @@ Behaviour changes the shop should know:
 - A refund that includes **item quantity** reduces the number of live tickets/passes to purchased minus refunded items. A refund of amount only (no item quantity) does not remove codes; mark the order Refunded or use Cancel if every code should drop.
 - External apps use a WordPress Application Password (HTTP Basic; WordPress authenticates) or `X-TPFW-Scanner-Token` as `{token_id}.{secret}`. The account login password is not accepted. Tokens created during 1.3.0 development as an opaque hex secret (no `token_id.` prefix) no longer work; create new ones. The secret is never stored.
 
-Swedish ships as a fallback under `languages/`. A language pack in `wp-content/languages/plugins/` still wins. The shop language is the WordPress locale; there is no plugin language switcher.
+Swedish (`sv_SE`) and Danish (`da_DK`) ship as fallbacks under `languages/`. A language pack in `wp-content/languages/plugins/` still wins. The shop language is the WordPress locale; there is no plugin language switcher.
 
 ## Deactivate vs delete
 

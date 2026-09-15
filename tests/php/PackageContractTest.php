@@ -54,6 +54,7 @@ class PackageContractTest extends TestCase
 		$this->assertContains($sTop.'docs/server-config/nginx-deny-tpfw-uploads.conf', $a);
 		$this->assertContains($sTop.'languages/tickets-passes-for-woocommerce.pot', $a);
 		$this->assertContains($sTop.'languages/tickets-passes-for-woocommerce-sv_SE.l10n.php', $a);
+		$this->assertContains($sTop.'languages/tickets-passes-for-woocommerce-da_DK.l10n.php', $a);
 		$this->assertTrue($this->zipHasPrefix($a, $sTop.'inc/functions/lib/'));
 		$this->assertTrue($this->zipHasPrefix($a, $sTop.'lib/air-datepicker/'));
 
