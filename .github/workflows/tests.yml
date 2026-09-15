@@ -1,0 +1,53 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root
+          MARIADB_DATABASE: tpfw_ci
+          MARIADB_USER: tpfw_ci
+          MARIADB_PASSWORD: ci-pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mysqli
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Write CI database credentials
+        run: |
+          cat > "$RUNNER_TEMP/tpfw-ci.credentials" <<'EOF'
+          DB_HOST=127.0.0.1
+          DB_NAME=tpfw_ci
+          DB_USER=tpfw_ci
+          DB_PASS=ci-pass
+          EOF
+          echo "TPFW_TEST_CREDENTIALS=$RUNNER_TEMP/tpfw-ci.credentials" >> "$GITHUB_ENV"
+
+      - name: git diff --check
+        run: git diff --check
+
+      - name: PHPUnit, package contract, and Node tests
+        run: bash tests/run.sh

@@ -1,0 +1,70 @@
+name: Bug report
+description: Something does not behave as documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do **not** report security vulnerabilities here. See [SECURITY.md](https://github.com/ricande/Tickets-Passes-for-WooCommerce/blob/main/SECURITY.md).
+        Strip passwords, Application Passwords, scanner tokens, and customer codes from logs.
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Plugin version
+      placeholder: 1.3.0-RC
+    validations:
+      required: true
+  - type: input
+    id: wp_version
+    attributes:
+      label: WordPress version
+    validations:
+      required: true
+  - type: input
+    id: wc_version
+    attributes:
+      label: WooCommerce version
+    validations:
+      required: true
+  - type: input
+    id: php_version
+    attributes:
+      label: PHP version
+    validations:
+      required: true
+  - type: dropdown
+    id: web_server
+    attributes:
+      label: Web server
+      options:
+        - nginx
+        - Apache
+        - LiteSpeed
+        - IIS
+        - Other / unknown
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: 1. … 2. … 3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (no secrets)
+      description: PHP or WooCommerce log lines with credentials and tokens removed.

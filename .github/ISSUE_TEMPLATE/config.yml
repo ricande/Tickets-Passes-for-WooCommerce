@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ricande/Tickets-Passes-for-WooCommerce/security/advisories/new
+    about: Do not file public issues for security reports. See SECURITY.md.
