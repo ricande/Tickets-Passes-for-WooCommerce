@@ -67,6 +67,10 @@ Product editor, QR ticket, door scanner, and admin overview images are not in th
 
 Full install, upgrade from 1.2.3, and scanner-user steps: [`docs/install.md`](docs/install.md).
 
+## Import previously sold tickets
+
+This plugin does not require an importer. For already-paid historical ticket sales, the optional [Tickets & Passes – Legacy Ticket Importer](https://github.com/ricande/Tickets-Passes-Legacy-Importer) is a separate admin tool. It creates WooCommerce guest orders and uses this plugin’s normal ticket issuing. V1 handles one purchase at a time; there is no CSV import. Test it on a disposable copy of the shop before production. Details: the importer [README](https://github.com/ricande/Tickets-Passes-Legacy-Importer#readme).
+
 ## Scanner and access
 
 - Check-in uses WordPress capabilities (Scanner role, or Administrator / Shop Manager).
