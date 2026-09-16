@@ -309,26 +309,314 @@ class QrRewriteErrorTest extends TestCase
 	public function test_running_job_resumes_on_unchanged_save(): void
 	{
 		$this->insertTicket(84, 'runA');
-		TPFW_Qr_Rewrite::$fnSchedule = function() {
-			return true;
-		};
+		$aPending = array();
+		$this->bindPendingSchedule($aPending);
 		$sKey = hash('sha256', 'running-resume');
 		TPFW_Qr_Rewrite::enqueue(84, 'ticket', $sKey);
+		$aPending = array();
 		$aJob = TPFW_Qr_Rewrite::get_job(84, 'ticket');
 		$aJob['status']    = 'running';
 		$aJob['cursor_id'] = 3;
 		TPFW_Qr_Rewrite::$aJobsOverride[TPFW_Qr_Rewrite::job_key(84, 'ticket')] = $aJob;
-		$iSchedules = 0;
-		TPFW_Qr_Rewrite::$fnSchedule = function() use (&$iSchedules) {
-			$iSchedules++;
-			return true;
-		};
 		$aResumed = TPFW_Qr_Rewrite::enqueue_if_needed(84, 'ticket', $sKey, $sKey);
 		$this->assertIsArray($aResumed);
 		$this->assertSame('queued', $aResumed['status']);
 		$this->assertSame(3, (int) $aResumed['cursor_id']);
 		$this->assertSame((int) $aJob['generation'], (int) $aResumed['generation']);
-		$this->assertGreaterThanOrEqual(1, $iSchedules);
+		$this->assertCount(1, $aPending);
+		$this->assertSame(array(84, 'ticket', (int) $aJob['generation']), $aPending[0]);
+	}
+
+	public function test_persistent_lock_failure_stops_after_max_scheduled_recoveries(): void
+	{
+		$this->insertTicket(90, 'lockCap');
+		$aPending = array();
+		$this->bindPendingSchedule($aPending);
+		$sKey = hash('sha256', 'lock-cap');
+		$aJob = TPFW_Qr_Rewrite::enqueue(90, 'ticket', $sKey);
+		$iGen = (int) $aJob['generation'];
+		$this->assertSame(array(array(90, 'ticket', $iGen)), $aPending);
+
+		TPFW_Qr_Rewrite::$wpdbOverride = $this->wpdbFailingGetLockAfter(0);
+		$aRecoveries = array();
+		$aLast = $this->drainBookedBatches($aPending, $this->wpdb, function() {
+			$this->fail('write must not run when the lock fails');
+		}, $aRecoveries);
+
+		$this->assertSame(array(1, 2, 3, 4), $aRecoveries);
+		$this->assertSame(array(), $aPending);
+		$this->assertFalse($aLast['ok']);
+		$this->assertSame('lock_failed', $aLast['reason']);
+		$this->assertNotSame('failed', $aLast['reason']);
+		$aStored = TPFW_Qr_Rewrite::get_job(90, 'ticket');
+		$this->assertSame('queued', $aStored['status']);
+		$this->assertSame('', (string) $aStored['last_error']);
+		$this->assertSame($iGen, (int) $aStored['generation']);
+		$this->assertSame(0, (int) $aStored['cursor_id']);
+		$this->assertSame(0, (int) $aStored['attempts']);
+	}
+
+	public function test_persistent_persist_failure_stops_after_max_scheduled_recoveries(): void
+	{
+		$this->insertTicket(91, 'persCap');
+		$this->useKvStore();
+		$aPending = array();
+		$this->bindPendingSchedule($aPending);
+		$sKey = hash('sha256', 'persist-cap');
+		$aJob = TPFW_Qr_Rewrite::enqueue(91, 'ticket', $sKey);
+		$iGen = (int) $aJob['generation'];
+		$this->assertSame(array(array(91, 'ticket', $iGen)), $aPending);
+
+		TPFW_Qr_Rewrite::$wpdbOverride = $this->wpdbFailingKvWrite(function() {
+			return true;
+		});
+		$aRecoveries = array();
+		$aLast = $this->drainBookedBatches($aPending, $this->wpdb, function() {
+			$this->fail('write must not run when start persist fails');
+		}, $aRecoveries);
+
+		$this->assertSame(array(1, 2, 3, 4), $aRecoveries);
+		$this->assertSame(array(), $aPending);
+		$this->assertFalse($aLast['ok']);
+		$this->assertSame('persist_failed', $aLast['reason']);
+		$this->assertNotSame('failed', $aLast['reason']);
+		$aStored = TPFW_Qr_Rewrite::get_job(91, 'ticket');
+		$this->assertSame('queued', $aStored['status']);
+		$this->assertSame('', (string) $aStored['last_error']);
+		$this->assertSame($iGen, (int) $aStored['generation']);
+		$this->assertSame(0, (int) $aStored['cursor_id']);
+	}
+
+	public function test_stranded_queued_job_resumes_on_unchanged_save_and_completes(): void
+	{
+		$this->insertTicket(92, 'strandA');
+		$this->insertTicket(92, 'strandB');
+		$aPending = array();
+		$this->bindPendingSchedule($aPending);
+		$sKey = hash('sha256', 'strand-resume');
+		$aJob = TPFW_Qr_Rewrite::enqueue(92, 'ticket', $sKey);
+		$iGen = (int) $aJob['generation'];
+		$iFirst = (int) $this->wpdb->get_var("SELECT MIN(id) FROM `{$this->wpdb->prefix}tpfw_tickets` WHERE product_id = 92 AND deleted IS NULL");
+		$aJob['cursor_id'] = $iFirst;
+		TPFW_Qr_Rewrite::$aJobsOverride[TPFW_Qr_Rewrite::job_key(92, 'ticket')] = $aJob;
+
+		$this->bindPendingSchedule($aPending, true);
+		TPFW_Qr_Rewrite::$wpdbOverride = $this->wpdbFailingGetLockAfter(0);
+		$aStart = $this->runBookedBatch($aPending, $this->wpdb, function() {
+			$this->fail('write must not run when the start lock fails');
+		});
+		$this->assertFalse($aStart['ok']);
+		$this->assertSame('schedule_failed', $aStart['reason']);
+		$this->assertSame(array(), $aPending);
+		$aStuck = TPFW_Qr_Rewrite::get_job(92, 'ticket');
+		$this->assertSame('queued', $aStuck['status']);
+		$this->assertSame('', (string) $aStuck['last_error']);
+		$this->assertSame($iGen, (int) $aStuck['generation']);
+		$this->assertSame($iFirst, (int) $aStuck['cursor_id']);
+
+		TPFW_Qr_Rewrite::$wpdbOverride = null;
+		$this->bindPendingSchedule($aPending);
+		$aKick = TPFW_Qr_Rewrite::enqueue_if_needed(92, 'ticket', $sKey, $sKey);
+		$this->assertIsArray($aKick);
+		$this->assertSame('queued', $aKick['status']);
+		$this->assertSame($iGen, (int) $aKick['generation']);
+		$this->assertSame($iFirst, (int) $aKick['cursor_id']);
+		$this->assertCount(1, $aPending);
+		$this->assertSame(array(92, 'ticket', $iGen), $aPending[0]);
+
+		TPFW_Qr_Rewrite::$fnSetIssuedKey = function() {};
+		$aDone = $this->runBookedBatch($aPending, $this->wpdb, function() {
+			return true;
+		});
+		$this->assertTrue($aDone['ok']);
+		$this->assertSame('done', $aDone['reason']);
+		$aFinal = TPFW_Qr_Rewrite::get_job(92, 'ticket');
+		$this->assertSame('done', $aFinal['status']);
+		$this->assertSame($iGen, (int) $aFinal['generation']);
+		$iMax = (int) $this->wpdb->get_var("SELECT MAX(id) FROM `{$this->wpdb->prefix}tpfw_tickets` WHERE product_id = 92 AND deleted IS NULL");
+		$this->assertSame($iMax, (int) $aFinal['cursor_id']);
+	}
+
+	public function test_stranded_resume_keeps_generation_and_stale_generation_cannot_mutate(): void
+	{
+		$this->insertTicket(93, 'genA');
+		$aPending = array();
+		$this->bindPendingSchedule($aPending);
+		$sOld = hash('sha256', 'gen-old');
+		$sNew = hash('sha256', 'gen-new');
+		$aJob = TPFW_Qr_Rewrite::enqueue(93, 'ticket', $sOld);
+		$iOldGen = (int) $aJob['generation'];
+		$aJob['cursor_id'] = 7;
+		TPFW_Qr_Rewrite::$aJobsOverride[TPFW_Qr_Rewrite::job_key(93, 'ticket')] = $aJob;
+
+		$this->bindPendingSchedule($aPending, true);
+		TPFW_Qr_Rewrite::$wpdbOverride = $this->wpdbFailingGetLockAfter(0);
+		$this->runBookedBatch($aPending, $this->wpdb, function() {
+			return true;
+		});
+		$this->assertSame(array(), $aPending);
+
+		TPFW_Qr_Rewrite::$wpdbOverride = null;
+		$this->bindPendingSchedule($aPending);
+		$aKick = TPFW_Qr_Rewrite::enqueue_if_needed(93, 'ticket', $sOld, $sOld);
+		$this->assertSame($iOldGen, (int) $aKick['generation']);
+		$this->assertSame(7, (int) $aKick['cursor_id']);
+
+		$aNewer = TPFW_Qr_Rewrite::enqueue_if_needed(93, 'ticket', $sOld, $sNew);
+		$this->assertSame($iOldGen + 1, (int) $aNewer['generation']);
+		$this->assertSame(0, (int) $aNewer['cursor_id']);
+		$iNewGen = (int) $aNewer['generation'];
+
+		$aStale = TPFW_Qr_Rewrite::process_batch(93, 'ticket', $iOldGen, $this->wpdb, function() {
+			$this->fail('stale generation must not write');
+		});
+		$this->assertTrue($aStale['ok']);
+		$this->assertSame('stale_generation', $aStale['reason']);
+		$aStored = TPFW_Qr_Rewrite::get_job(93, 'ticket');
+		$this->assertSame($iNewGen, (int) $aStored['generation']);
+		$this->assertSame(0, (int) $aStored['cursor_id']);
+		$this->assertSame($sNew, $aStored['target']);
+	}
+
+	public function test_repeat_saves_do_not_duplicate_waiting_or_running_jobs(): void
+	{
+		$this->insertTicket(94, 'dupA');
+		$aPending = array();
+		$this->bindPendingSchedule($aPending);
+		$sKey = hash('sha256', 'no-dup');
+		$aJob = TPFW_Qr_Rewrite::enqueue_if_needed(94, 'ticket', '', $sKey);
+		$this->assertSame('queued', $aJob['status']);
+		$this->assertCount(1, $aPending);
+		$aFirstArgs = $aPending[0];
+
+		$this->assertNull(TPFW_Qr_Rewrite::enqueue_if_needed(94, 'ticket', $sKey, $sKey));
+		$this->assertNull(TPFW_Qr_Rewrite::enqueue_if_needed(94, 'ticket', $sKey, $sKey));
+		$this->assertCount(1, $aPending);
+		$this->assertSame($aFirstArgs, $aPending[0]);
+		$this->assertSame(array(94, 'ticket', (int) $aJob['generation']), $aPending[0]);
+
+		$aRun = TPFW_Qr_Rewrite::get_job(94, 'ticket');
+		$aRun['status'] = 'running';
+		TPFW_Qr_Rewrite::$aJobsOverride[TPFW_Qr_Rewrite::job_key(94, 'ticket')] = $aRun;
+		$this->assertNull(TPFW_Qr_Rewrite::enqueue_if_needed(94, 'ticket', $sKey, $sKey));
+		$this->assertCount(1, $aPending);
+		$this->assertSame('running', TPFW_Qr_Rewrite::get_job(94, 'ticket')['status']);
+		$this->assertSame((int) $aJob['generation'], (int) TPFW_Qr_Rewrite::get_job(94, 'ticket')['generation']);
+	}
+
+	public function test_legacy_three_argument_batch_still_runs(): void
+	{
+		$this->insertTicket(95, 'legacyA');
+		$aPending = array();
+		$this->bindPendingSchedule($aPending);
+		$sKey = hash('sha256', 'legacy-args');
+		$aJob = TPFW_Qr_Rewrite::enqueue(95, 'ticket', $sKey);
+		$iGen = (int) $aJob['generation'];
+		$this->assertCount(1, $aPending);
+		$this->assertSame(array(95, 'ticket', $iGen), $aPending[0]);
+		$this->assertCount(3, $aPending[0]);
+
+		TPFW_Qr_Rewrite::$fnSetIssuedKey = function() {};
+		$aArgs = $aPending[0];
+		array_shift($aPending);
+		$aDone = TPFW_Qr_Rewrite::process_batch((int) $aArgs[0], (string) $aArgs[1], (int) $aArgs[2], $this->wpdb, function() {
+			return true;
+		});
+		$this->assertTrue($aDone['ok']);
+		$this->assertSame('done', $aDone['reason']);
+		$this->assertSame('done', TPFW_Qr_Rewrite::get_job(95, 'ticket')['status']);
+
+		$oRef = new ReflectionMethod(TPFW_Qr_Rewrite::class, 'process_batch');
+		$aParams = $oRef->getParameters();
+		$this->assertTrue($aParams[5]->isDefaultValueAvailable());
+		$this->assertSame(0, $aParams[5]->getDefaultValue());
+		$sFn = file_get_contents(TPFW_PLUGIN_DIR.'inc/functions/class--functions.php');
+		$this->assertNotFalse(strpos($sFn, 'function run_qr_rewrite_batch($iProductID, $sType, $iGeneration, $iRecovery = 0)'));
+		$this->assertNotFalse(strpos($sFn, "add_action(TPFW_Qr_Rewrite::HOOK_BATCH, array(\$this, 'run_qr_rewrite_batch'), 10, 4)"));
+	}
+
+	/**
+	 * @param array<int,array<int,int|string>> $aPending
+	 * @param bool                             $bFail
+	 * @return void
+	 */
+	private function bindPendingSchedule(array &$aPending, $bFail = false)
+	{
+		TPFW_Qr_Rewrite::$fnSchedule = function($sHook, $aArgs) use (&$aPending, $bFail) {
+			if($bFail)
+			{
+				return false;
+			}
+			if((string) $sHook === TPFW_Qr_Rewrite::HOOK_BATCH)
+			{
+				$aPending[] = $aArgs;
+			}
+			return true;
+		};
+		TPFW_Qr_Rewrite::$fnHasScheduled = function($iPid, $sType, $iGen) use (&$aPending) {
+			foreach($aPending as $aArgs)
+			{
+				if((int) $aArgs[0] === (int) $iPid
+					&& (string) $aArgs[1] === (string) $sType
+					&& (int) $aArgs[2] === (int) $iGen)
+				{
+					return true;
+				}
+			}
+			return false;
+		};
+	}
+
+	/**
+	 * @param array<int,array<int,int|string>> $aPending
+	 * @param object                           $wpdb
+	 * @param callable                         $fnWrite
+	 * @return array<string,mixed>
+	 */
+	private function runBookedBatch(array &$aPending, $wpdb, $fnWrite)
+	{
+		$this->assertNotSame(array(), $aPending);
+		$aArgs = array_shift($aPending);
+		$iRec  = isset($aArgs[3]) ? (int) $aArgs[3] : 0;
+		return TPFW_Qr_Rewrite::process_batch(
+			(int) $aArgs[0],
+			(string) $aArgs[1],
+			(int) $aArgs[2],
+			$wpdb,
+			$fnWrite,
+			$iRec
+		);
+	}
+
+	/**
+	 * @param array<int,array<int,int|string>> $aPending
+	 * @param object                           $wpdb
+	 * @param callable                         $fnWrite
+	 * @param array<int,int>                   $aRecoveries
+	 * @return array<string,mixed>
+	 */
+	private function drainBookedBatches(array &$aPending, $wpdb, $fnWrite, array &$aRecoveries)
+	{
+		$aLast  = null;
+		$iGuard = 0;
+		while($aPending !== array())
+		{
+			$iGuard++;
+			if($iGuard > 20)
+			{
+				$this->fail('retry drain did not stop');
+			}
+			$aLast = $this->runBookedBatch($aPending, $wpdb, $fnWrite);
+			if($aPending === array())
+			{
+				break;
+			}
+			$this->assertCount(1, $aPending);
+			$this->assertArrayHasKey(3, $aPending[0]);
+			$aRecoveries[] = (int) $aPending[0][3];
+		}
+		$this->assertSame(TPFW_Qr_Rewrite::MAX_ATTEMPTS, $iGuard);
+		return $aLast;
 	}
 
 	/**

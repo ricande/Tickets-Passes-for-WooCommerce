@@ -67,7 +67,7 @@ Existing tickets, passes, QR codes, PDFs and `tpfw_upload_slug` keep working. Gu
 
 The first request after the update records `TPFW_Qr_Render::RENDER_VERSION` and queues a background repair of live QR images (Action Scheduler, or WP-Cron if Action Scheduler is not available). Product settings do not have to change. The shop does **not** send a new mail. Customers get a current code from **My Account**, a **new PDF download**, or a dashboard **Resend**. Inbox messages already sent, and PDFs already saved on a phone, cannot be updated retroactively.
 
-A product save only queues another rewrite when colours, logo, label or the renderer version actually changed, or a previous rewrite job failed.
+A product save queues another rewrite when colours, logo, label or the renderer version actually changed, a previous rewrite job failed, or a waiting/running job has no remaining scheduled action. A save that finds the same job already queued or running with a pending action does nothing.
 
 Behaviour changes the shop should know:
 

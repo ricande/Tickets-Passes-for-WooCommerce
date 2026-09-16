@@ -72,7 +72,7 @@ class TPFW_Functions
 		add_action('wp_enqueue_scripts', array($this, 'enqueue_front_inline_styles'));
 		add_action('wp_enqueue_scripts', array($this, 'enqueue_front_product_assets'));
 
-		add_action(TPFW_Qr_Rewrite::HOOK_BATCH, array($this, 'run_qr_rewrite_batch'), 10, 3);
+		add_action(TPFW_Qr_Rewrite::HOOK_BATCH, array($this, 'run_qr_rewrite_batch'), 10, 4);
 		add_action(TPFW_Qr_Rewrite::HOOK_SWEEP, array($this, 'run_qr_rewrite_upgrade_sweep'));
 		add_action('init', array($this, 'maybe_queue_qr_rewrite_upgrade'), 30);
 		add_action('admin_notices', array($this, 'qr_rewrite_admin_notices'));
@@ -2241,23 +2241,16 @@ class TPFW_Functions
 	 * @param int    $iProductID
 	 * @param string $sType
 	 * @param int    $iGeneration
+	 * @param int    $iRecovery
 	 * @return array<string,mixed>
 	 */
-	/**
-	 * One Action Scheduler / WP-Cron page of QR rewrites.
-	 *
-	 * @param int    $iProductID
-	 * @param string $sType
-	 * @param int    $iGeneration
-	 * @return array<string,mixed>
-	 */
-	public function run_qr_rewrite_batch($iProductID, $sType, $iGeneration)
+	public function run_qr_rewrite_batch($iProductID, $sType, $iGeneration, $iRecovery = 0)
 	{
 		global $wpdb;
 		$oSelf = $this;
 		return TPFW_Qr_Rewrite::process_batch((int) $iProductID, (string) $sType, (int) $iGeneration, $wpdb, function($iPid, $sTy, $sNano) use ($oSelf) {
 			return $oSelf->write_scanner_qr($iPid, $sTy, $sNano);
-		});
+		}, (int) $iRecovery);
 	}
 
 	/**
