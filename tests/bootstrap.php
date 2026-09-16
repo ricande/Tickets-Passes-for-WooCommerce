@@ -35,6 +35,7 @@ require_once TPFW_PLUGIN_DIR.'inc/support/load.php';
 require_once __DIR__.'/lib/Credentials.php';
 require_once __DIR__.'/lib/TestWpdb.php';
 require_once __DIR__.'/lib/FailingWpdb.php';
+require_once __DIR__.'/lib/ActionSchedulerStub.php';
 require_once __DIR__.'/lib/TestSchema.php';
 require_once __DIR__.'/lib/PhpScopeScan.php';
 require_once __DIR__.'/lib/QrGenerate.php';

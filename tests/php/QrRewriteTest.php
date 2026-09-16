@@ -9,6 +9,10 @@ class QrRewriteTest extends TestCase
 	{
 		TPFW_Qr_Rewrite::reset_test_state();
 		TPFW_Qr_Rewrite::$aJobsOverride = array();
+		if(class_exists('TPFW_As_Action_Stub'))
+		{
+			TPFW_As_Action_Stub::reset();
+		}
 		$mysqli = TPFW_Test_Credentials::mysqli();
 		if(!$mysqli)
 		{

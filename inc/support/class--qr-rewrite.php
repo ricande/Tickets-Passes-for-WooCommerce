@@ -85,13 +85,13 @@ class TPFW_Qr_Rewrite
 		{
 			$sStatus    = (string) ($aJob['status'] ?? '');
 			$sJobTarget = (string) ($aJob['target'] ?? '');
-			if($sStatus === 'failed')
+			if($sStatus === 'failed' || $sStatus === 'running')
 			{
 				return true;
 			}
-			if(($sStatus === 'queued' || $sStatus === 'running') && $sJobTarget === $sTargetKey)
+			if($sStatus === 'queued' && $sJobTarget === $sTargetKey)
 			{
-				return false;
+				return (string) ($aJob['last_error'] ?? '') !== '';
 			}
 			if(($sStatus === 'queued' || $sStatus === 'running') && $sJobTarget !== $sTargetKey)
 			{
@@ -503,15 +503,15 @@ class TPFW_Qr_Rewrite
 		$aArgs = array((int) $iProductID, (string) $sType, (int) $iGeneration);
 		if(is_callable(self::$fnSchedule))
 		{
-			return (self::$fnSchedule)(self::HOOK_BATCH, $aArgs) !== false;
+			return self::hook_schedule_ok((self::$fnSchedule)(self::HOOK_BATCH, $aArgs));
 		}
 		if(function_exists('as_enqueue_async_action'))
 		{
-			return as_enqueue_async_action(self::HOOK_BATCH, $aArgs, self::GROUP) !== false;
+			return self::action_id_ok(as_enqueue_async_action(self::HOOK_BATCH, $aArgs, self::GROUP));
 		}
 		if(function_exists('wp_schedule_single_event'))
 		{
-			return wp_schedule_single_event(time(), self::HOOK_BATCH, $aArgs) !== false;
+			return self::cron_schedule_ok(wp_schedule_single_event(time(), self::HOOK_BATCH, $aArgs));
 		}
 		return false;
 	}
@@ -523,7 +523,7 @@ class TPFW_Qr_Rewrite
 	{
 		if(is_callable(self::$fnSchedule))
 		{
-			return (self::$fnSchedule)(self::HOOK_SWEEP, array()) !== false;
+			return self::hook_schedule_ok((self::$fnSchedule)(self::HOOK_SWEEP, array()));
 		}
 		if(function_exists('as_has_scheduled_action') && as_has_scheduled_action(self::HOOK_SWEEP, null, self::GROUP))
 		{
@@ -531,7 +531,7 @@ class TPFW_Qr_Rewrite
 		}
 		if(function_exists('as_enqueue_async_action'))
 		{
-			return as_enqueue_async_action(self::HOOK_SWEEP, array(), self::GROUP) !== false;
+			return self::action_id_ok(as_enqueue_async_action(self::HOOK_SWEEP, array(), self::GROUP));
 		}
 		if(function_exists('wp_next_scheduled') && wp_next_scheduled(self::HOOK_SWEEP))
 		{
@@ -539,9 +539,40 @@ class TPFW_Qr_Rewrite
 		}
 		if(function_exists('wp_schedule_single_event'))
 		{
-			return wp_schedule_single_event(time(), self::HOOK_SWEEP) !== false;
+			return self::cron_schedule_ok(wp_schedule_single_event(time(), self::HOOK_SWEEP));
 		}
 		return false;
+	}
+
+	/**
+	 * Action Scheduler returns a positive action ID on success and 0 on failure.
+	 *
+	 * @param mixed $mId
+	 * @return bool
+	 */
+	public static function action_id_ok($mId)
+	{
+		return is_numeric($mId) && (int) $mId > 0;
+	}
+
+	/**
+	 * WP-Cron returns true when the event was scheduled.
+	 *
+	 * @param mixed $m
+	 * @return bool
+	 */
+	public static function cron_schedule_ok($m)
+	{
+		return $m === true;
+	}
+
+	/**
+	 * @param mixed $m
+	 * @return bool
+	 */
+	private static function hook_schedule_ok($m)
+	{
+		return $m !== false && $m !== 0 && $m !== '0';
 	}
 
 	/**
@@ -628,6 +659,10 @@ class TPFW_Qr_Rewrite
 
 		if(($sStatus === 'queued' || $sStatus === 'running') && $sPrev === $sTargetKey)
 		{
+			if($sStatus === 'running' || (string) ($aJob['last_error'] ?? '') !== '')
+			{
+				return self::reschedule_locked($iProductID, $sType, $aJob);
+			}
 			return $aJob;
 		}
 
@@ -693,13 +728,24 @@ class TPFW_Qr_Rewrite
 		}
 		catch(\RuntimeException $oException)
 		{
-			return array('ok' => false, 'reason' => 'lock_failed', 'written' => 0, 'error' => 'lock_failed');
+			return self::recover_batch($iProductID, $sType, $iGeneration, 'lock_failed', 0);
 		}
-		if(($aStart['reason'] ?? '') !== 'applied')
+		$sStartReason = (string) ($aStart['reason'] ?? 'no_job');
+		if(empty($aStart['ok']) || $sStartReason === 'persist_failed' || $sStartReason === 'lock_failed')
+		{
+			return self::recover_batch(
+				$iProductID,
+				$sType,
+				$iGeneration,
+				(string) ($aStart['error'] ?? $sStartReason),
+				0
+			);
+		}
+		if($sStartReason !== 'applied')
 		{
 			return array(
 				'ok'      => true,
-				'reason'  => (string) ($aStart['reason'] ?? 'no_job'),
+				'reason'  => $sStartReason,
 				'written' => 0,
 			);
 		}
@@ -707,7 +753,7 @@ class TPFW_Qr_Rewrite
 		$aFetched = self::fetch_batch($wpdb, $iProductID, $sType, (int) ($aJob['cursor_id'] ?? 0), self::batch_size());
 		if(empty($aFetched['ok']))
 		{
-			return self::fail_current($iProductID, $sType, $iGeneration, (string) ($aFetched['error'] ?? 'query_failed'), 0);
+			return self::recover_batch($iProductID, $sType, $iGeneration, (string) ($aFetched['error'] ?? 'query_failed'), 0);
 		}
 		$aRows    = $aFetched['rows'];
 		$iWritten = 0;
@@ -757,7 +803,7 @@ class TPFW_Qr_Rewrite
 			}
 			catch(\RuntimeException $oException)
 			{
-				return array('ok' => false, 'reason' => 'lock_failed', 'written' => $iWritten, 'error' => 'lock_failed');
+				return self::recover_batch($iProductID, $sType, $iGeneration, 'lock_failed', $iWritten);
 			}
 			if(($aAfter['reason'] ?? '') === 'stale_generation' || ($aAfter['reason'] ?? '') === 'no_job')
 			{
@@ -765,11 +811,12 @@ class TPFW_Qr_Rewrite
 			}
 			if(empty($aAfter['ok']))
 			{
-				return array(
-					'ok'      => false,
-					'reason'  => 'persist_failed',
-					'written' => $iWritten,
-					'error'   => (string) ($aAfter['error'] ?? 'persist_failed'),
+				return self::recover_batch(
+					$iProductID,
+					$sType,
+					$iGeneration,
+					(string) ($aAfter['error'] ?? 'persist_failed'),
+					$iWritten
 				);
 			}
 			$aJob = $aAfter['job'];
@@ -777,7 +824,7 @@ class TPFW_Qr_Rewrite
 			{
 				if(($aJob['status'] ?? '') === 'queued' && !self::schedule($iProductID, $sType, $iGeneration))
 				{
-					self::fail_current($iProductID, $sType, $iGeneration, 'schedule_failed', $iWritten);
+					return self::recover_batch($iProductID, $sType, $iGeneration, 'schedule_failed', $iWritten);
 				}
 				return array(
 					'ok'      => false,
@@ -826,7 +873,7 @@ class TPFW_Qr_Rewrite
 		}
 		catch(\RuntimeException $oException)
 		{
-			return array('ok' => false, 'reason' => 'lock_failed', 'written' => $iWritten, 'error' => 'lock_failed');
+			return self::recover_batch($iProductID, $sType, $iGeneration, 'lock_failed', $iWritten);
 		}
 		if(($aEnd['reason'] ?? '') === 'stale_generation' || ($aEnd['reason'] ?? '') === 'no_job')
 		{
@@ -834,7 +881,13 @@ class TPFW_Qr_Rewrite
 		}
 		if(empty($aEnd['ok']))
 		{
-			return array('ok' => false, 'reason' => 'persist_failed', 'written' => $iWritten, 'error' => (string) ($aEnd['error'] ?? 'persist_failed'));
+			return self::recover_batch(
+				$iProductID,
+				$sType,
+				$iGeneration,
+				(string) ($aEnd['error'] ?? 'persist_failed'),
+				$iWritten
+			);
 		}
 		$aJob = $aEnd['job'];
 		if(($aJob['status'] ?? '') === 'done')
@@ -847,7 +900,7 @@ class TPFW_Qr_Rewrite
 		}
 		if(!self::schedule($iProductID, $sType, $iGeneration))
 		{
-			return self::fail_current($iProductID, $sType, $iGeneration, 'schedule_failed', $iWritten);
+			return self::recover_batch($iProductID, $sType, $iGeneration, 'schedule_failed', $iWritten);
 		}
 		return array('ok' => true, 'reason' => 'continue', 'written' => $iWritten);
 	}
@@ -860,7 +913,7 @@ class TPFW_Qr_Rewrite
 	 * @param int    $iWritten
 	 * @return array<string,mixed>
 	 */
-	private static function fail_current($iProductID, $sType, $iGeneration, $sError, $iWritten)
+	private static function recover_batch($iProductID, $sType, $iGeneration, $sError, $iWritten)
 	{
 		try
 		{
@@ -873,16 +926,48 @@ class TPFW_Qr_Rewrite
 		}
 		catch(\RuntimeException $oException)
 		{
-			return array('ok' => false, 'reason' => 'lock_failed', 'written' => $iWritten, 'error' => 'lock_failed');
+			$bSched = self::schedule($iProductID, $sType, $iGeneration);
+			return array(
+				'ok'      => false,
+				'reason'  => $bSched ? 'lock_failed' : 'schedule_failed',
+				'written' => $iWritten,
+				'error'   => $bSched ? $sError : 'schedule_failed',
+			);
 		}
 		if(($aFail['reason'] ?? '') === 'stale_generation' || ($aFail['reason'] ?? '') === 'no_job')
 		{
 			return array('ok' => true, 'reason' => 'superseded', 'written' => $iWritten);
 		}
-		$aJob = $aFail['job'] ?? array();
-		if(($aJob['status'] ?? '') === 'queued')
+		if(empty($aFail['ok']))
 		{
-			self::schedule($iProductID, $sType, $iGeneration);
+			$bSched = self::schedule($iProductID, $sType, $iGeneration);
+			return array(
+				'ok'      => false,
+				'reason'  => $bSched ? 'persist_failed' : 'schedule_failed',
+				'written' => $iWritten,
+				'error'   => $bSched ? $sError : 'schedule_failed',
+			);
+		}
+		$aJob = $aFail['job'] ?? array();
+		if(($aJob['status'] ?? '') === 'queued' && !self::schedule($iProductID, $sType, $iGeneration))
+		{
+			try
+			{
+				$aMark = self::apply_generation($iProductID, $sType, $iGeneration, function($aFresh) {
+					$aFresh['status']     = 'failed';
+					$aFresh['last_error'] = 'schedule_failed';
+					return $aFresh;
+				});
+			}
+			catch(\RuntimeException $oException)
+			{
+				return array('ok' => false, 'reason' => 'schedule_failed', 'written' => $iWritten, 'error' => 'schedule_failed');
+			}
+			if(($aMark['reason'] ?? '') === 'stale_generation' || ($aMark['reason'] ?? '') === 'no_job')
+			{
+				return array('ok' => true, 'reason' => 'superseded', 'written' => $iWritten);
+			}
+			return array('ok' => false, 'reason' => 'failed', 'written' => $iWritten, 'error' => 'schedule_failed');
 		}
 		return array(
 			'ok'      => false,
@@ -890,6 +975,31 @@ class TPFW_Qr_Rewrite
 			'written' => $iWritten,
 			'error'   => $sError,
 		);
+	}
+
+	/**
+	 * Resume a same-generation job without moving the cursor. Used when a running or
+	 * errored queued job is kicked by a product save or sweep.
+	 *
+	 * @param int                 $iProductID
+	 * @param string              $sType
+	 * @param array<string,mixed> $aJob
+	 * @return array<string,mixed>
+	 */
+	private static function reschedule_locked($iProductID, $sType, $aJob)
+	{
+		$iGen = (int) ($aJob['generation'] ?? 0);
+		if(!self::schedule($iProductID, $sType, $iGen))
+		{
+			$aJob['status']     = 'failed';
+			$aJob['last_error'] = 'schedule_failed';
+			self::persist_job($iProductID, $sType, $aJob);
+			return $aJob;
+		}
+		$aJob['status']     = 'queued';
+		$aJob['last_error'] = '';
+		self::persist_job($iProductID, $sType, $aJob);
+		return $aJob;
 	}
 
 	/**

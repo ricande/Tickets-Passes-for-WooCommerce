@@ -65,7 +65,7 @@ class TPFW_Failing_Wpdb
 		if(call_user_func($this->fnFail, (string)$sql))
 		{
 			$this->last_error = 'injected failure';
-			return null;
+			return str_contains((string)$sql, 'GET_LOCK') ? '0' : null;
 		}
 		$m = $this->inner->get_var($sql);
 		$this->last_error = $this->inner->last_error;
