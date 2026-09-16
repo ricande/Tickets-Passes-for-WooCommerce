@@ -24,12 +24,12 @@ Subfolders are a fixed map (`TPFW_Functions::FILE_TYPE_FOLDERS`). The request ne
 
 ## Request shape
 
-`?tpfw_file={type}&id={name}&ext={ext}` plus optional `&exp={unix}&t={hmac}` and optional `&v={mtime}`
+`?tpfw_file={type}&id={name}&ext={ext}` plus optional `&exp={unix}&t={hmac}` and optional `&v={revision}`
 
 - `type` must be a `FILE_TYPE_FOLDERS` key
 - `id` must match `^[A-Za-z0-9_-]{1,64}$`
 - `ext` must be in `SERVABLE_MIMES` (webp, png, jpg, jpeg, gif, pdf)
-- `v` is a cache-buster taken from the file mtime. It is **not** part of the HMAC and is ignored by `may_access_file()`. Changing `v` cannot grant access that `type` / `id` / `ext` / `exp` / `t` would have refused.
+- `v` is a cache-buster taken from a content hash of the published file. It is **not** part of the HMAC and is ignored by `may_access_file()`. Changing `v` cannot grant access that `type` / `id` / `ext` / `exp` / `t` would have refused.
 
 Anything else, any failed auth, and any path that `realpath()` would take outside the type folder, answers the **same bare 404**. Distinguishing “no such ticket” from “not yours” would be an existence oracle.
 
@@ -49,7 +49,7 @@ Signatures: `verify_file_token()` / `sign_file_token()` using `tpfw_file_secret`
 
 - `Cache-Control: private` + `Vary: Cookie` + `DONOTCACHEPAGE` so a page cache or CDN cannot hand one customer’s file to the next
 - QR / guest / PDF / preview / profile: `no-cache` + ETag. QR and guest images are rewritten in place (same nano-id filename) when the product’s colours/logo or the renderer version change. PDFs are rebuilt from the **current** QR on every download. They must not be advertised as immutable.
-- Generated links include `&v={mtime}` so a browser that already stored an old immutable response fetches the new file. `v` is not signed.
+- Generated links include `&v={revision}` (content hash of the published file, and for PDFs of the embedded QR too) so a browser that already stored an old immutable response fetches the new file. `v` is not signed.
 - `X-Content-Type-Options: nosniff`, `X-Robots-Tag: noindex`
 - PDF is `Content-Disposition: attachment`; images are `inline`
 
@@ -59,4 +59,4 @@ The constructor calls `serve_file()` immediately. The plugin boots on `init` pri
 
 ## Rewriting issued QR images
 
-`TPFW_Qr_Rewrite` rewrites live codes in background batches (Action Scheduler when WooCommerce provides it, otherwise a one-shot WP-Cron event). A product save queues work only when the appearance fingerprint (colours, logo, label, `TPFW_Qr_Render::RENDER_VERSION`) differs from the last successful rewrite, or a previous job failed. Unchanged saves are a no-op. After an upgrade the first request schedules a repair sweep so existing shops get the new look without opening every product. Batches are 25 live rows (`deleted IS NULL`); cancelled/revoked rows are skipped and never reactivated. Writes go to a temp file and replace the destination only after a successful generate. A job that fails five times stops and surfaces an admin notice; saving the product or the next sweep resumes from the last successful id.
+`TPFW_Qr_Rewrite` rewrites live codes in background batches (Action Scheduler when WooCommerce provides it, otherwise a one-shot WP-Cron event). A product save queues work only when the appearance fingerprint (colours, logo, label, `TPFW_Qr_Render::RENDER_VERSION`) differs from the last successful rewrite, or a previous job failed. Unchanged saves are a no-op. After an upgrade the first request schedules a repair sweep so existing shops get the new look without opening every product. Batches are 25 live rows (`deleted IS NULL`); cancelled/revoked rows are skipped and never reactivated. Job state lives in one option but is mutated under a MySQL named lock after a cache-busted reload, so an older generation cannot overwrite a newer cursor/status/target and concurrent product updates cannot drop each other. Each write uses a unique temp file on the destination’s directory; a rewrite replaces the live image only while that generation is still current. A failed write leaves the previous image in place. A database error is not treated as an empty page: the job stays resumable and an incomplete upgrade sweep is not recorded as handled. A job that fails five times stops and surfaces an admin notice; saving the product or the next sweep resumes from the last successful id.

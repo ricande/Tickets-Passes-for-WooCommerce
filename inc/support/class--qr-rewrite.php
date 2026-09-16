@@ -4,11 +4,10 @@ defined('ABSPATH') or die('No script kiddies please!');
 /**
  * Background rewrite of issued QR images after appearance or renderer changes.
  *
- * Product save no longer walks every live row in the request. A job is queued only when the
- * appearance fingerprint (including TPFW_Qr_Render::RENDER_VERSION) disagrees with the last
- * successful rewrite, or when a previous job failed and can be resumed. Batches are bounded,
- * keyed by row id so deleted/revoked rows are never revived, and a newer fingerprint resets
- * the cursor so an in-flight job cannot finish on a stale look.
+ * Job state lives in one option but is only mutated under a MySQL named lock, after a
+ * cache-busted reload. Older generations cannot persist cursor, status, target or issued-key
+ * once a newer generation is stored. File publish for a rewrite uses the same lock and
+ * generation check before replacing the destination.
  */
 class TPFW_Qr_Rewrite
 {
@@ -17,6 +16,8 @@ class TPFW_Qr_Rewrite
 	const HOOK_BATCH    = 'tpfw_rewrite_qr_batch';
 	const HOOK_SWEEP    = 'tpfw_rewrite_qr_upgrade_sweep';
 	const GROUP         = 'tpfw-qr-rewrite';
+	const LOCK_NAME     = 'tpfw_qr_rewrite_jobs';
+	const KV_TABLE      = 'tpfw_kv';
 	const BATCH_SIZE    = 25;
 	const MAX_ATTEMPTS  = 5;
 
@@ -26,7 +27,7 @@ class TPFW_Qr_Rewrite
 	/** @var int|null */
 	public static $iBatchSizeOverride = null;
 
-	/** @var callable|null function(string $sHook, array $aArgs): void */
+	/** @var callable|null function(string $sHook, array $aArgs): mixed */
 	public static $fnSchedule = null;
 
 	/** @var callable|null function(int $iProductID, string $sType, int $iGeneration): void */
@@ -34,6 +35,15 @@ class TPFW_Qr_Rewrite
 
 	/** @var callable|null function(int $iProductID, string $sType, string $sKey): void */
 	public static $fnSetIssuedKey = null;
+
+	/** @var object|null wpdb-like handle for GET_LOCK and optional kv storage. */
+	public static $wpdbOverride = null;
+
+	/** @var bool */
+	public static $bKvStore = false;
+
+	/** @var array{product_id:int,type:string,generation:int}|null */
+	public static $aPublishContext = null;
 
 	/**
 	 * @return void
@@ -45,6 +55,9 @@ class TPFW_Qr_Rewrite
 		self::$fnSchedule         = null;
 		self::$fnUnschedule       = null;
 		self::$fnSetIssuedKey     = null;
+		self::$wpdbOverride       = null;
+		self::$bKvStore           = false;
+		self::$aPublishContext    = null;
 	}
 
 	/**
@@ -89,10 +102,24 @@ class TPFW_Qr_Rewrite
 	}
 
 	/**
+	 * Unique temp path on the same directory (hence filesystem) as the destination.
+	 *
+	 * @param string $sDest
+	 * @return string
+	 */
+	public static function unique_temp_path($sDest)
+	{
+		$sDest = (string) $sDest;
+		$sDir  = dirname($sDest);
+		$sBase = basename($sDest);
+		return $sDir.'/'.$sBase.'.'.bin2hex(random_bytes(8)).'.tmp';
+	}
+
+	/**
 	 * Atomically replace $sDest with $sTmp after a successful generation.
 	 *
-	 * The destination is left untouched when the temp file is missing, empty, or cannot be
-	 * renamed into place, so a working QR is not destroyed by a failed rewrite.
+	 * Only $sTmp is removed on failure. The destination is left untouched when the temp file
+	 * is missing, empty, or cannot be renamed into place.
 	 *
 	 * @param string $sTmp  Temporary file that already holds the new image.
 	 * @param string $sDest Final .webp path.
@@ -104,18 +131,51 @@ class TPFW_Qr_Rewrite
 		$sDest = (string) $sDest;
 		if($sTmp === '' || $sDest === '' || !is_file($sTmp) || filesize($sTmp) < 32)
 		{
-			if($sTmp !== '' && is_file($sTmp))
-			{
-				@unlink($sTmp);
-			}
+			self::unlink_own_temp($sTmp);
 			return false;
 		}
+		clearstatcache(true, $sTmp);
+		clearstatcache(true, $sDest);
 		if(!@rename($sTmp, $sDest))
 		{
-			@unlink($sTmp);
+			self::unlink_own_temp($sTmp);
 			return false;
 		}
+		clearstatcache(true, $sDest);
+		clearstatcache(true, $sTmp);
 		return true;
+	}
+
+	/**
+	 * Replace a QR file only when this rewrite generation is still current.
+	 *
+	 * @param string $sTmp
+	 * @param string $sDest
+	 * @param int    $iProductID
+	 * @param string $sType
+	 * @param int    $iGeneration
+	 * @return bool
+	 */
+	public static function publish_rewrite_file($sTmp, $sDest, $iProductID, $sType, $iGeneration)
+	{
+		try
+		{
+			$bOk = self::with_jobs_lock(function() use ($sTmp, $sDest, $iProductID, $sType, $iGeneration) {
+				$aJob = self::get_job($iProductID, $sType);
+				if($aJob === null || (int) ($aJob['generation'] ?? 0) !== (int) $iGeneration)
+				{
+					self::unlink_own_temp($sTmp);
+					return false;
+				}
+				return self::commit_generated_file($sTmp, $sDest);
+			});
+			return $bOk === true;
+		}
+		catch(\RuntimeException $oException)
+		{
+			self::unlink_own_temp($sTmp);
+			return false;
+		}
 	}
 
 	/**
@@ -158,26 +218,17 @@ class TPFW_Qr_Rewrite
 	 */
 	public static function load_jobs()
 	{
-		if(self::$aJobsOverride !== null)
+		if(self::$aJobsOverride !== null && !self::$bKvStore)
 		{
 			return self::$aJobsOverride;
 		}
+		if(self::$bKvStore)
+		{
+			return self::kv_read_jobs();
+		}
+		self::bust_jobs_cache();
 		$a = get_option(self::OPTION_JOBS, array());
 		return is_array($a) ? $a : array();
-	}
-
-	/**
-	 * @param array<string,array<string,mixed>> $aJobs
-	 * @return void
-	 */
-	public static function save_jobs($aJobs)
-	{
-		if(self::$aJobsOverride !== null)
-		{
-			self::$aJobsOverride = $aJobs;
-			return;
-		}
-		update_option(self::OPTION_JOBS, $aJobs, false);
 	}
 
 	/**
@@ -199,26 +250,35 @@ class TPFW_Qr_Rewrite
 	 * @param string $sType
 	 * @param string $sIssuedKey
 	 * @param string $sTargetKey
-	 * @return array<string,mixed>|null The job after the call, or null when nothing was queued.
+	 * @return array<string,mixed>|false|null The job, false on lock/persist failure, null when nothing was queued.
 	 */
 	public static function enqueue_if_needed($iProductID, $sType, $sIssuedKey, $sTargetKey)
 	{
-		return self::needs_rewrite($sIssuedKey, $sTargetKey, self::get_job($iProductID, $sType))
-			? self::enqueue($iProductID, $sType, $sTargetKey)
-			: null;
+		try
+		{
+			return self::with_jobs_lock(function() use ($iProductID, $sType, $sIssuedKey, $sTargetKey) {
+				$aJob = self::get_job($iProductID, $sType);
+				if(!self::needs_rewrite($sIssuedKey, $sTargetKey, $aJob))
+				{
+					return null;
+				}
+				$aQueued = self::enqueue_locked($iProductID, $sType, $sTargetKey, $aJob);
+				return $aQueued === null ? false : $aQueued;
+			});
+		}
+		catch(\RuntimeException $oException)
+		{
+			return false;
+		}
 	}
 
 	/**
 	 * Queue or refresh a rewrite for one product panel.
 	 *
-	 * Same fingerprint while a job is already queued/running is a no-op (repeated save).
-	 * A new fingerprint bumps generation and resets the cursor. A failed job with the same
-	 * target keeps the cursor and clears the attempt counter so it can resume.
-	 *
 	 * @param int    $iProductID
 	 * @param string $sType
 	 * @param string $sTargetKey
-	 * @return array<string,mixed>|null The job after the call, or null when nothing was queued.
+	 * @return array<string,mixed>|null
 	 */
 	public static function enqueue($iProductID, $sType, $sTargetKey)
 	{
@@ -228,44 +288,16 @@ class TPFW_Qr_Rewrite
 		{
 			return null;
 		}
-
-		$aJobs   = self::load_jobs();
-		$sKey    = self::job_key($iProductID, $sType);
-		$aJob    = isset($aJobs[$sKey]) && is_array($aJobs[$sKey]) ? $aJobs[$sKey] : array();
-		$sStatus = (string) ($aJob['status'] ?? '');
-		$sPrev   = (string) ($aJob['target'] ?? '');
-		$iGen    = (int) ($aJob['generation'] ?? 0);
-
-		if(($sStatus === 'queued' || $sStatus === 'running') && $sPrev === $sTargetKey)
+		try
 		{
-			return $aJob;
+			return self::with_jobs_lock(function() use ($iProductID, $sType, $sTargetKey) {
+				return self::enqueue_locked($iProductID, $sType, $sTargetKey, self::get_job($iProductID, $sType));
+			});
 		}
-
-		if($sStatus === 'failed' && $sPrev === $sTargetKey)
+		catch(\RuntimeException $oException)
 		{
-			$aJob['status']     = 'queued';
-			$aJob['attempts']   = 0;
-			$aJob['last_error'] = '';
-			$aJobs[$sKey]       = $aJob;
-			self::save_jobs($aJobs);
-			self::schedule($iProductID, $sType, (int) $aJob['generation']);
-			return $aJob;
+			return null;
 		}
-
-		self::unschedule($iProductID, $sType, $iGen);
-		$iGen++;
-		$aJob = array(
-			'generation' => $iGen,
-			'target'     => $sTargetKey,
-			'cursor_id'  => 0,
-			'status'     => 'queued',
-			'attempts'   => 0,
-			'last_error' => '',
-		);
-		$aJobs[$sKey] = $aJob;
-		self::save_jobs($aJobs);
-		self::schedule($iProductID, $sType, $iGen);
-		return $aJob;
 	}
 
 	/**
@@ -276,14 +308,14 @@ class TPFW_Qr_Rewrite
 	 * @param string $sType
 	 * @param int    $iCursorId
 	 * @param int    $iLimit
-	 * @return array<int,object>
+	 * @return array{ok:bool, rows:array<int,object>, error?:string}
 	 */
 	public static function fetch_batch($wpdb, $iProductID, $sType, $iCursorId, $iLimit)
 	{
 		$aSpec = self::table_spec($sType);
 		if($aSpec === null || empty($wpdb))
 		{
-			return array();
+			return array('ok' => false, 'rows' => array(), 'error' => 'bad_spec');
 		}
 		$iLimit    = max(1, (int) $iLimit);
 		$iCursorId = max(0, (int) $iCursorId);
@@ -296,9 +328,18 @@ class TPFW_Qr_Rewrite
 			$iCursorId,
 			$iLimit
 		);
+		$wpdb->last_error = '';
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sSql is $wpdb->prepare() above; $sExtra is a literal from table_spec().
 		$aRows = $wpdb->get_results($sSql);
-		return is_array($aRows) ? $aRows : array();
+		if($aRows === false || (isset($wpdb->last_error) && $wpdb->last_error !== ''))
+		{
+			return array(
+				'ok'    => false,
+				'rows'  => array(),
+				'error' => (string) ($wpdb->last_error !== '' ? $wpdb->last_error : 'query_failed'),
+			);
+		}
+		return array('ok' => true, 'rows' => is_array($aRows) ? $aRows : array());
 	}
 
 	/**
@@ -307,110 +348,40 @@ class TPFW_Qr_Rewrite
 	 * @param int      $iGeneration
 	 * @param object   $wpdb
 	 * @param callable $fnWrite function(int $iProductID, string $sType, string $sNanoID): bool
-	 * @return array<string,mixed> Result snapshot for tests and logging.
+	 * @return array<string,mixed>
 	 */
 	public static function process_batch($iProductID, $sType, $iGeneration, $wpdb, $fnWrite)
 	{
 		$iProductID  = (int) $iProductID;
 		$iGeneration = (int) $iGeneration;
-		$aJob        = self::get_job($iProductID, $sType);
-		if($aJob === null)
+		$aPrev       = self::$aPublishContext;
+		self::$aPublishContext = array(
+			'product_id' => $iProductID,
+			'type'       => $sType,
+			'generation' => $iGeneration,
+		);
+		try
 		{
-			return array('ok' => true, 'reason' => 'no_job', 'written' => 0);
+			return self::process_batch_body($iProductID, $sType, $iGeneration, $wpdb, $fnWrite);
 		}
-		if((int) ($aJob['generation'] ?? 0) !== $iGeneration)
+		finally
 		{
-			return array('ok' => true, 'reason' => 'stale_generation', 'written' => 0);
+			self::$aPublishContext = $aPrev;
 		}
-
-		$aJob['status'] = 'running';
-		self::put_job($iProductID, $sType, $aJob);
-
-		$aRows    = self::fetch_batch($wpdb, $iProductID, $sType, (int) ($aJob['cursor_id'] ?? 0), self::batch_size());
-		$iWritten = 0;
-		foreach($aRows as $oRow)
-		{
-			$aFresh = self::get_job($iProductID, $sType);
-			if($aFresh === null || (int) ($aFresh['generation'] ?? 0) !== $iGeneration)
-			{
-				return array('ok' => true, 'reason' => 'superseded', 'written' => $iWritten);
-			}
-			$sNano = isset($oRow->nano_id) ? (string) $oRow->nano_id : '';
-			$iId   = isset($oRow->id) ? (int) $oRow->id : 0;
-			if($sNano === '' || $iId < 1)
-			{
-				continue;
-			}
-			$bOk = false;
-			try
-			{
-				$bOk = (bool) $fnWrite($iProductID, $sType, $sNano);
-			}
-			catch(\Throwable $oThrowable)
-			{
-				$bOk = false;
-				$aJob['last_error'] = $oThrowable->getMessage();
-			}
-			if(!$bOk)
-			{
-				$aJob['attempts'] = (int) ($aJob['attempts'] ?? 0) + 1;
-				$aJob['status']   = ($aJob['attempts'] >= self::MAX_ATTEMPTS) ? 'failed' : 'queued';
-				if(($aJob['last_error'] ?? '') === '')
-				{
-					$aJob['last_error'] = 'write_failed';
-				}
-				self::put_job($iProductID, $sType, $aJob);
-				if($aJob['status'] === 'queued')
-				{
-					self::schedule($iProductID, $sType, $iGeneration);
-				}
-				return array(
-					'ok'      => false,
-					'reason'  => $aJob['status'],
-					'written' => $iWritten,
-					'error'   => (string) $aJob['last_error'],
-				);
-			}
-			$aJob['cursor_id']  = $iId;
-			$aJob['last_error'] = '';
-			$aJob['attempts']   = 0;
-			self::put_job($iProductID, $sType, $aJob);
-			$iWritten++;
-		}
-
-		if(count($aRows) < self::batch_size())
-		{
-			$aJob['status'] = 'done';
-			self::put_job($iProductID, $sType, $aJob);
-			if(is_callable(self::$fnSetIssuedKey))
-			{
-				(self::$fnSetIssuedKey)($iProductID, $sType, (string) $aJob['target']);
-			}
-			elseif(function_exists('update_post_meta'))
-			{
-				update_post_meta($iProductID, '_tpfw_'.$sType.'_qr_issued_key', (string) $aJob['target']);
-			}
-			return array('ok' => true, 'reason' => 'done', 'written' => $iWritten);
-		}
-
-		$aJob['status'] = 'queued';
-		self::put_job($iProductID, $sType, $aJob);
-		self::schedule($iProductID, $sType, $iGeneration);
-		return array('ok' => true, 'reason' => 'continue', 'written' => $iWritten);
 	}
 
 	/**
 	 * Product ids that still have live issued rows, for the post-upgrade repair sweep.
 	 *
 	 * @param object $wpdb
-	 * @return array<int,array{product_id:int,type:string}>
+	 * @return array{ok:bool, items:array<int,array{product_id:int,type:string}>, error?:string}
 	 */
 	public static function live_product_types($wpdb)
 	{
 		$aOut = array();
 		if(empty($wpdb))
 		{
-			return $aOut;
+			return array('ok' => false, 'items' => array(), 'error' => 'no_wpdb');
 		}
 		foreach(array('ticket', 'timeslot', 'pass', 'guestpass') as $sType)
 		{
@@ -419,8 +390,17 @@ class TPFW_Qr_Rewrite
 				'SELECT DISTINCT product_id FROM %i WHERE deleted IS NULL'.$aSpec['extra'],
 				$wpdb->prefix.$aSpec['table']
 			);
+			$wpdb->last_error = '';
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sSql is $wpdb->prepare(); extra is a literal.
 			$aRows = $wpdb->get_results($sSql);
+			if($aRows === false || (isset($wpdb->last_error) && $wpdb->last_error !== ''))
+			{
+				return array(
+					'ok'    => false,
+					'items' => array(),
+					'error' => (string) ($wpdb->last_error !== '' ? $wpdb->last_error : 'query_failed'),
+				);
+			}
 			if(!is_array($aRows))
 			{
 				continue;
@@ -434,12 +414,63 @@ class TPFW_Qr_Rewrite
 				}
 			}
 		}
-		return $aOut;
+		return array('ok' => true, 'items' => $aOut);
 	}
 
 	/**
-	 * Human-readable failures for wp-admin. Empty when nothing is stuck.
+	 * Queue a rewrite for every live product/type after a renderer bump.
 	 *
+	 * A database error, persist failure or schedule failure leaves the sweep incomplete so
+	 * RENDER_VERSION is not recorded as handled.
+	 *
+	 * @param object      $wpdb
+	 * @param callable    $fnTargetKey   function(int $iProductID, string $sType): string
+	 * @param callable    $fnIssuedKey   function(int $iProductID, string $sType): string
+	 * @param callable    $fnMarkHandled function(): void Called only after a complete sweep.
+	 * @return array{ok:bool, queued:int, error?:string}
+	 */
+	public static function upgrade_sweep($wpdb, $fnTargetKey, $fnIssuedKey, $fnMarkHandled)
+	{
+		$aLive = self::live_product_types($wpdb);
+		if(empty($aLive['ok']))
+		{
+			return array('ok' => false, 'queued' => 0, 'error' => (string) ($aLive['error'] ?? 'query_failed'));
+		}
+		$iQueued = 0;
+		$bOk     = true;
+		foreach($aLive['items'] as $aItem)
+		{
+			$iPid    = (int) ($aItem['product_id'] ?? 0);
+			$sType   = (string) ($aItem['type'] ?? '');
+			$sTarget = (string) $fnTargetKey($iPid, $sType);
+			$sIssued = (string) $fnIssuedKey($iPid, $sType);
+			$mJob    = self::enqueue_if_needed($iPid, $sType, $sIssued, $sTarget);
+			if($mJob === false)
+			{
+				$bOk = false;
+				continue;
+			}
+			if(is_array($mJob))
+			{
+				$iQueued++;
+				if(($mJob['status'] ?? '') === 'failed')
+				{
+					$bOk = false;
+				}
+			}
+		}
+		if(!$bOk)
+		{
+			return array('ok' => false, 'queued' => $iQueued, 'error' => 'incomplete');
+		}
+		if(is_callable($fnMarkHandled))
+		{
+			$fnMarkHandled();
+		}
+		return array('ok' => true, 'queued' => $iQueued);
+	}
+
+	/**
 	 * @return string[]
 	 */
 	public static function failure_messages()
@@ -465,54 +496,52 @@ class TPFW_Qr_Rewrite
 	 * @param int    $iProductID
 	 * @param string $sType
 	 * @param int    $iGeneration
-	 * @return void
+	 * @return bool
 	 */
 	public static function schedule($iProductID, $sType, $iGeneration)
 	{
 		$aArgs = array((int) $iProductID, (string) $sType, (int) $iGeneration);
 		if(is_callable(self::$fnSchedule))
 		{
-			(self::$fnSchedule)(self::HOOK_BATCH, $aArgs);
-			return;
+			return (self::$fnSchedule)(self::HOOK_BATCH, $aArgs) !== false;
 		}
 		if(function_exists('as_enqueue_async_action'))
 		{
-			as_enqueue_async_action(self::HOOK_BATCH, $aArgs, self::GROUP);
-			return;
+			return as_enqueue_async_action(self::HOOK_BATCH, $aArgs, self::GROUP) !== false;
 		}
 		if(function_exists('wp_schedule_single_event'))
 		{
-			wp_schedule_single_event(time(), self::HOOK_BATCH, $aArgs);
+			return wp_schedule_single_event(time(), self::HOOK_BATCH, $aArgs) !== false;
 		}
+		return false;
 	}
 
 	/**
-	 * @return void
+	 * @return bool
 	 */
 	public static function schedule_sweep()
 	{
 		if(is_callable(self::$fnSchedule))
 		{
-			(self::$fnSchedule)(self::HOOK_SWEEP, array());
-			return;
+			return (self::$fnSchedule)(self::HOOK_SWEEP, array()) !== false;
 		}
 		if(function_exists('as_has_scheduled_action') && as_has_scheduled_action(self::HOOK_SWEEP, null, self::GROUP))
 		{
-			return;
+			return true;
 		}
 		if(function_exists('as_enqueue_async_action'))
 		{
-			as_enqueue_async_action(self::HOOK_SWEEP, array(), self::GROUP);
-			return;
+			return as_enqueue_async_action(self::HOOK_SWEEP, array(), self::GROUP) !== false;
 		}
 		if(function_exists('wp_next_scheduled') && wp_next_scheduled(self::HOOK_SWEEP))
 		{
-			return;
+			return true;
 		}
 		if(function_exists('wp_schedule_single_event'))
 		{
-			wp_schedule_single_event(time(), self::HOOK_SWEEP);
+			return wp_schedule_single_event(time(), self::HOOK_SWEEP) !== false;
 		}
+		return false;
 	}
 
 	/**
@@ -557,15 +586,482 @@ class TPFW_Qr_Rewrite
 	}
 
 	/**
+	 * @param callable $fn
+	 * @return mixed
+	 */
+	public static function with_jobs_lock($fn)
+	{
+		$wpdb = self::lock_wpdb();
+		if($wpdb === null)
+		{
+			return $fn();
+		}
+		$oLock = TPFW_Named_Lock::acquire($wpdb, self::LOCK_NAME, 5);
+		if(!$oLock->held())
+		{
+			throw new RuntimeException('qr_rewrite_lock');
+		}
+		try
+		{
+			self::bust_jobs_cache();
+			return $fn();
+		}
+		finally
+		{
+			$oLock->release();
+		}
+	}
+
+	/**
+	 * @param int    $iProductID
+	 * @param string $sType
+	 * @param string $sTargetKey
+	 * @param array<string,mixed>|null $aJob
+	 * @return array<string,mixed>|null
+	 */
+	private static function enqueue_locked($iProductID, $sType, $sTargetKey, $aJob)
+	{
+		$aJob    = is_array($aJob) ? $aJob : array();
+		$sStatus = (string) ($aJob['status'] ?? '');
+		$sPrev   = (string) ($aJob['target'] ?? '');
+		$iGen    = (int) ($aJob['generation'] ?? 0);
+
+		if(($sStatus === 'queued' || $sStatus === 'running') && $sPrev === $sTargetKey)
+		{
+			return $aJob;
+		}
+
+		if($sStatus === 'failed' && $sPrev === $sTargetKey)
+		{
+			$aJob['status']     = 'queued';
+			$aJob['attempts']   = 0;
+			$aJob['last_error'] = '';
+			if(!self::persist_job($iProductID, $sType, $aJob))
+			{
+				$aJob['status']     = 'failed';
+				$aJob['last_error'] = 'persist_failed';
+				return $aJob;
+			}
+			if(!self::schedule($iProductID, $sType, (int) $aJob['generation']))
+			{
+				$aJob['status']     = 'failed';
+				$aJob['last_error'] = 'schedule_failed';
+				self::persist_job($iProductID, $sType, $aJob);
+			}
+			return $aJob;
+		}
+
+		self::unschedule($iProductID, $sType, $iGen);
+		$iGen++;
+		$aJob = array(
+			'generation' => $iGen,
+			'target'     => $sTargetKey,
+			'cursor_id'  => 0,
+			'status'     => 'queued',
+			'attempts'   => 0,
+			'last_error' => '',
+		);
+		if(!self::persist_job($iProductID, $sType, $aJob))
+		{
+			return null;
+		}
+		if(!self::schedule($iProductID, $sType, $iGen))
+		{
+			$aJob['status']     = 'failed';
+			$aJob['last_error'] = 'schedule_failed';
+			self::persist_job($iProductID, $sType, $aJob);
+		}
+		return $aJob;
+	}
+
+	/**
+	 * @param int      $iProductID
+	 * @param string   $sType
+	 * @param int      $iGeneration
+	 * @param object   $wpdb
+	 * @param callable $fnWrite
+	 * @return array<string,mixed>
+	 */
+	private static function process_batch_body($iProductID, $sType, $iGeneration, $wpdb, $fnWrite)
+	{
+		try
+		{
+			$aStart = self::apply_generation($iProductID, $sType, $iGeneration, function($aJob) {
+				$aJob['status'] = 'running';
+				return $aJob;
+			});
+		}
+		catch(\RuntimeException $oException)
+		{
+			return array('ok' => false, 'reason' => 'lock_failed', 'written' => 0, 'error' => 'lock_failed');
+		}
+		if(($aStart['reason'] ?? '') !== 'applied')
+		{
+			return array(
+				'ok'      => true,
+				'reason'  => (string) ($aStart['reason'] ?? 'no_job'),
+				'written' => 0,
+			);
+		}
+		$aJob     = $aStart['job'];
+		$aFetched = self::fetch_batch($wpdb, $iProductID, $sType, (int) ($aJob['cursor_id'] ?? 0), self::batch_size());
+		if(empty($aFetched['ok']))
+		{
+			return self::fail_current($iProductID, $sType, $iGeneration, (string) ($aFetched['error'] ?? 'query_failed'), 0);
+		}
+		$aRows    = $aFetched['rows'];
+		$iWritten = 0;
+		foreach($aRows as $oRow)
+		{
+			$sNano = isset($oRow->nano_id) ? (string) $oRow->nano_id : '';
+			$iId   = isset($oRow->id) ? (int) $oRow->id : 0;
+			if($sNano === '' || $iId < 1)
+			{
+				continue;
+			}
+			$bOk         = false;
+			$sWriteError = '';
+			try
+			{
+				$bOk = (bool) $fnWrite($iProductID, $sType, $sNano);
+			}
+			catch(\Throwable $oThrowable)
+			{
+				$bOk = false;
+				$sWriteError = $oThrowable->getMessage();
+			}
+			try
+			{
+				$aAfter = self::apply_generation($iProductID, $sType, $iGeneration, function($aFresh) use ($bOk, $iId, $sWriteError) {
+					if((int) ($aFresh['cursor_id'] ?? 0) >= $iId && $bOk)
+					{
+						return $aFresh;
+					}
+					if(!$bOk)
+					{
+						$aFresh['attempts']   = (int) ($aFresh['attempts'] ?? 0) + 1;
+						$aFresh['status']     = ($aFresh['attempts'] >= self::MAX_ATTEMPTS) ? 'failed' : 'queued';
+						$aFresh['last_error'] = (isset($sWriteError) && $sWriteError !== '') ? $sWriteError : 'write_failed';
+						return $aFresh;
+					}
+					if($iId <= (int) ($aFresh['cursor_id'] ?? 0))
+					{
+						return $aFresh;
+					}
+					$aFresh['cursor_id']  = $iId;
+					$aFresh['last_error'] = '';
+					$aFresh['attempts']   = 0;
+					$aFresh['status']     = 'running';
+					return $aFresh;
+				});
+			}
+			catch(\RuntimeException $oException)
+			{
+				return array('ok' => false, 'reason' => 'lock_failed', 'written' => $iWritten, 'error' => 'lock_failed');
+			}
+			if(($aAfter['reason'] ?? '') === 'stale_generation' || ($aAfter['reason'] ?? '') === 'no_job')
+			{
+				return array('ok' => true, 'reason' => 'superseded', 'written' => $iWritten);
+			}
+			if(empty($aAfter['ok']))
+			{
+				return array(
+					'ok'      => false,
+					'reason'  => 'persist_failed',
+					'written' => $iWritten,
+					'error'   => (string) ($aAfter['error'] ?? 'persist_failed'),
+				);
+			}
+			$aJob = $aAfter['job'];
+			if(!$bOk)
+			{
+				if(($aJob['status'] ?? '') === 'queued' && !self::schedule($iProductID, $sType, $iGeneration))
+				{
+					self::fail_current($iProductID, $sType, $iGeneration, 'schedule_failed', $iWritten);
+				}
+				return array(
+					'ok'      => false,
+					'reason'  => (string) ($aJob['status'] ?? 'failed'),
+					'written' => $iWritten,
+					'error'   => (string) ($aJob['last_error'] ?? 'write_failed'),
+				);
+			}
+			$iWritten++;
+		}
+
+		return self::finish_page($iProductID, $sType, $iGeneration, $wpdb, $iWritten);
+	}
+
+	/**
+	 * @param int    $iProductID
+	 * @param string $sType
+	 * @param int    $iGeneration
+	 * @param object $wpdb
+	 * @param int    $iWritten
+	 * @return array<string,mixed>
+	 */
+	private static function finish_page($iProductID, $sType, $iGeneration, $wpdb, $iWritten)
+	{
+		try
+		{
+			$aEnd = self::apply_generation($iProductID, $sType, $iGeneration, function($aJob) use ($wpdb, $iProductID, $sType) {
+				$aMore = self::fetch_batch($wpdb, $iProductID, $sType, (int) ($aJob['cursor_id'] ?? 0), 1);
+				if(empty($aMore['ok']))
+				{
+					$aJob['attempts']   = (int) ($aJob['attempts'] ?? 0) + 1;
+					$aJob['status']     = ($aJob['attempts'] >= self::MAX_ATTEMPTS) ? 'failed' : 'queued';
+					$aJob['last_error'] = (string) ($aMore['error'] ?? 'query_failed');
+					return $aJob;
+				}
+				if($aMore['rows'] === array())
+				{
+					self::store_issued_key($iProductID, $sType, (string) ($aJob['target'] ?? ''));
+					$aJob['status']     = 'done';
+					$aJob['last_error'] = '';
+					return $aJob;
+				}
+				$aJob['status'] = 'queued';
+				return $aJob;
+			});
+		}
+		catch(\RuntimeException $oException)
+		{
+			return array('ok' => false, 'reason' => 'lock_failed', 'written' => $iWritten, 'error' => 'lock_failed');
+		}
+		if(($aEnd['reason'] ?? '') === 'stale_generation' || ($aEnd['reason'] ?? '') === 'no_job')
+		{
+			return array('ok' => true, 'reason' => 'superseded', 'written' => $iWritten);
+		}
+		if(empty($aEnd['ok']))
+		{
+			return array('ok' => false, 'reason' => 'persist_failed', 'written' => $iWritten, 'error' => (string) ($aEnd['error'] ?? 'persist_failed'));
+		}
+		$aJob = $aEnd['job'];
+		if(($aJob['status'] ?? '') === 'done')
+		{
+			return array('ok' => true, 'reason' => 'done', 'written' => $iWritten);
+		}
+		if(($aJob['status'] ?? '') === 'failed')
+		{
+			return array('ok' => false, 'reason' => 'failed', 'written' => $iWritten, 'error' => (string) ($aJob['last_error'] ?? 'query_failed'));
+		}
+		if(!self::schedule($iProductID, $sType, $iGeneration))
+		{
+			return self::fail_current($iProductID, $sType, $iGeneration, 'schedule_failed', $iWritten);
+		}
+		return array('ok' => true, 'reason' => 'continue', 'written' => $iWritten);
+	}
+
+	/**
+	 * @param int    $iProductID
+	 * @param string $sType
+	 * @param int    $iGeneration
+	 * @param string $sError
+	 * @param int    $iWritten
+	 * @return array<string,mixed>
+	 */
+	private static function fail_current($iProductID, $sType, $iGeneration, $sError, $iWritten)
+	{
+		try
+		{
+			$aFail = self::apply_generation($iProductID, $sType, $iGeneration, function($aJob) use ($sError) {
+				$aJob['attempts']   = (int) ($aJob['attempts'] ?? 0) + 1;
+				$aJob['status']     = ($aJob['attempts'] >= self::MAX_ATTEMPTS) ? 'failed' : 'queued';
+				$aJob['last_error'] = $sError;
+				return $aJob;
+			});
+		}
+		catch(\RuntimeException $oException)
+		{
+			return array('ok' => false, 'reason' => 'lock_failed', 'written' => $iWritten, 'error' => 'lock_failed');
+		}
+		if(($aFail['reason'] ?? '') === 'stale_generation' || ($aFail['reason'] ?? '') === 'no_job')
+		{
+			return array('ok' => true, 'reason' => 'superseded', 'written' => $iWritten);
+		}
+		$aJob = $aFail['job'] ?? array();
+		if(($aJob['status'] ?? '') === 'queued')
+		{
+			self::schedule($iProductID, $sType, $iGeneration);
+		}
+		return array(
+			'ok'      => false,
+			'reason'  => (string) ($aJob['status'] ?? 'failed'),
+			'written' => $iWritten,
+			'error'   => $sError,
+		);
+	}
+
+	/**
+	 * Reload, require generation, mutate and persist inside the jobs lock.
+	 *
+	 * @param int      $iProductID
+	 * @param string   $sType
+	 * @param int      $iGeneration
+	 * @param callable $fn function(array $aJob): array
+	 * @return array<string,mixed>
+	 */
+	private static function apply_generation($iProductID, $sType, $iGeneration, $fn)
+	{
+		return self::with_jobs_lock(function() use ($iProductID, $sType, $iGeneration, $fn) {
+			$aJob = self::get_job($iProductID, $sType);
+			if($aJob === null)
+			{
+				return array('ok' => true, 'reason' => 'no_job', 'job' => null);
+			}
+			if((int) ($aJob['generation'] ?? 0) !== (int) $iGeneration)
+			{
+				return array('ok' => true, 'reason' => 'stale_generation', 'job' => $aJob);
+			}
+			$aNext = $fn($aJob);
+			if(!is_array($aNext))
+			{
+				return array('ok' => true, 'reason' => 'aborted', 'job' => $aJob);
+			}
+			if(!self::persist_job($iProductID, $sType, $aNext))
+			{
+				return array('ok' => false, 'reason' => 'persist_failed', 'job' => $aJob, 'error' => 'persist_failed');
+			}
+			return array('ok' => true, 'reason' => 'applied', 'job' => $aNext);
+		});
+	}
+
+	/**
 	 * @param int                 $iProductID
 	 * @param string              $sType
 	 * @param array<string,mixed> $aJob
-	 * @return void
+	 * @return bool
 	 */
-	private static function put_job($iProductID, $sType, $aJob)
+	private static function persist_job($iProductID, $sType, $aJob)
 	{
 		$aJobs = self::load_jobs();
 		$aJobs[self::job_key($iProductID, $sType)] = $aJob;
-		self::save_jobs($aJobs);
+		return self::save_jobs($aJobs);
+	}
+
+	/**
+	 * @param array<string,array<string,mixed>> $aJobs
+	 * @return bool
+	 */
+	private static function save_jobs($aJobs)
+	{
+		if(self::$aJobsOverride !== null && !self::$bKvStore)
+		{
+			self::$aJobsOverride = $aJobs;
+			return true;
+		}
+		if(self::$bKvStore)
+		{
+			return self::kv_write_jobs($aJobs);
+		}
+		$b = update_option(self::OPTION_JOBS, $aJobs, false);
+		self::bust_jobs_cache();
+		$aRead = get_option(self::OPTION_JOBS, null);
+		return $b !== false || (is_array($aRead) && $aRead === $aJobs);
+	}
+
+	/**
+	 * @return void
+	 */
+	private static function bust_jobs_cache()
+	{
+		if(function_exists('wp_cache_delete'))
+		{
+			wp_cache_delete(self::OPTION_JOBS, 'options');
+		}
+	}
+
+	/**
+	 * @return object|null
+	 */
+	private static function lock_wpdb()
+	{
+		if(self::$wpdbOverride !== null)
+		{
+			return self::$wpdbOverride;
+		}
+		return isset($GLOBALS['wpdb']) ? $GLOBALS['wpdb'] : null;
+	}
+
+	/**
+	 * @return array<string,array<string,mixed>>
+	 */
+	private static function kv_read_jobs()
+	{
+		$wpdb = self::$wpdbOverride;
+		if($wpdb === null)
+		{
+			return array();
+		}
+		$wpdb->last_error = '';
+		$sJson = $wpdb->get_var($wpdb->prepare(
+			'SELECT v FROM %i WHERE k = %s LIMIT 1',
+			$wpdb->prefix.self::KV_TABLE,
+			self::OPTION_JOBS
+		));
+		if($wpdb->last_error !== '')
+		{
+			return array();
+		}
+		$a = is_string($sJson) ? json_decode($sJson, true) : array();
+		return is_array($a) ? $a : array();
+	}
+
+	/**
+	 * @param array<string,array<string,mixed>> $aJobs
+	 * @return bool
+	 */
+	private static function kv_write_jobs($aJobs)
+	{
+		$wpdb = self::$wpdbOverride;
+		if($wpdb === null)
+		{
+			return false;
+		}
+		$sJson = function_exists('wp_json_encode') ? wp_json_encode($aJobs) : json_encode($aJobs);
+		if(!is_string($sJson))
+		{
+			return false;
+		}
+		$sTable = $wpdb->prefix.self::KV_TABLE;
+		$m = $wpdb->query($wpdb->prepare(
+			'INSERT INTO %i (k, v) VALUES (%s, %s) ON DUPLICATE KEY UPDATE v = %s',
+			$sTable,
+			self::OPTION_JOBS,
+			$sJson,
+			$sJson
+		));
+		return $m !== false;
+	}
+
+	/**
+	 * @param string $sTmp
+	 * @return void
+	 */
+	private static function unlink_own_temp($sTmp)
+	{
+		if($sTmp !== '' && is_file($sTmp))
+		{
+			@unlink($sTmp);
+		}
+	}
+
+	/**
+	 * @param int    $iProductID
+	 * @param string $sType
+	 * @param string $sTargetKey
+	 * @return void
+	 */
+	private static function store_issued_key($iProductID, $sType, $sTargetKey)
+	{
+		if(is_callable(self::$fnSetIssuedKey))
+		{
+			(self::$fnSetIssuedKey)($iProductID, $sType, $sTargetKey);
+			return;
+		}
+		if(function_exists('update_post_meta'))
+		{
+			update_post_meta($iProductID, '_tpfw_'.$sType.'_qr_issued_key', $sTargetKey);
+		}
 	}
 }

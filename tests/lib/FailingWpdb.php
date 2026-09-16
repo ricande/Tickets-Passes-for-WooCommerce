@@ -62,7 +62,15 @@ class TPFW_Failing_Wpdb
 	 */
 	public function get_var($sql)
 	{
-		return $this->inner->get_var($sql);
+		if(call_user_func($this->fnFail, (string)$sql))
+		{
+			$this->last_error = 'injected failure';
+			return null;
+		}
+		$m = $this->inner->get_var($sql);
+		$this->last_error = $this->inner->last_error;
+		$this->insert_id = $this->inner->insert_id;
+		return $m;
 	}
 
 	/**
@@ -89,6 +97,14 @@ class TPFW_Failing_Wpdb
 	 */
 	public function get_results($sql)
 	{
-		return $this->inner->get_results($sql);
+		if(call_user_func($this->fnFail, (string)$sql))
+		{
+			$this->last_error = 'injected failure';
+			return false;
+		}
+		$m = $this->inner->get_results($sql);
+		$this->last_error = $this->inner->last_error;
+		$this->insert_id = $this->inner->insert_id;
+		return $m;
 	}
 }

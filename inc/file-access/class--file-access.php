@@ -65,9 +65,9 @@ class TPFW_File_Access
 	 * any of those immutable would leave a browser holding last week's image or PDF. They
 	 * still get an ETag, so a revalidation that finds nothing changed is a 304.
 	 *
-	 * A `v` query argument is appended by get_file_url() from the file mtime so a previously
-	 * cached immutable response is not reused. `v` is not part of the HMAC and is ignored
-	 * here; it cannot widen access.
+	 * A `v` query argument is appended by get_file_url() from a content hash of the published
+	 * file so a previously cached immutable response is not reused. `v` is not part of the HMAC
+	 * and is ignored here; it cannot widen access.
 	 *
 	 * @var array<int,string> Keys of TPFW_Functions::FILE_TYPE_FOLDERS.
 	 */
@@ -150,48 +150,84 @@ class TPFW_File_Access
 	}
 
 	/**
-	 * Cache-buster for a generated file URL. HMAC signing does not include this value.
+	 * SHA-256 prefix of a published file. Empty when the path is missing or unreadable.
 	 *
-	 * A PDF embeds the current QR, so its version is the newer of the PDF file and the QR
-	 * image it would read. Missing files yield 0 (omitted from the URL).
-	 *
-	 * @param string $sType     File type key.
-	 * @param int    $iFileMtime mtime of the served file, or 0.
-	 * @param int    $iQrMtime  mtime of the QR/guest webp the PDF embeds, or 0.
-	 * @return int
+	 * @param string $sPath
+	 * @return string
 	 */
-	public static function url_version($sType, $iFileMtime, $iQrMtime = 0)
+	public static function content_revision($sPath)
 	{
-		$iFileMtime = (int) $iFileMtime;
-		$iQrMtime   = (int) $iQrMtime;
-		if((string) $sType === 'pdf')
+		$sPath = (string) $sPath;
+		if($sPath === '' || !is_file($sPath) || !is_readable($sPath))
 		{
-			return max($iFileMtime, $iQrMtime);
+			return '';
 		}
-		return $iFileMtime > 0 ? $iFileMtime : 0;
+		clearstatcache(true, $sPath);
+		$sHash = hash_file('sha256', $sPath);
+		return is_string($sHash) && $sHash !== '' ? substr($sHash, 0, 16) : '';
 	}
 
 	/**
-	 * Query arguments for a file link. `$iVersion` is never signed.
+	 * Cache-buster for a generated file URL. HMAC signing does not include this value.
+	 *
+	 * A PDF embeds the current QR, so its version combines the PDF file revision with the QR
+	 * or guest image it would read. Missing files yield '' (omitted from the URL).
+	 *
+	 * @param string $sType    File type key.
+	 * @param string $sFileRev Content revision of the served file, or ''.
+	 * @param string $sQrRev   Content revision of the QR/guest webp the PDF embeds, or ''.
+	 * @return string
+	 */
+	public static function url_version($sType, $sFileRev, $sQrRev = '')
+	{
+		$sFileRev = (string) $sFileRev;
+		$sQrRev   = (string) $sQrRev;
+		if((string) $sType === 'pdf')
+		{
+			if($sFileRev === '' && $sQrRev === '')
+			{
+				return '';
+			}
+			return substr(hash('sha256', $sFileRev."\n".$sQrRev), 0, 16);
+		}
+		return $sFileRev;
+	}
+
+	/**
+	 * ETag for a published file. Different contents yield different tags even when size and
+	 * mtime match.
+	 *
+	 * @param string $sPath
+	 * @param string $sFilename
+	 * @return string
+	 */
+	public static function etag_for_file($sPath, $sFilename)
+	{
+		return '"'.md5((string) $sFilename.'|'.self::content_revision($sPath)).'"';
+	}
+
+	/**
+	 * Query arguments for a file link. `$sVersion` is never signed.
 	 *
 	 * @param string $sType
 	 * @param string $sName
 	 * @param string $sExt
-	 * @param int    $iVersion
+	 * @param string $sVersion
 	 * @param string $sToken
 	 * @param int    $iExpiry
 	 * @return array<string,string|int>
 	 */
-	public static function file_query_args($sType, $sName, $sExt, $iVersion = 0, $sToken = '', $iExpiry = 0)
+	public static function file_query_args($sType, $sName, $sExt, $sVersion = '', $sToken = '', $iExpiry = 0)
 	{
 		$aArgs = array(
 			'tpfw_file' => $sType,
 			'id'        => $sName,
 			'ext'       => $sExt,
 		);
-		if((int) $iVersion > 0)
+		$sVersion = (string) $sVersion;
+		if($sVersion !== '' && $sVersion !== '0')
 		{
-			$aArgs['v'] = (string) (int) $iVersion;
+			$aArgs['v'] = $sVersion;
 		}
 		if($sToken !== '')
 		{
@@ -300,7 +336,7 @@ class TPFW_File_Access
 
 		$iSize  = filesize($sPath);
 		$iTime  = filemtime($sPath);
-		$sETag  = '"'.md5($sFilename.'|'.$iSize.'|'.$iTime).'"';
+		$sETag  = self::etag_for_file($sPath, $sFilename);
 
 		// "private" bars shared caches by spec; see the class docblock on REWRITABLE_TYPES for
 		// why only some of these may also claim to be immutable.

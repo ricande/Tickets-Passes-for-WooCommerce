@@ -71,6 +71,7 @@ Integrity-critical writes take a MySQL named lock (`TPFW_Named_Lock` / `GET_LOCK
 | Pass issue | `tpfw_pass_issue_{order_line_id}` | Upsert for that line |
 | Guest quota | `tpfw_guest_{parent_nano_id}` | Slot assign / mint under `UNIQUE(parent, guest_slot)` |
 | Timeslot capacity | `tpfw_timeslot_{timeslot_id}` | Reserve and issue |
+| QR rewrite jobs | `tpfw_qr_rewrite_jobs` | Shared job map and generation-gated QR file publish |
 
 ## Writes vs artefacts
 

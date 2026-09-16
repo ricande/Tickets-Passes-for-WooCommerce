@@ -84,26 +84,25 @@ class QrGenerateDecodeTest extends TestCase
 		$sA    = TPFW_Test_Qr_Generate::scanner_url($sNano, false);
 		$sB    = TPFW_Test_Qr_Generate::scanner_url($sNano, true);
 		$sPath = TPFW_Test_Qr_Generate::write($sA, $this->sDir, $sNano);
-		$iOld  = (int) filemtime($sPath);
 		$sOld  = file_get_contents($sPath);
-		touch($sPath, $iOld);
-		$iVerA = TPFW_File_Access::url_version('qr', $iOld);
-		$aUrlA = TPFW_File_Access::file_query_args('qr', $sNano, 'webp', $iVerA, 'token', 0);
-		$this->assertSame((string) $iOld, $aUrlA['v']);
+		$iMtime = (int) filemtime($sPath);
+		touch($sPath, $iMtime);
+		clearstatcache(true, $sPath);
+		$sVerA = TPFW_File_Access::url_version('qr', TPFW_File_Access::content_revision($sPath));
+		$aUrlA = TPFW_File_Access::file_query_args('qr', $sNano, 'webp', $sVerA, 'token', 0);
+		$this->assertSame($sVerA, $aUrlA['v']);
 		$this->assertSame('qr', $aUrlA['tpfw_file']);
 		$this->assertSame($sNano, $aUrlA['id']);
 
-		clearstatcache(true, $sPath);
 		TPFW_Test_Qr_Generate::write($sB, $this->sDir, $sNano);
-		touch($sPath, $iOld + 30);
+		touch($sPath, $iMtime);
 		clearstatcache(true, $sPath);
-		$iNew = (int) filemtime($sPath);
 		$this->assertNotSame($sOld, file_get_contents($sPath));
 		$this->assertSame($sB, TPFW_Test_Qr_Generate::decode($sPath));
-		$iVerB = TPFW_File_Access::url_version('qr', $iNew);
-		$this->assertNotSame($iVerA, $iVerB);
-		$aUrlB = TPFW_File_Access::file_query_args('qr', $sNano, 'webp', $iVerB, 'token', 0);
-		$this->assertSame((string) $iNew, $aUrlB['v']);
+		$sVerB = TPFW_File_Access::url_version('qr', TPFW_File_Access::content_revision($sPath));
+		$this->assertNotSame($sVerA, $sVerB);
+		$aUrlB = TPFW_File_Access::file_query_args('qr', $sNano, 'webp', $sVerB, 'token', 0);
+		$this->assertSame($sVerB, $aUrlB['v']);
 		$this->assertSame($aUrlA['t'], $aUrlB['t']);
 		$this->assertSame($aUrlA['exp'], $aUrlB['exp']);
 
@@ -112,7 +111,7 @@ class QrGenerateDecodeTest extends TestCase
 		$this->assertTrue(TPFW_File_Token::verify('qr', $sNano, 0, $sTok, $sSecret));
 		$this->assertFalse(TPFW_File_Token::verify('guest', $sNano, 0, $sTok, $sSecret));
 		$this->assertFalse(TPFW_File_Token::verify('qr', $sNano.'x', 0, $sTok, $sSecret));
-		$sTokWithVersionShape = TPFW_File_Token::sign('qr', $sNano.'|'.$iVerB, 0, $sSecret);
+		$sTokWithVersionShape = TPFW_File_Token::sign('qr', $sNano.'|'.$sVerB, 0, $sSecret);
 		$this->assertNotSame($sTok, $sTokWithVersionShape);
 		$this->assertFalse(TPFW_File_Token::verify('qr', $sNano, 0, $sTokWithVersionShape, $sSecret));
 	}
@@ -124,17 +123,21 @@ class QrGenerateDecodeTest extends TestCase
 		$sPdf  = $this->sDir.$sNano.'.pdf';
 		TPFW_Test_Qr_Generate::write(TPFW_Test_Qr_Generate::scanner_url($sNano), $this->sDir, $sNano);
 		file_put_contents($sPdf, '%PDF-1.4 stale');
-		$iQr  = 1_700_000_100;
-		$iPdf = 1_700_000_050;
-		$this->assertSame($iQr, TPFW_File_Access::url_version('pdf', $iPdf, $iQr));
+		$sPdfRev = TPFW_File_Access::content_revision($sPdf);
+		$sQrRevA = TPFW_File_Access::content_revision($sQr);
 		$sBefore = TPFW_Test_Qr_Generate::decode($sQr);
+		$sVerA   = TPFW_File_Access::url_version('pdf', $sPdfRev, $sQrRevA);
 		TPFW_Test_Qr_Generate::write(TPFW_Test_Qr_Generate::scanner_url($sNano, true), $this->sDir, $sNano);
-		$sAfter = TPFW_Test_Qr_Generate::decode($sQr);
+		$sAfter  = TPFW_Test_Qr_Generate::decode($sQr);
 		$this->assertNotSame($sBefore, $sAfter);
 		$this->assertSame(TPFW_Test_Qr_Generate::scanner_url($sNano, true), $sAfter);
 		$this->assertSame('%PDF-1.4 stale', file_get_contents($sPdf));
-		$aPdfArgs = TPFW_File_Access::file_query_args('pdf', $sNano, 'pdf', TPFW_File_Access::url_version('pdf', $iPdf, $iQr + 40));
-		$this->assertSame((string) ($iQr + 40), $aPdfArgs['v']);
+		$sQrRevB = TPFW_File_Access::content_revision($sQr);
+		$this->assertNotSame($sQrRevA, $sQrRevB);
+		$sVerB = TPFW_File_Access::url_version('pdf', $sPdfRev, $sQrRevB);
+		$this->assertNotSame($sVerA, $sVerB);
+		$aPdfArgs = TPFW_File_Access::file_query_args('pdf', $sNano, 'pdf', $sVerB);
+		$this->assertSame($sVerB, $aPdfArgs['v']);
 		$this->assertArrayNotHasKey('t', $aPdfArgs);
 	}
 }

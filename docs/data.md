@@ -36,7 +36,7 @@ Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db
 | `tpfw_file_secret` | Signing of file links |
 | `tpfw_scanner_tokens` | Per-device scanner tokens keyed by `token_id`; stores `hash(secret)` only (`TPFW_Scanner_Tokens`) |
 | `tpfw_scanner_tokens_required` | Legacy option; account-password Basic Auth is no longer used |
-| `tpfw_qr_rewrite_jobs` | Background QR rewrite job rows (cursor, generation, last error) |
+| `tpfw_qr_rewrite_jobs` | Background QR rewrite job rows (cursor, generation, last error); mutated under `GET_LOCK` |
 | `tpfw_qr_render_version` | Last applied `TPFW_Qr_Render::RENDER_VERSION`; a lower value queues a repair sweep |
 
 ### Product post meta

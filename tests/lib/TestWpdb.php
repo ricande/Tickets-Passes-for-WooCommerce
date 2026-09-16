@@ -99,6 +99,7 @@ class TPFW_Test_Wpdb
 			$this->last_error = $this->mysqli->error;
 			return false;
 		}
+		$this->last_error = '';
 		$this->insert_id = (int)$this->mysqli->insert_id;
 		if($m instanceof mysqli_result)
 		{
@@ -121,6 +122,7 @@ class TPFW_Test_Wpdb
 			$this->last_error = $this->mysqli->error;
 			return null;
 		}
+		$this->last_error = '';
 		$row = $m->fetch_row();
 		$m->free();
 		if($row === null)
@@ -142,6 +144,7 @@ class TPFW_Test_Wpdb
 			$this->last_error = $this->mysqli->error;
 			return null;
 		}
+		$this->last_error = '';
 		$row = $m->fetch_object();
 		$m->free();
 		return $row ?: null;
@@ -159,6 +162,7 @@ class TPFW_Test_Wpdb
 			$this->last_error = $this->mysqli->error;
 			return array();
 		}
+		$this->last_error = '';
 		$a = array();
 		while($row = $m->fetch_row())
 		{
@@ -178,8 +182,9 @@ class TPFW_Test_Wpdb
 		if($m === false)
 		{
 			$this->last_error = $this->mysqli->error;
-			return array();
+			return false;
 		}
+		$this->last_error = '';
 		$a = array();
 		while($row = $m->fetch_object())
 		{

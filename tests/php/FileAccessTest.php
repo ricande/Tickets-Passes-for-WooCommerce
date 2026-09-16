@@ -100,14 +100,54 @@ class FileAccessTest extends TestCase
 		require_once TPFW_PLUGIN_DIR.'inc/file-access/class--file-access.php';
 		$sSecret = 'test-secret-must-be-at-least-32-chars!!';
 		$sTok    = TPFW_File_Token::sign('qr', 'V1StGXR8Z5jdHi6BmyTxq', 0, $sSecret);
-		$aArgs   = TPFW_File_Access::file_query_args('qr', 'V1StGXR8Z5jdHi6BmyTxq', 'webp', 1700000100, $sTok, 0);
-		$this->assertSame('1700000100', $aArgs['v']);
+		$sVer    = 'a1b2c3d4e5f67890';
+		$aArgs   = TPFW_File_Access::file_query_args('qr', 'V1StGXR8Z5jdHi6BmyTxq', 'webp', $sVer, $sTok, 0);
+		$this->assertSame($sVer, $aArgs['v']);
 		$this->assertSame($sTok, $aArgs['t']);
 		$this->assertTrue(TPFW_File_Token::verify('qr', 'V1StGXR8Z5jdHi6BmyTxq', 0, $aArgs['t'], $sSecret));
 		$this->assertFalse(TPFW_File_Token::verify('guest', 'V1StGXR8Z5jdHi6BmyTxq', 0, $aArgs['t'], $sSecret));
-		$aUnsigned = TPFW_File_Access::file_query_args('qr', 'V1StGXR8Z5jdHi6BmyTxq', 'webp', 1700000100);
+		$aUnsigned = TPFW_File_Access::file_query_args('qr', 'V1StGXR8Z5jdHi6BmyTxq', 'webp', $sVer);
 		$this->assertArrayNotHasKey('t', $aUnsigned);
-		$this->assertSame('1700000100', $aUnsigned['v']);
+		$this->assertSame($sVer, $aUnsigned['v']);
+	}
+
+	public function test_content_revision_differs_when_size_and_mtime_match(): void
+	{
+		require_once TPFW_PLUGIN_DIR.'inc/file-access/class--file-access.php';
+		$sDir = sys_get_temp_dir().'/tpfw-etag-'.bin2hex(random_bytes(4)).'/';
+		mkdir($sDir, 0777, true);
+		$sA = $sDir.'a.webp';
+		$sB = $sDir.'b.webp';
+		$sPayA = str_repeat('A', 64);
+		$sPayB = str_repeat('B', 64);
+		file_put_contents($sA, $sPayA);
+		file_put_contents($sB, $sPayB);
+		$iTime = 1_700_000_100;
+		touch($sA, $iTime);
+		touch($sB, $iTime);
+		clearstatcache(true, $sA);
+		clearstatcache(true, $sB);
+		$this->assertSame(strlen($sPayA), strlen($sPayB));
+		$this->assertSame($iTime, filemtime($sA));
+		$this->assertSame($iTime, filemtime($sB));
+		$sRevA = TPFW_File_Access::content_revision($sA);
+		$sRevB = TPFW_File_Access::content_revision($sB);
+		$this->assertNotSame('', $sRevA);
+		$this->assertNotSame($sRevA, $sRevB);
+		$this->assertNotSame(
+			TPFW_File_Access::etag_for_file($sA, 'same.webp'),
+			TPFW_File_Access::etag_for_file($sB, 'same.webp')
+		);
+		$this->assertNotSame(
+			TPFW_File_Access::url_version('qr', $sRevA),
+			TPFW_File_Access::url_version('qr', $sRevB)
+		);
+		$sPdfA = TPFW_File_Access::url_version('pdf', 'pdfrev', $sRevA);
+		$sPdfB = TPFW_File_Access::url_version('pdf', 'pdfrev', $sRevB);
+		$this->assertNotSame($sPdfA, $sPdfB);
+		@unlink($sA);
+		@unlink($sB);
+		@rmdir($sDir);
 	}
 
 	/**

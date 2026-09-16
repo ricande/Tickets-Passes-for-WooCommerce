@@ -2243,6 +2243,14 @@ class TPFW_Functions
 	 * @param int    $iGeneration
 	 * @return array<string,mixed>
 	 */
+	/**
+	 * One Action Scheduler / WP-Cron page of QR rewrites.
+	 *
+	 * @param int    $iProductID
+	 * @param string $sType
+	 * @param int    $iGeneration
+	 * @return array<string,mixed>
+	 */
 	public function run_qr_rewrite_batch($iProductID, $sType, $iGeneration)
 	{
 		global $wpdb;
@@ -2263,20 +2271,20 @@ class TPFW_Functions
 	public function run_qr_rewrite_upgrade_sweep()
 	{
 		global $wpdb;
-		$iQueued = 0;
-		foreach(TPFW_Qr_Rewrite::live_product_types($wpdb) as $aItem)
-		{
-			$iPid    = (int) $aItem['product_id'];
-			$sType   = (string) $aItem['type'];
-			$sTarget = $this->qr_appearance_key($iPid, $sType);
-			$sIssued = (string) get_post_meta($iPid, '_tpfw_'.$sType.'_qr_issued_key', true);
-			if(TPFW_Qr_Rewrite::enqueue_if_needed($iPid, $sType, $sIssued, $sTarget) !== null)
-			{
-				$iQueued++;
+		$oSelf = $this;
+		$a = TPFW_Qr_Rewrite::upgrade_sweep(
+			$wpdb,
+			function($iPid, $sType) use ($oSelf) {
+				return $oSelf->qr_appearance_key($iPid, $sType);
+			},
+			function($iPid, $sType) {
+				return (string) get_post_meta($iPid, '_tpfw_'.$sType.'_qr_issued_key', true);
+			},
+			function() {
+				update_option(TPFW_Qr_Rewrite::OPTION_RENDER, TPFW_Qr_Render::RENDER_VERSION, false);
 			}
-		}
-		update_option(TPFW_Qr_Rewrite::OPTION_RENDER, TPFW_Qr_Render::RENDER_VERSION, false);
-		return $iQueued;
+		);
+		return (int) ($a['queued'] ?? 0);
 	}
 
 	/**
@@ -3148,7 +3156,7 @@ class TPFW_Functions
 	}
 
 	/**
-	 * mtime-based cache-buster for get_file_url(). 0 when the file is not on disk yet.
+	 * Content-hash cache-buster for get_file_url(). Empty when the file is not on disk yet.
 	 *
 	 * PDF version follows the QR/guest webp it embeds, so a rewritten code cannot be hidden
 	 * behind a previously cached PDF URL.
@@ -3156,23 +3164,29 @@ class TPFW_Functions
 	 * @param string $sType
 	 * @param string $sName
 	 * @param string $sExt
-	 * @return int
+	 * @return string
 	 */
 	public function file_url_version($sType, $sName, $sExt)
 	{
 		$sPath = $this->get_upload_dir_for_type($sType).$sName.'.'.$sExt;
-		$iFile = is_file($sPath) ? (int) filemtime($sPath) : 0;
-		$iQr   = 0;
+		$sFile = TPFW_File_Access::content_revision($sPath);
+		$sQr   = '';
 		if($sType === 'pdf')
 		{
-			$sQr    = $this->get_upload_dir_for_type('qr').$sName.'.webp';
-			$sGuest = $this->get_upload_dir_for_type('guest').$sName.'.webp';
-			$iQr    = max(
-				is_file($sQr) ? (int) filemtime($sQr) : 0,
-				is_file($sGuest) ? (int) filemtime($sGuest) : 0
-			);
+			$sQrPath    = $this->get_upload_dir_for_type('qr').$sName.'.webp';
+			$sGuestPath = $this->get_upload_dir_for_type('guest').$sName.'.webp';
+			$sQr        = TPFW_File_Access::content_revision($sQrPath);
+			$sGuest     = TPFW_File_Access::content_revision($sGuestPath);
+			if($sQr !== '' && $sGuest !== '')
+			{
+				$sQr = substr(hash('sha256', $sQr."\n".$sGuest), 0, 16);
+			}
+			elseif($sQr === '')
+			{
+				$sQr = $sGuest;
+			}
 		}
-		return TPFW_File_Access::url_version($sType, $iFile, $iQr);
+		return TPFW_File_Access::url_version($sType, $sFile, $sQr);
 	}
 
 	/**
@@ -4824,9 +4838,24 @@ class TPFW_Functions
 
 		$aQRCode = $aWriter->write($qrCode, $aLogo, $aLabel);
 		$sDest   = $sUploadFileDir.$sFileName.'.webp';
-		$sTmp    = $sDest.'.tmp';
+		$sTmp    = TPFW_Qr_Rewrite::unique_temp_path($sDest);
 		$aQRCode->saveToFile($sTmp);
-		if(!TPFW_Qr_Rewrite::commit_generated_file($sTmp, $sDest))
+		$aCtx = TPFW_Qr_Rewrite::$aPublishContext;
+		if(is_array($aCtx))
+		{
+			$bOk = TPFW_Qr_Rewrite::publish_rewrite_file(
+				$sTmp,
+				$sDest,
+				(int) ($aCtx['product_id'] ?? 0),
+				(string) ($aCtx['type'] ?? ''),
+				(int) ($aCtx['generation'] ?? 0)
+			);
+		}
+		else
+		{
+			$bOk = TPFW_Qr_Rewrite::commit_generated_file($sTmp, $sDest);
+		}
+		if(!$bOk)
 		{
 			throw new RuntimeException('qr_write_failed');
 		}

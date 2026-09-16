@@ -113,6 +113,7 @@ class PackageContractTest extends TestCase
 			$this->assertFalse(str_starts_with($sName, $sTop.'vendor/'), $sName);
 			$this->assertStringNotContainsString('issue-ticket-worker.php', $sName);
 			$this->assertStringNotContainsString('issue-pass-worker.php', $sName);
+			$this->assertStringNotContainsString('qr-rewrite-worker.php', $sName);
 			$this->assertStringNotContainsString('phpunit.phar', $sName);
 			$this->assertStringNotContainsString('phpunit.xml', $sName);
 			$this->assertStringNotContainsString('decode-qr-rgba.js', $sName);
