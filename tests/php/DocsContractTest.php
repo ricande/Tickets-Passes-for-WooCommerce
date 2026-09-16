@@ -69,7 +69,7 @@ class DocsContractTest extends TestCase
 			$this->assertNotFalse(strpos($s, 'bash tests/run.sh'));
 			$this->assertNotFalse(strpos($s, 'ensure-phpunit.sh'));
 			$this->assertNotFalse(strpos($s, 'bash scripts/build-plugin-zip.sh'));
-			$this->assertNotFalse(strpos($s, 'dist/tickets-passes-for-woocommerce-1.3.1.zip'));
+			$this->assertNotFalse(strpos($s, 'dist/tickets-passes-for-woocommerce-1.3.2.zip'));
 		}
 	}
 
@@ -78,10 +78,10 @@ class DocsContractTest extends TestCase
 		$sMain = file_get_contents(TPFW_PLUGIN_DIR.'tickets-passes-for-woocommerce.php');
 		$sRead = file_get_contents(TPFW_PLUGIN_DIR.'readme.txt');
 		$sLog  = file_get_contents(TPFW_PLUGIN_DIR.'changelog.txt');
-		$this->assertMatchesRegularExpression('/^\s*\*\s*Version:\s*1\.3\.1\s*$/m', $sMain);
-		$this->assertNotFalse(strpos($sMain, "define('TPFW_VERSION', '1.3.1')"));
-		$this->assertNotFalse(strpos($sRead, 'Stable tag: 1.3.1'));
-		$this->assertMatchesRegularExpression('/^= 1\.3\.1 =/m', $sLog);
-		$this->assertMatchesRegularExpression('/^= 1\.3\.1 =/m', $sRead);
+		$this->assertMatchesRegularExpression('/^\s*\*\s*Version:\s*1\.3\.2\s*$/m', $sMain);
+		$this->assertNotFalse(strpos($sMain, "define('TPFW_VERSION', '1.3.2')"));
+		$this->assertNotFalse(strpos($sRead, 'Stable tag: 1.3.2'));
+		$this->assertMatchesRegularExpression('/^= 1\.3\.2 =/m', $sLog);
+		$this->assertMatchesRegularExpression('/^= 1\.3\.2 =/m', $sRead);
 	}
 }

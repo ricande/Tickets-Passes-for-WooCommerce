@@ -7,7 +7,7 @@
 | 1.3.x (RC / current development) | Yes |
 | 1.2.3 and earlier | No security patches from this repository |
 
-1.3.1 RC is a pre-release. Treat findings against this branch as current development.
+1.3.2 RC is a pre-release. Treat findings against this branch as current development. It is not a stable WordPress.org release.
 
 ## Reporting a vulnerability
 

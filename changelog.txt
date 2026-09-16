@@ -2,6 +2,13 @@
 
 Full release history for Tickets & Passes for WooCommerce. The three most recent releases are also listed in readme.txt.
 
+= 1.3.2 =
+* QR codes with a centre logo stay scannable at the door: high error correction, and a tall logo is capped on its longer side.
+* Issued QR files are rewritten in bounded background batches when the look or renderer version changes. A one-shot repair queue runs after upgrade without opening every product. Unchanged product saves do not start a new job.
+* Concurrent rewrite jobs are serialised. A failed write leaves the previous image in place. Unwritable retries are capped. A stranded queued job with no remaining scheduled action resumes when the product is saved.
+* QR, guest and PDF links and ETags identify the file by content hash, so a rewritten image is not served from an old cache.
+* Already-sent emails and already-downloaded files are not updated. The current code is in My Account, a new PDF download, or a dashboard Resend. No automatic customer mail is sent.
+
 = 1.3.1 =
 * Fixed QR codes with a centre image being unreadable at the door. A logo now uses high error correction, and a tall product photo is capped on its longer side instead of being sized only by width.
 * Issued QR files are rewritten in bounded background batches when the look or renderer version changes, including a one-shot repair after upgrade. Unchanged product saves do not walk every ticket. A failed write leaves the previous image in place.

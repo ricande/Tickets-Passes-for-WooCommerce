@@ -3,7 +3,7 @@ defined('ABSPATH') or die('No script kiddies please!');
     /*
      *  Plugin Name: Tickets & Passes for WooCommerce
      *  Description: Sell tickets, timeslot bookings and passes with WooCommerce, and check visitors in at the door with a built-in QR scanner.
-     *  Version: 1.3.1
+     *  Version: 1.3.2
      *  Requires at least: 6.5
      *  Tested up to: 7.1
      *  Requires PHP: 8.0
@@ -22,7 +22,7 @@ defined('ABSPATH') or die('No script kiddies please!');
     define('TPFW_PLUGIN_URL',  plugin_dir_url(__FILE__));
 
     // Keep in step with the Version: header above - asset cache-busting keys off it.
-    define('TPFW_VERSION', '1.3.1');
+    define('TPFW_VERSION', '1.3.2');
 
     // Bump to force a one-time rewrite flush on existing sites. See tpfw_maybe_flush_rewrites().
     // 4: the My Account endpoints gained the plugin prefix (/pass -> /tpfw-pass).

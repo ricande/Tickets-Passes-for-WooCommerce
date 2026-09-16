@@ -163,9 +163,9 @@ class PackageContractTest extends TestCase
 	{
 		$sMain = file_get_contents(TPFW_PLUGIN_DIR.'tickets-passes-for-woocommerce.php');
 		$sRead = file_get_contents(TPFW_PLUGIN_DIR.'readme.txt');
-		$this->assertMatchesRegularExpression('/^\s*\*\s*Version:\s*1\.3\.1\s*$/m', $sMain);
-		$this->assertNotFalse(strpos($sMain, "define('TPFW_VERSION', '1.3.1')"));
-		$this->assertNotFalse(strpos($sRead, 'Stable tag: 1.3.1'));
+		$this->assertMatchesRegularExpression('/^\s*\*\s*Version:\s*1\.3\.2\s*$/m', $sMain);
+		$this->assertNotFalse(strpos($sMain, "define('TPFW_VERSION', '1.3.2')"));
+		$this->assertNotFalse(strpos($sRead, 'Stable tag: 1.3.2'));
 	}
 
 	/**

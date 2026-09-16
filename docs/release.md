@@ -20,13 +20,15 @@ Tests must not read `../deploy/`, `/var/www/`, or other host paths except that c
 
 A **source / review** checkout is this repository: tests, workers, `scripts/`, and developer `docs/` are present so `bash tests/run.sh` works after a clean clone.
 
+The plugin header **1.3.2** is published as GitHub pre-release tag `1.3.2-RC`. It is a release candidate, not a stable WordPress.org build.
+
 ## Production ZIP
 
 ```bash
 bash scripts/build-plugin-zip.sh
 ```
 
-Writes `dist/tickets-passes-for-woocommerce-1.3.1.zip` (version from the plugin header). Optional: `TPFW_ZIP_OUT=/tmp/plugin.zip`.
+Writes `dist/tickets-passes-for-woocommerce-1.3.2.zip` (version from the plugin header). Optional: `TPFW_ZIP_OUT=/tmp/plugin.zip`.
 
 Top folder inside the zip: `tickets-passes-for-woocommerce/`.
 

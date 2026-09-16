@@ -5,7 +5,7 @@ Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
 Requires Plugins: woocommerce
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -116,7 +116,7 @@ A Scanner account can log in and check people in. It cannot open Ticket & Passes
 
 = Upgrading from 1.2.3 =
 
-Replace the plugin folder (or upload the 1.3.1 zip over 1.2.3). Leave the plugin active. The first page load migrates the database. Existing tickets, QR codes and upload files keep working.
+Replace the plugin folder (or upload the 1.3.2 zip over 1.2.3). Leave the plugin active. The first page load migrates the database. Existing tickets, QR codes and upload files keep working.
 
 Check-in is now POST only. The built-in scanner already uses POST. If you have a separate scanner app that still uses GET, change it to POST or it will not check anyone in (HTTP 405 when the app is authenticated). New guest passes stay inactive until the holder is scanned. Paid orders receive QR codes when WooCommerce marks the payment complete. An order that only goes to Processing (for example cash on delivery) waits until Completed, or until you press Create on the order. Refunding an item quantity removes that many issued codes; refunding an amount only does not.
 
@@ -248,6 +248,11 @@ repositories.
 
 The three most recent releases are below. The full history is in `changelog.txt` in the plugin folder.
 
+= 1.3.2 =
+* QR codes with a centre logo stay scannable at the door. Existing QR files are rewritten in background batches after an upgrade or when the look changes. Unchanged product saves do not start a new job.
+* A stranded rewrite job resumes when the product is saved. Concurrent jobs are serialised and unwritable retries are capped. Links and ETags follow the file content, so a rewritten image is not kept from cache.
+* Already-sent emails and already-downloaded files are not updated. The current code is in My Account, a new PDF download, or Resend. No automatic mail is sent.
+
 = 1.3.1 =
 * Fixed QR codes with a centre image being unreadable at the door. A logo now uses high error correction, and a tall product photo is capped on its longer side instead of being sized only by width.
 * Issued QR files are rewritten in the background after an upgrade or when the look changes. Unchanged product saves no longer regenerate every code in the request.
@@ -259,13 +264,12 @@ The three most recent releases are below. The full history is in `changelog.txt`
 * External scanner apps use a WordPress Application Password or an X-TPFW-Scanner-Token (`token_id.secret`), not the account login password. nginx/IIS must deny direct `/wp-content/uploads/tpfw-*` (snippet in `docs/server-config/`).
 * Swedish and Danish translations ship in the plugin; WordPress still owns the language. Existing tickets, QR codes and upload files from 1.2.3 keep working — the first load after the update migrates the guest-pass table.
 
-= 1.2.3 =
-* The colour settings on the Ticket, Timeslot Ticket and Pass tabs now sit beside a live preview of the card the customer actually sees, so a colour can be judged in place instead of by saving and opening a product page. Each tab previews its own product, and the preview can be shown against a light or a dark theme.
-* Each colour row is now a swatch, a hex field and a strip of preset swatches from your theme's editor palette, with a "Use default color" link that is only live while the row differs from the colour it shipped with.
-
 Older releases: see `changelog.txt`.
 
 == Upgrade Notice ==
+
+= 1.3.2 =
+Upload the 1.3.2 zip over 1.3.1 or 1.3.0. This is a release candidate, not a stable WordPress.org build. The first page load queues a background repair of live QR images if the renderer has not been recorded yet. The plugin does not send a new mail. Old inbox copies and already-downloaded files stay as they are; the current code is in My Account, a new PDF, or Resend. If a rewrite job is stranded, open the product and save it to resume.
 
 = 1.3.1 =
 Upload the 1.3.1 zip over 1.3.0. The first page load queues a background repair of live QR images if the renderer changed; you do not have to open every product. The plugin does not send a new mail. Customers see the current code in My Account, a freshly downloaded PDF, or after Resend. Inbox copies of an old URL cannot be updated.

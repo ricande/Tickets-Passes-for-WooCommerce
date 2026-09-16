@@ -63,6 +63,20 @@ The first request after the swap runs the installer because `tpfw_db_version` is
 
 Existing tickets, passes, QR codes, PDFs and `tpfw_upload_slug` keep working. Guest rows that already have `valid_from` stay valid. **New** guest passes stay inactive until the holder is scanned.
 
+## Upgrade to 1.3.2 (QR rewrite)
+
+**1.3.2 RC** is a pre-release for review and staging, not a stable WordPress.org build.
+
+Upload the 1.3.2 zip over 1.3.1 or 1.3.0. Leave the plugin active. The first page load records `TPFW_Qr_Render::RENDER_VERSION` if this site has not yet, and queues a one-shot background repair of live QR images (Action Scheduler, or WP-Cron if Action Scheduler is not available). Product settings do not have to change. The shop does **not** send a new mail.
+
+QR files with a centre logo use high error correction and a longer-side cap so they remain scannable at email size. Issued images are rewritten in bounded background batches when colours, logo, label or the renderer version change. Unchanged product saves do not start a new job. Concurrent rewrite jobs are serialised; a failed write leaves the previous file; unwritable retries are capped. QR, guest and PDF URLs and ETags identify the file by content hash.
+
+Already-sent emails and already-downloaded PDFs are not updated retroactively. Customers get the current code from **My Account**, a **new PDF download**, or a dashboard **Resend**.
+
+A product save queues another rewrite when the look actually changed, a previous rewrite job failed, or a waiting/running job has no remaining scheduled action (including a stranded `queued` job with an empty last error). Saving the product is how a stranded job is resumed. A save that finds the same job already queued or running with a pending action does nothing.
+
+Local live checks of this RC used WordPress, WooCommerce, Action Scheduler and HTTP. Product saves in that verification were run through WP-CLI, not a wp-admin POST.
+
 ## Upgrade to 1.3.1 (QR look)
 
 The first request after the update records `TPFW_Qr_Render::RENDER_VERSION` and queues a background repair of live QR images (Action Scheduler, or WP-Cron if Action Scheduler is not available). Product settings do not have to change. The shop does **not** send a new mail. Customers get a current code from **My Account**, a **new PDF download**, or a dashboard **Resend**. Inbox messages already sent, and PDFs already saved on a phone, cannot be updated retroactively.
@@ -112,6 +126,6 @@ Production ZIP (runtime only, no tests or credentials):
 bash scripts/build-plugin-zip.sh
 ```
 
-Writes `dist/tickets-passes-for-woocommerce-1.3.1.zip`. See [release.md](release.md).
+Writes `dist/tickets-passes-for-woocommerce-1.3.2.zip`. See [release.md](release.md).
 
 Regenerate the POT after string changes with `wp i18n make-pot`. Bundled library versions in `readme.txt` must match `inc/functions/lib/*/composer/installed.json`.
