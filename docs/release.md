@@ -26,7 +26,7 @@ A **source / review** checkout is this repository: tests, workers, `scripts/`, a
 bash scripts/build-plugin-zip.sh
 ```
 
-Writes `dist/tickets-passes-for-woocommerce-1.3.0.zip` (version from the plugin header). Optional: `TPFW_ZIP_OUT=/tmp/plugin.zip`.
+Writes `dist/tickets-passes-for-woocommerce-1.3.1.zip` (version from the plugin header). Optional: `TPFW_ZIP_OUT=/tmp/plugin.zip`.
 
 Top folder inside the zip: `tickets-passes-for-woocommerce/`.
 

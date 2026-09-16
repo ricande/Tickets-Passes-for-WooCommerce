@@ -7,7 +7,7 @@
 | 1.3.x (RC / current development) | Yes |
 | 1.2.3 and earlier | No security patches from this repository |
 
-1.3.0 RC is a pre-release. Treat findings against this branch as current development.
+1.3.1 RC is a pre-release. Treat findings against this branch as current development.
 
 ## Reporting a vulnerability
 

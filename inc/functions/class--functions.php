@@ -1,6 +1,7 @@
 <?php
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
 use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelLow;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Label\Label;
@@ -2165,6 +2166,66 @@ class TPFW_Functions
 			'preview',
 			$sPreviewName,
 		);
+
+		$this->rewrite_issued_qr_images($iPostID, $sType);
+	}
+
+	/**
+	 * Rewrites live QR files for one product after its appearance settings changed.
+	 *
+	 * Issued codes keep the same nano id and filename, so emails and My Account pick up the
+	 * new image. Without this, a logo added on the product left already-issued tickets on the
+	 * previous (often unscannable) file until each row was Reset by hand.
+	 *
+	 * @param int    $iPostID Product id.
+	 * @param string $sType   QR panel key: ticket, timeslot, pass or guestpass.
+	 * @return void
+	 */
+	private function rewrite_issued_qr_images($iPostID, $sType)
+	{
+		global $wpdb;
+		$iPostID = (int) $iPostID;
+		if($iPostID < 1 || empty($wpdb) || !isset(self::QR_META_PREFIXES[$sType]))
+		{
+			return;
+		}
+
+		if($sType === 'ticket')
+		{
+			$sTable = $wpdb->prefix . 'tpfw_tickets';
+			$sSql   = $wpdb->prepare('SELECT nano_id FROM %i WHERE product_id = %d AND deleted IS NULL', $sTable, $iPostID);
+		}
+		elseif($sType === 'timeslot')
+		{
+			$sTable = $wpdb->prefix . 'tpfw_timeslot_tickets';
+			$sSql   = $wpdb->prepare('SELECT nano_id FROM %i WHERE product_id = %d AND deleted IS NULL', $sTable, $iPostID);
+		}
+		elseif($sType === 'pass')
+		{
+			$sTable = $wpdb->prefix . 'tpfw_pass';
+			$sSql   = $wpdb->prepare('SELECT nano_id FROM %i WHERE product_id = %d AND deleted IS NULL AND parent_nano_id_fk IS NULL', $sTable, $iPostID);
+		}
+		else
+		{
+			$sTable = $wpdb->prefix . 'tpfw_pass';
+			$sSql   = $wpdb->prepare('SELECT nano_id FROM %i WHERE product_id = %d AND deleted IS NULL AND parent_nano_id_fk IS NOT NULL', $sTable, $iPostID);
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sSql is the return value of $wpdb->prepare() above.
+		$aRows = $wpdb->get_results($sSql);
+		if(empty($aRows) || !is_array($aRows))
+		{
+			return;
+		}
+
+		foreach($aRows as $oRow)
+		{
+			if(empty($oRow->nano_id))
+			{
+				continue;
+			}
+			$this->write_scanner_qr($iPostID, $sType, (string) $oRow->nano_id);
+		}
 	}
 
 	/**
@@ -4597,13 +4658,16 @@ class TPFW_Functions
 	{
 		include_once dirname(__FILE__).'/lib/qrcodegen/autoload.php';    
 
-		$aWriter = new WebPWriter();
+		$aWriter  = new WebPWriter();
+		$aLogoBox = TPFW_Qr_Render::logo_box((int) $iSize, $sFullLogoPath);
 
-		// Create QR code
+		// Low (~7%) is enough for a plain code. A centre logo destroys modules; High (~30%)
+		// is the level Endroid documents for that case, and the only one that stays scannable
+		// once a product photo is punched into the middle.
 		$qrCode = new QrCode(
 			data                : $sQRData,
 			encoding            : new Encoding('UTF-8'),
-			errorCorrectionLevel: new ErrorCorrectionLevelLow(),
+			errorCorrectionLevel: ($aLogoBox !== null) ? new ErrorCorrectionLevelHigh() : new ErrorCorrectionLevelLow(),
 			size                : $iSize,
 			margin              : $iMargin,
 			roundBlockSizeMode  : new RoundBlockSizeModeMargin(),
@@ -4627,13 +4691,13 @@ class TPFW_Functions
 			);
 		}
 
-		// Create generic logo
 		$aLogo = null;
-		if($sFullLogoPath != null)
+		if($aLogoBox !== null)
 		{
 			$aLogo = new Logo(
 				path              : $sFullLogoPath,
-				resizeToWidth     : ($iSize/4),
+				resizeToWidth     : $aLogoBox[0],
+				resizeToHeight    : $aLogoBox[1],
 				punchoutBackground: true
 			);
 		}

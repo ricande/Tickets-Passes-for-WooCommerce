@@ -106,6 +106,6 @@ Production ZIP (runtime only, no tests or credentials):
 bash scripts/build-plugin-zip.sh
 ```
 
-Writes `dist/tickets-passes-for-woocommerce-1.3.0.zip`. See [release.md](release.md).
+Writes `dist/tickets-passes-for-woocommerce-1.3.1.zip`. See [release.md](release.md).
 
 Regenerate the POT after string changes with `wp i18n make-pot`. Bundled library versions in `readme.txt` must match `inc/functions/lib/*/composer/installed.json`.

@@ -154,6 +154,7 @@ Loaded unconditionally from `TPFW_Main` before the installer.
 | `class--db-write.php` | `TPFW_Db_Write` | `$wpdb` false vs 0 for fail-closed writes |
 | `class--checkin-payload.php` | `TPFW_Checkin_Payload` | Scanner success allowlist |
 | `class--image-limits.php` | `TPFW_Image_Limits` | Profile-photo pixel cap before decode |
+| `class--qr-render.php` | `TPFW_Qr_Render` | Centre-logo box so a product photo cannot cover the QR |
 | `class--file-paths.php` | `TPFW_File_Paths` | All files under `tpfw-{slug}/` |
 | `class--file-token.php` | `TPFW_File_Token` | HMAC sign/verify |
 | `class--scanner-tokens.php` | `TPFW_Scanner_Tokens` | Revocable `{token_id}.{secret}` header; one hash verify |

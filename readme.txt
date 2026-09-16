@@ -5,7 +5,7 @@ Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
 Requires Plugins: woocommerce
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -116,7 +116,7 @@ A Scanner account can log in and check people in. It cannot open Ticket & Passes
 
 = Upgrading from 1.2.3 =
 
-Replace the plugin folder (or upload the 1.3.0 zip over 1.2.3). Leave the plugin active. The first page load migrates the database. Existing tickets, QR codes and upload files keep working.
+Replace the plugin folder (or upload the 1.3.1 zip over 1.2.3). Leave the plugin active. The first page load migrates the database. Existing tickets, QR codes and upload files keep working.
 
 Check-in is now POST only. The built-in scanner already uses POST. If you have a separate scanner app that still uses GET, change it to POST or it will not check anyone in (HTTP 405 when the app is authenticated). New guest passes stay inactive until the holder is scanned. Paid orders receive QR codes when WooCommerce marks the payment complete. An order that only goes to Processing (for example cash on delivery) waits until Completed, or until you press Create on the order. Refunding an item quantity removes that many issued codes; refunding an amount only does not.
 
@@ -248,6 +248,9 @@ repositories.
 
 The three most recent releases are below. The full history is in `changelog.txt` in the plugin folder.
 
+= 1.3.1 =
+* Fixed QR codes with a centre image being unreadable at the door. A logo now uses high error correction, and a tall product photo is capped on its longer side instead of being sized only by width. Saving the product rewrites already issued QR files.
+
 = 1.3.0 =
 * Guest passes cannot be scanned before the holder checks in, and the guest quota is enforced in the database. Timeslot seats are reserved and issued under a lock so the last place cannot be sold twice.
 * Check-in is POST only (GET no longer lets anyone through). The API response is an allowlist, not the raw database row. Paid orders receive QR codes on WooCommerce payment complete; Processing alone does not issue, so unpaid checkouts wait until Completed. A refund with item quantity drops that many issued codes; an amount-only refund does not.
@@ -258,12 +261,12 @@ The three most recent releases are below. The full history is in `changelog.txt`
 * The colour settings on the Ticket, Timeslot Ticket and Pass tabs now sit beside a live preview of the card the customer actually sees, so a colour can be judged in place instead of by saving and opening a product page. Each tab previews its own product, and the preview can be shown against a light or a dark theme.
 * Each colour row is now a swatch, a hex field and a strip of preset swatches from your theme's editor palette, with a "Use default color" link that is only live while the row differs from the colour it shipped with.
 
-= 1.2.2 =
-* Every row on the Tickets, Timeslot Tickets and Passes dashboards has a "Download" action, which gives you the holder's printable ticket or pass PDF - the same one they get from My Account. A customer who has lost their email can be helped without leaving the screen. It appears only on rows whose QR code was issued, and guest passes get their own.
-
 Older releases: see `changelog.txt`.
 
 == Upgrade Notice ==
+
+= 1.3.1 =
+Upload the 1.3.1 zip over 1.3.0. If a product uses a centre image on its QR codes, open that product and save it so already issued codes are rewritten. Then scan from My Account or a freshly downloaded PDF.
 
 = 1.3.0 =
 Replace the plugin folder (or upload the new zip over 1.2.3). The first page load migrates the database. Existing tickets, passes and QR codes keep working. Check-in is now POST only — update any external scanner app that still uses GET. New guest passes stay inactive until the holder is scanned.
