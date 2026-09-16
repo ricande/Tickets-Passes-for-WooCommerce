@@ -57,20 +57,21 @@ class TPFW_File_Access
 	);
 
 	/**
-	 * File types whose stored file is rewritten behind an unchanged URL.
+	 * File types whose stored file can be rewritten behind the same type/id/ext.
 	 *
-	 * A qr, guest or pdf file is named after the nano id it belongs to, written once when that
-	 * row is created and never touched again, so a year of immutable caching is exactly right
-	 * for it. The other two are not: a preview is rewritten every time the shop owner saves new
-	 * QR colours, and a profile photo every time the pass holder uploads a new one - both under
-	 * the same URL as before. Advertising those as immutable means the browser never asks again,
-	 * and the owner keeps seeing last week's preview while the customer keeps seeing their old
-	 * photo, with no reload that can clear it. They still get an ETag, so a revalidation that
-	 * finds nothing changed is a 304 and costs no bandwidth.
+	 * Preview and profile have always been rewritten in place. QR and guest images are too:
+	 * a product save (or the post-upgrade repair sweep) regenerates issued codes under the
+	 * same nano-id filename. PDFs are rebuilt from the current QR on every download. Marking
+	 * any of those immutable would leave a browser holding last week's image or PDF. They
+	 * still get an ETag, so a revalidation that finds nothing changed is a 304.
+	 *
+	 * A `v` query argument is appended by get_file_url() from the file mtime so a previously
+	 * cached immutable response is not reused. `v` is not part of the HMAC and is ignored
+	 * here; it cannot widen access.
 	 *
 	 * @var array<int,string> Keys of TPFW_Functions::FILE_TYPE_FOLDERS.
 	 */
-	const REWRITABLE_TYPES = array('preview', 'profile');
+	const REWRITABLE_TYPES = array('preview', 'profile', 'qr', 'guest', 'pdf');
 
 	/**
 	 * Serves one stored file, if the caller is allowed it.
@@ -138,7 +139,73 @@ class TPFW_File_Access
 	}
 
 	/**
+	 * Cache-Control freshness for one file type. Shared caches stay barred by "private".
+	 *
+	 * @param string $sType File type key.
+	 * @return string
+	 */
+	public static function cache_control_freshness($sType)
+	{
+		return in_array((string) $sType, self::REWRITABLE_TYPES, true) ? 'no-cache, max-age=0' : 'max-age=31536000, immutable';
+	}
+
+	/**
+	 * Cache-buster for a generated file URL. HMAC signing does not include this value.
+	 *
+	 * A PDF embeds the current QR, so its version is the newer of the PDF file and the QR
+	 * image it would read. Missing files yield 0 (omitted from the URL).
+	 *
+	 * @param string $sType     File type key.
+	 * @param int    $iFileMtime mtime of the served file, or 0.
+	 * @param int    $iQrMtime  mtime of the QR/guest webp the PDF embeds, or 0.
+	 * @return int
+	 */
+	public static function url_version($sType, $iFileMtime, $iQrMtime = 0)
+	{
+		$iFileMtime = (int) $iFileMtime;
+		$iQrMtime   = (int) $iQrMtime;
+		if((string) $sType === 'pdf')
+		{
+			return max($iFileMtime, $iQrMtime);
+		}
+		return $iFileMtime > 0 ? $iFileMtime : 0;
+	}
+
+	/**
+	 * Query arguments for a file link. `$iVersion` is never signed.
+	 *
+	 * @param string $sType
+	 * @param string $sName
+	 * @param string $sExt
+	 * @param int    $iVersion
+	 * @param string $sToken
+	 * @param int    $iExpiry
+	 * @return array<string,string|int>
+	 */
+	public static function file_query_args($sType, $sName, $sExt, $iVersion = 0, $sToken = '', $iExpiry = 0)
+	{
+		$aArgs = array(
+			'tpfw_file' => $sType,
+			'id'        => $sName,
+			'ext'       => $sExt,
+		);
+		if((int) $iVersion > 0)
+		{
+			$aArgs['v'] = (string) (int) $iVersion;
+		}
+		if($sToken !== '')
+		{
+			$aArgs['exp'] = (int) $iExpiry;
+			$aArgs['t']   = $sToken;
+		}
+		return $aArgs;
+	}
+
+	/**
 	 * Decides whether the caller may have this file. See serve_file() for the reasoning.
+	 *
+	 * The optional `v` cache-buster is not read here and is not part of the HMAC, so it
+	 * cannot grant access that type/id/ext/exp/t would have refused.
 	 *
 	 * @param string $sType File type key.
 	 * @param string $sName Base filename.
@@ -209,9 +276,7 @@ class TPFW_File_Access
 	/**
 	 * Writes the file to the client with caching that never crosses users.
 	 *
-	 * A file named after a nano id never changes, so the browser is told to keep it for a year
-	 * and the request cost is paid once; the two types that do get rewritten revalidate instead
-	 * (see REWRITABLE_TYPES). "private" bars shared caches by
+	 * Rewritable types revalidate (see REWRITABLE_TYPES). "private" bars shared caches by
 	 * spec, Vary: Cookie keys anything that ignores that, and DONOTCACHEPAGE is what the host
 	 * and plugin page caches (LiteSpeed, WP Rocket, W3TC, WP Super Cache) actually read. All
 	 * three are needed: one customer's pass must never be handed to the next visitor.
@@ -239,7 +304,7 @@ class TPFW_File_Access
 
 		// "private" bars shared caches by spec; see the class docblock on REWRITABLE_TYPES for
 		// why only some of these may also claim to be immutable.
-		$sFreshness = in_array($sType, self::REWRITABLE_TYPES, true) ? 'no-cache, max-age=0' : 'max-age=31536000, immutable';
+		$sFreshness = self::cache_control_freshness($sType);
 
 		header('Content-Type: '.$sMime);
 		header('Cache-Control: private, '.$sFreshness);

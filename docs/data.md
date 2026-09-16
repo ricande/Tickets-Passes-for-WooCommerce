@@ -36,6 +36,8 @@ Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db
 | `tpfw_file_secret` | Signing of file links |
 | `tpfw_scanner_tokens` | Per-device scanner tokens keyed by `token_id`; stores `hash(secret)` only (`TPFW_Scanner_Tokens`) |
 | `tpfw_scanner_tokens_required` | Legacy option; account-password Basic Auth is no longer used |
+| `tpfw_qr_rewrite_jobs` | Background QR rewrite job rows (cursor, generation, last error) |
+| `tpfw_qr_render_version` | Last applied `TPFW_Qr_Render::RENDER_VERSION`; a lower value queues a repair sweep |
 
 ### Product post meta
 
@@ -52,7 +54,7 @@ Prefix `_tpfw_ticket_`, `_tpfw_pass_` or `_tpfw_timeslot_ticket_` / `_tpfw_times
 | `user_start_date_enable` / `user_start_date_min` / `user_start_date_max` | Customer-picked start |
 | `sales_timespan_enable` / `sales_timespan_start` / `sales_timespan_end` | Purchase window |
 
-QR colours use `_tpfw_{ticket|timeslot|pass}_qr_*`. A centre logo (`logo_id`) is drawn at most 20% of the QR’s longer side with high error correction; width-only sizing used to let a portrait product photo cover the code. Pass extras: `_tpfw_pass_guest_pass_*`, `_tpfw_pass_profile_image_upload_*`. Timeslot extras: `_tpfw_timeslot_ticket_recurring_enable`, `_tpfw_timeslot_ticket_recurring_future`, `_tpfw_timeslot_ticket_before_checkin_duration`, `_tpfw_timeslot_ticket_max_usage`.
+QR colours use `_tpfw_{ticket|timeslot|pass}_qr_*`. A centre logo (`logo_id`) is drawn at most 20% of the QR’s longer side with high error correction; width-only sizing used to let a portrait product photo cover the code. After a successful rewrite the fingerprint is stored as `_tpfw_{type}_qr_issued_key`. Pass extras: `_tpfw_pass_guest_pass_*`, `_tpfw_pass_profile_image_upload_*`. Timeslot extras: `_tpfw_timeslot_ticket_recurring_enable`, `_tpfw_timeslot_ticket_recurring_future`, `_tpfw_timeslot_ticket_before_checkin_duration`, `_tpfw_timeslot_ticket_max_usage`.
 
 ### Order / cart item meta
 

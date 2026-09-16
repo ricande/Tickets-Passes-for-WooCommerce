@@ -41,6 +41,8 @@ function tpfw_uninstall_site()
 		'tpfw_file_secret',
 		'tpfw_scanner_tokens',
 		'tpfw_scanner_tokens_required',
+		'tpfw_qr_rewrite_jobs',
+		'tpfw_qr_render_version',
 	);
 	foreach($aOptions as $sOption)
 	{
@@ -51,6 +53,13 @@ function tpfw_uninstall_site()
 	// firing a hook nothing listens to until someone clears them by hand.
 	wp_clear_scheduled_hook('tpfw_hourly_create_recurring_timeslots_cronjob');
 	wp_clear_scheduled_hook('tpfw_minut_delete_expired_reservations_cronjob');
+	wp_clear_scheduled_hook('tpfw_rewrite_qr_batch');
+	wp_clear_scheduled_hook('tpfw_rewrite_qr_upgrade_sweep');
+	if(function_exists('as_unschedule_all_actions'))
+	{
+		as_unschedule_all_actions('tpfw_rewrite_qr_batch');
+		as_unschedule_all_actions('tpfw_rewrite_qr_upgrade_sweep');
+	}
 
 	// Added by the plugin, so it goes with it. Users keep their accounts; they simply lose
 	// this role. remove_role() is a no-op if it was never created.

@@ -249,7 +249,9 @@ repositories.
 The three most recent releases are below. The full history is in `changelog.txt` in the plugin folder.
 
 = 1.3.1 =
-* Fixed QR codes with a centre image being unreadable at the door. A logo now uses high error correction, and a tall product photo is capped on its longer side instead of being sized only by width. Saving the product rewrites already issued QR files.
+* Fixed QR codes with a centre image being unreadable at the door. A logo now uses high error correction, and a tall product photo is capped on its longer side instead of being sized only by width.
+* Issued QR files are rewritten in the background after an upgrade or when the look changes. Unchanged product saves no longer regenerate every code in the request.
+* QR and PDF links are versioned so a previously cached image is not kept. Already-sent emails are not resent; the customer uses My Account, a new PDF download, or Resend.
 
 = 1.3.0 =
 * Guest passes cannot be scanned before the holder checks in, and the guest quota is enforced in the database. Timeslot seats are reserved and issued under a lock so the last place cannot be sold twice.
@@ -266,7 +268,7 @@ Older releases: see `changelog.txt`.
 == Upgrade Notice ==
 
 = 1.3.1 =
-Upload the 1.3.1 zip over 1.3.0. If a product uses a centre image on its QR codes, open that product and save it so already issued codes are rewritten. Then scan from My Account or a freshly downloaded PDF.
+Upload the 1.3.1 zip over 1.3.0. The first page load queues a background repair of live QR images if the renderer changed; you do not have to open every product. The plugin does not send a new mail. Customers see the current code in My Account, a freshly downloaded PDF, or after Resend. Inbox copies of an old URL cannot be updated.
 
 = 1.3.0 =
 Replace the plugin folder (or upload the new zip over 1.2.3). The first page load migrates the database. Existing tickets, passes and QR codes keep working. Check-in is now POST only — update any external scanner app that still uses GET. New guest passes stay inactive until the holder is scanned.

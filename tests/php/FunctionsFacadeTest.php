@@ -20,5 +20,6 @@ class FunctionsFacadeTest extends TestCase
 	{
 		$sLoad = file_get_contents(TPFW_PLUGIN_DIR.'inc/support/load.php');
 		$this->assertNotFalse(strpos($sLoad, 'class--qr-render.php'));
+		$this->assertNotFalse(strpos($sLoad, 'class--qr-rewrite.php'));
 	}
 }

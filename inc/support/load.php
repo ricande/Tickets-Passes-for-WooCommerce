@@ -9,6 +9,7 @@ require_once __DIR__.'/class--db-write.php';
 require_once __DIR__.'/class--issue-lock.php';
 require_once __DIR__.'/class--image-limits.php';
 require_once __DIR__.'/class--qr-render.php';
+require_once __DIR__.'/class--qr-rewrite.php';
 require_once __DIR__.'/class--checkin-payload.php';
 require_once __DIR__.'/class--issue-policy.php';
 require_once __DIR__.'/class--refund-policy.php';

@@ -63,6 +63,12 @@ The first request after the swap runs the installer because `tpfw_db_version` is
 
 Existing tickets, passes, QR codes, PDFs and `tpfw_upload_slug` keep working. Guest rows that already have `valid_from` stay valid. **New** guest passes stay inactive until the holder is scanned.
 
+## Upgrade to 1.3.1 (QR look)
+
+The first request after the update records `TPFW_Qr_Render::RENDER_VERSION` and queues a background repair of live QR images (Action Scheduler, or WP-Cron if Action Scheduler is not available). Product settings do not have to change. The shop does **not** send a new mail. Customers get a current code from **My Account**, a **new PDF download**, or a dashboard **Resend**. Inbox messages already sent, and PDFs already saved on a phone, cannot be updated retroactively.
+
+A product save only queues another rewrite when colours, logo, label or the renderer version actually changed, or a previous rewrite job failed.
+
 Behaviour changes the shop should know:
 
 - Check-in is **POST only**. An authenticated GET answers **405** and does not write a stats row. The built-in scanner already POSTs. An external app that still GETs must switch.
@@ -74,7 +80,7 @@ Swedish (`sv_SE`) and Danish (`da_DK`) ship as fallbacks under `languages/`. A l
 
 ## Deactivate vs delete
 
-**Deactivate** clears the two cron hooks and flushes rewrite rules so `/check-in/` and the My Account tabs 404 cleanly. Settings, tables and files stay. Reactivating picks up the same `tpfw_db_version` and upload slug.
+**Deactivate** clears the timeslot cron hooks, QR rewrite batch/sweep hooks, and flushes rewrite rules so `/check-in/` and the My Account tabs 404 cleanly. Settings, tables and files stay. Reactivating picks up the same `tpfw_db_version` and upload slug.
 
 **Delete** (uninstall) always removes this plugin’s options, the Scanner role and the cron events. Tables and generated files stay unless `wp-config.php` has:
 

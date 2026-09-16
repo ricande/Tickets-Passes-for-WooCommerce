@@ -24,11 +24,12 @@ Subfolders are a fixed map (`TPFW_Functions::FILE_TYPE_FOLDERS`). The request ne
 
 ## Request shape
 
-`?tpfw_file={type}&id={name}&ext={ext}` plus optional `&exp={unix}&t={hmac}`
+`?tpfw_file={type}&id={name}&ext={ext}` plus optional `&exp={unix}&t={hmac}` and optional `&v={mtime}`
 
 - `type` must be a `FILE_TYPE_FOLDERS` key
 - `id` must match `^[A-Za-z0-9_-]{1,64}$`
 - `ext` must be in `SERVABLE_MIMES` (webp, png, jpg, jpeg, gif, pdf)
+- `v` is a cache-buster taken from the file mtime. It is **not** part of the HMAC and is ignored by `may_access_file()`. Changing `v` cannot grant access that `type` / `id` / `ext` / `exp` / `t` would have refused.
 
 Anything else, any failed auth, and any path that `realpath()` would take outside the type folder, answers the **same bare 404**. Distinguishing “no such ticket” from “not yours” would be an existence oracle.
 
@@ -47,9 +48,15 @@ Signatures: `verify_file_token()` / `sign_file_token()` using `tpfw_file_secret`
 ## Caching
 
 - `Cache-Control: private` + `Vary: Cookie` + `DONOTCACHEPAGE` so a page cache or CDN cannot hand one customer’s file to the next
-- QR / guest / PDF: `max-age=31536000, immutable` (named after nano id, written once)
-- preview / profile: `no-cache` + ETag (same URL is rewritten when colours or the photo change)
+- QR / guest / PDF / preview / profile: `no-cache` + ETag. QR and guest images are rewritten in place (same nano-id filename) when the product’s colours/logo or the renderer version change. PDFs are rebuilt from the **current** QR on every download. They must not be advertised as immutable.
+- Generated links include `&v={mtime}` so a browser that already stored an old immutable response fetches the new file. `v` is not signed.
 - `X-Content-Type-Options: nosniff`, `X-Robots-Tag: noindex`
 - PDF is `Content-Disposition: attachment`; images are `inline`
 
+A new My Account view or PDF download shows the current QR. A dashboard **Resend** sends a mail with the current signed URL (including `v`). Already-sent emails keep the URL they were given; already-downloaded PDFs on the customer’s disk are not updated. The plugin does **not** automatically send a new mail after a rewrite.
+
 The constructor calls `serve_file()` immediately. The plugin boots on `init` priority 20, so hooking `init` from this class would register too late and never run.
+
+## Rewriting issued QR images
+
+`TPFW_Qr_Rewrite` rewrites live codes in background batches (Action Scheduler when WooCommerce provides it, otherwise a one-shot WP-Cron event). A product save queues work only when the appearance fingerprint (colours, logo, label, `TPFW_Qr_Render::RENDER_VERSION`) differs from the last successful rewrite, or a previous job failed. Unchanged saves are a no-op. After an upgrade the first request schedules a repair sweep so existing shops get the new look without opening every product. Batches are 25 live rows (`deleted IS NULL`); cancelled/revoked rows are skipped and never reactivated. Writes go to a temp file and replace the destination only after a successful generate. A job that fails five times stops and surfaces an admin notice; saving the product or the next sweep resumes from the last successful id.

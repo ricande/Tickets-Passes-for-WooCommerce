@@ -32,7 +32,9 @@ Endpoints are registered from `init` (the classes are constructed on `init`, so 
 | `/tpfw-tickets` | `TPFW_Ticket_WC_MyAccount` | Ticket **and** timeslot ticket rows for the logged-in user: QR, status pill, uses left, PDF, Add to Calendar (`.ics`) |
 | `/tpfw-pass` | `TPFW_Pass_WC_MyAccount` | Passes, guest-pass hand-out, photo upload |
 
-Queries are scoped to `user_id = get_current_user_id()` in SQL. QR and guest images on these pages are **signed** (`get_file_url(..., true)`), because `qr` / `guest` are HMAC-only. PDF download is AJAX that returns an unsigned `pdf` URL; `TPFW_File_Access` then checks the session. Profile photos are unsigned and likewise session-gated. A forwarded PDF/photo URL is useless; a forwarded QR URL still works until the signature expires (`exp = 0` never expires).
+Queries are scoped to `user_id = get_current_user_id()` in SQL. QR and guest images on these pages are **signed** (`get_file_url(..., true)`), because `qr` / `guest` are HMAC-only. The URL also carries `&v={mtime}` so a rewritten code is not hidden behind a previously cached image. PDF download is AJAX that returns an unsigned `pdf` URL whose `v` follows the current QR; `TPFW_File_Access` then checks the session. Profile photos are unsigned and likewise session-gated. A forwarded PDF/photo URL is useless; a forwarded QR URL still works until the signature expires (`exp = 0` never expires).
+
+Changing QR colours or the renderer after a ticket was emailed does **not** send a new mail. The customer gets a current image from My Account, a fresh PDF download, or a dashboard **Resend**. Old inbox URLs without `v` may still show a cached copy in that mail client.
 
 There is no check-in button on My Account. Manual check-in is the dashboard row action.
 

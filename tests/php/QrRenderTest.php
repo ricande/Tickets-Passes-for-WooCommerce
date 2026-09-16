@@ -28,6 +28,18 @@ class QrRenderTest extends TestCase
 		$this->assertLessThan(150, $aBox[1]);
 	}
 
+	public function test_appearance_key_uses_render_version_and_colour_fallbacks(): void
+	{
+		$sEmpty = TPFW_Qr_Render::appearance_key_from_settings('', '', '', '', 0);
+		$sFull  = TPFW_Qr_Render::appearance_key('', '#000000', '#FFFFFF', '#000000', 0);
+		$this->assertSame($sEmpty, $sFull);
+		$sLogo  = TPFW_Qr_Render::appearance_key_from_settings('', '#ffffff', '#000000', '#000000', 9);
+		$sNone  = TPFW_Qr_Render::appearance_key_from_settings('', '#ffffff', '#000000', '#000000', 0);
+		$this->assertNotSame($sLogo, $sNone);
+		$this->assertSame(2, TPFW_Qr_Render::RENDER_VERSION);
+		$this->assertSame(150, TPFW_Qr_Render::EMAIL_DISPLAY_PX);
+	}
+
 	public function test_landscape_photo_is_capped_on_width(): void
 	{
 		$sPath = $this->writePng(800, 200);
@@ -47,7 +59,8 @@ class QrRenderTest extends TestCase
 		$this->assertNotFalse(strpos($sSrc, 'ErrorCorrectionLevelLow'));
 		$this->assertNotFalse(strpos($sSrc, 'TPFW_Qr_Render::logo_box'));
 		$this->assertFalse((bool) preg_match('/resizeToWidth\s*:\s*\(\s*\$iSize\s*\/\s*4\s*\)/', $sSrc));
-		$this->assertNotFalse(strpos($sSrc, 'rewrite_issued_qr_images'));
+		$this->assertNotFalse(strpos($sSrc, 'queue_issued_qr_rewrite_if_needed'));
+		$this->assertFalse(strpos($sSrc, 'function rewrite_issued_qr_images'));
 	}
 
 	private function writePng(int $iWidth, int $iHeight): string

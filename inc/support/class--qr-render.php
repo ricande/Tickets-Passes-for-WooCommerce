@@ -14,6 +14,20 @@ class TPFW_Qr_Render
 	const LOGO_MAX_FRACTION = 0.20;
 
 	/**
+	 * Bumped when generated QR files must be rewritten even if the product's colours/logo
+	 * have not changed (logo sizing + error-correction fix). Stored beside the appearance
+	 * fingerprint so an upgrade can queue a repair without a product save.
+	 */
+	const RENDER_VERSION = 2;
+
+	/**
+	 * CSS width of the QR <img> in the completed-order / confirmation email
+	 * (`TPFW_Emails::add_ticket_and_pass_text`). Generation is 300px; this is what a mail
+	 * client actually paints, so decode tests resample to it.
+	 */
+	const EMAIL_DISPLAY_PX = 150;
+
+	/**
 	 * @param mixed $sPath Filesystem path to a centre image, or empty for none.
 	 * @return bool
 	 */
@@ -47,5 +61,52 @@ class TPFW_Qr_Render
 			return array($iMax, max(1, (int) round($iSrcH * $iMax / $iSrcW)));
 		}
 		return array(max(1, (int) round($iSrcW * $iMax / $iSrcH)), $iMax);
+	}
+
+	/**
+	 * Fingerprint of the settings that actually paint a scanner QR.
+	 *
+	 * @param string     $sLabelText
+	 * @param string     $sBackground
+	 * @param string     $sForeground
+	 * @param string     $sLabelColor
+	 * @param int|string $mLogoId
+	 * @return string
+	 */
+	public static function appearance_key($sLabelText, $sBackground, $sForeground, $sLabelColor, $mLogoId)
+	{
+		return hash('sha256', implode("\n", array(
+			'v'.self::RENDER_VERSION,
+			(string) $sLabelText,
+			(string) $sBackground,
+			(string) $sForeground,
+			(string) $sLabelColor,
+			(string) (int) $mLogoId,
+		)));
+	}
+
+	/**
+	 * Same fingerprint write_scanner_qr will paint, including the colour fallbacks used when
+	 * a field is empty.
+	 *
+	 * @param string     $sLabelText
+	 * @param string     $sBackground
+	 * @param string     $sForeground
+	 * @param string     $sLabelColor
+	 * @param int|string $mLogoId
+	 * @return string
+	 */
+	public static function appearance_key_from_settings($sLabelText, $sBackground, $sForeground, $sLabelColor, $mLogoId)
+	{
+		$sBackground = (string) $sBackground;
+		$sForeground = (string) $sForeground;
+		$sLabelColor = (string) $sLabelColor;
+		return self::appearance_key(
+			(string) $sLabelText,
+			$sBackground !== '' ? $sBackground : '#000000',
+			$sForeground !== '' ? $sForeground : '#FFFFFF',
+			$sLabelColor !== '' ? $sLabelColor : '#000000',
+			$mLogoId
+		);
 	}
 }

@@ -84,6 +84,32 @@ class FileAccessTest extends TestCase
 		}
 	}
 
+	public function test_rewritable_qr_and_pdf_are_not_immutable(): void
+	{
+		require_once TPFW_PLUGIN_DIR.'inc/file-access/class--file-access.php';
+		foreach(array('qr', 'guest', 'pdf', 'preview', 'profile') as $sType)
+		{
+			$this->assertSame('no-cache, max-age=0', TPFW_File_Access::cache_control_freshness($sType), $sType);
+			$this->assertContains($sType, TPFW_File_Access::REWRITABLE_TYPES);
+		}
+		$this->assertStringNotContainsString('immutable', TPFW_File_Access::cache_control_freshness('qr'));
+	}
+
+	public function test_version_query_is_unsigned_and_does_not_widen_hmac(): void
+	{
+		require_once TPFW_PLUGIN_DIR.'inc/file-access/class--file-access.php';
+		$sSecret = 'test-secret-must-be-at-least-32-chars!!';
+		$sTok    = TPFW_File_Token::sign('qr', 'V1StGXR8Z5jdHi6BmyTxq', 0, $sSecret);
+		$aArgs   = TPFW_File_Access::file_query_args('qr', 'V1StGXR8Z5jdHi6BmyTxq', 'webp', 1700000100, $sTok, 0);
+		$this->assertSame('1700000100', $aArgs['v']);
+		$this->assertSame($sTok, $aArgs['t']);
+		$this->assertTrue(TPFW_File_Token::verify('qr', 'V1StGXR8Z5jdHi6BmyTxq', 0, $aArgs['t'], $sSecret));
+		$this->assertFalse(TPFW_File_Token::verify('guest', 'V1StGXR8Z5jdHi6BmyTxq', 0, $aArgs['t'], $sSecret));
+		$aUnsigned = TPFW_File_Access::file_query_args('qr', 'V1StGXR8Z5jdHi6BmyTxq', 'webp', 1700000100);
+		$this->assertArrayNotHasKey('t', $aUnsigned);
+		$this->assertSame('1700000100', $aUnsigned['v']);
+	}
+
 	/**
 	 * @return string
 	 */

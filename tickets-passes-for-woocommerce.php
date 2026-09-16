@@ -160,6 +160,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 
         // Creates the randomised upload base and its guard files up front, so the first customer
         // order is not the thing that discovers the folder cannot be written.
+        require_once dirname(__FILE__).'/inc/support/load.php';
         require_once dirname(__FILE__).'/inc/functions/class--functions.php';
         $oFunctions = new TPFW_Functions('tpfw');
         foreach(array_keys(TPFW_Functions::FILE_TYPE_FOLDERS) as $sFileType)
@@ -181,6 +182,8 @@ defined('ABSPATH') or die('No script kiddies please!');
     {
         wp_clear_scheduled_hook('tpfw_hourly_create_recurring_timeslots_cronjob');
         wp_clear_scheduled_hook('tpfw_minut_delete_expired_reservations_cronjob');
+        require_once dirname(__FILE__).'/inc/support/load.php';
+        TPFW_Qr_Rewrite::clear_scheduled();
 
         // The My Account endpoints and /check-in/ are gone now; drop the rules that point
         // at them so those URLs 404 cleanly instead of resolving to nothing.

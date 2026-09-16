@@ -56,6 +56,11 @@ class TPFW_Functions
 	 */
 	private function load_general_dependencies()
 	{
+		if(!class_exists('TPFW_Qr_Rewrite'))
+		{
+			require_once dirname(__FILE__).'/../support/load.php';
+		}
+
 		//CLASS ENQUEUE JS
 		add_action('admin_enqueue_scripts', array($this, 'enqueue_script_admin'));
 		// After WooCommerce has registered wc-admin-product-meta-boxes, so the inline
@@ -66,6 +71,11 @@ class TPFW_Functions
 
 		add_action('wp_enqueue_scripts', array($this, 'enqueue_front_inline_styles'));
 		add_action('wp_enqueue_scripts', array($this, 'enqueue_front_product_assets'));
+
+		add_action(TPFW_Qr_Rewrite::HOOK_BATCH, array($this, 'run_qr_rewrite_batch'), 10, 3);
+		add_action(TPFW_Qr_Rewrite::HOOK_SWEEP, array($this, 'run_qr_rewrite_upgrade_sweep'));
+		add_action('init', array($this, 'maybe_queue_qr_rewrite_upgrade'), 30);
+		add_action('admin_notices', array($this, 'qr_rewrite_admin_notices'));
 
 		$this->maybe_register_scanner_role();
 	}
@@ -2167,64 +2177,137 @@ class TPFW_Functions
 			$sPreviewName,
 		);
 
-		$this->rewrite_issued_qr_images($iPostID, $sType);
+		$this->queue_issued_qr_rewrite_if_needed($iPostID, $sType, $aValues);
 	}
 
 	/**
-	 * Rewrites live QR files for one product after its appearance settings changed.
+	 * Queues a background rewrite of live QR files when appearance or renderer version changed.
 	 *
-	 * Issued codes keep the same nano id and filename, so emails and My Account pick up the
-	 * new image. Without this, a logo added on the product left already-issued tickets on the
-	 * previous (often unscannable) file until each row was Reset by hand.
+	 * Issued codes keep the same nano id and filename. The work runs in bounded batches so a
+	 * product save does not walk every live row in the request. An unchanged save whose
+	 * issued fingerprint already matches is a no-op. An empty issued fingerprint (upgrade,
+	 * or a product that has never been rewritten) still queues a repair.
 	 *
-	 * @param int    $iPostID Product id.
-	 * @param string $sType   QR panel key: ticket, timeslot, pass or guestpass.
+	 * @param int                  $iPostID Product id.
+	 * @param string               $sType   QR panel key: ticket, timeslot, pass or guestpass.
+	 * @param array<string,string> $aValues Label/colour/logo fields just saved.
 	 * @return void
 	 */
-	private function rewrite_issued_qr_images($iPostID, $sType)
+	public function queue_issued_qr_rewrite_if_needed($iPostID, $sType, $aValues)
+	{
+		$iPostID = (int) $iPostID;
+		if($iPostID < 1 || !isset(self::QR_META_PREFIXES[$sType]) || !is_array($aValues))
+		{
+			return;
+		}
+
+		$sTarget = TPFW_Qr_Render::appearance_key_from_settings(
+			$aValues['label_text'] ?? '',
+			$aValues['background_color'] ?? '',
+			$aValues['foreground_color'] ?? '',
+			$aValues['label_color'] ?? '',
+			$aValues['logo_id'] ?? 0
+		);
+		$sIssued = (string) get_post_meta($iPostID, '_tpfw_'.$sType.'_qr_issued_key', true);
+		TPFW_Qr_Rewrite::enqueue_if_needed($iPostID, $sType, $sIssued, $sTarget);
+	}
+
+	/**
+	 * Fingerprint of the QR settings currently stored on a product.
+	 *
+	 * @param int    $iProductID
+	 * @param string $sType
+	 * @return string
+	 */
+	public function qr_appearance_key($iProductID, $sType)
+	{
+		$sPrefix = self::QR_META_PREFIXES[$sType] ?? '';
+		if($sPrefix === '')
+		{
+			return '';
+		}
+		return TPFW_Qr_Render::appearance_key_from_settings(
+			(string) get_post_meta($iProductID, $sPrefix.'label_text', true),
+			(string) get_post_meta($iProductID, $sPrefix.'background_color', true),
+			(string) get_post_meta($iProductID, $sPrefix.'foreground_color', true),
+			(string) get_post_meta($iProductID, $sPrefix.'label_color', true),
+			get_post_meta($iProductID, $sPrefix.'logo_id', true)
+		);
+	}
+
+	/**
+	 * One Action Scheduler / WP-Cron page of QR rewrites.
+	 *
+	 * @param int    $iProductID
+	 * @param string $sType
+	 * @param int    $iGeneration
+	 * @return array<string,mixed>
+	 */
+	public function run_qr_rewrite_batch($iProductID, $sType, $iGeneration)
 	{
 		global $wpdb;
-		$iPostID = (int) $iPostID;
-		if($iPostID < 1 || empty($wpdb) || !isset(self::QR_META_PREFIXES[$sType]))
-		{
-			return;
-		}
+		$oSelf = $this;
+		return TPFW_Qr_Rewrite::process_batch((int) $iProductID, (string) $sType, (int) $iGeneration, $wpdb, function($iPid, $sTy, $sNano) use ($oSelf) {
+			return $oSelf->write_scanner_qr($iPid, $sTy, $sNano);
+		});
+	}
 
-		if($sType === 'ticket')
+	/**
+	 * After a renderer-version bump, queue a rewrite for every product that still has live codes.
+	 *
+	 * Does not send email. Customers pick up the new image from My Account, a new PDF download,
+	 * or a dashboard Resend.
+	 *
+	 * @return int Number of product/type pairs that were queued.
+	 */
+	public function run_qr_rewrite_upgrade_sweep()
+	{
+		global $wpdb;
+		$iQueued = 0;
+		foreach(TPFW_Qr_Rewrite::live_product_types($wpdb) as $aItem)
 		{
-			$sTable = $wpdb->prefix . 'tpfw_tickets';
-			$sSql   = $wpdb->prepare('SELECT nano_id FROM %i WHERE product_id = %d AND deleted IS NULL', $sTable, $iPostID);
-		}
-		elseif($sType === 'timeslot')
-		{
-			$sTable = $wpdb->prefix . 'tpfw_timeslot_tickets';
-			$sSql   = $wpdb->prepare('SELECT nano_id FROM %i WHERE product_id = %d AND deleted IS NULL', $sTable, $iPostID);
-		}
-		elseif($sType === 'pass')
-		{
-			$sTable = $wpdb->prefix . 'tpfw_pass';
-			$sSql   = $wpdb->prepare('SELECT nano_id FROM %i WHERE product_id = %d AND deleted IS NULL AND parent_nano_id_fk IS NULL', $sTable, $iPostID);
-		}
-		else
-		{
-			$sTable = $wpdb->prefix . 'tpfw_pass';
-			$sSql   = $wpdb->prepare('SELECT nano_id FROM %i WHERE product_id = %d AND deleted IS NULL AND parent_nano_id_fk IS NOT NULL', $sTable, $iPostID);
-		}
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sSql is the return value of $wpdb->prepare() above.
-		$aRows = $wpdb->get_results($sSql);
-		if(empty($aRows) || !is_array($aRows))
-		{
-			return;
-		}
-
-		foreach($aRows as $oRow)
-		{
-			if(empty($oRow->nano_id))
+			$iPid    = (int) $aItem['product_id'];
+			$sType   = (string) $aItem['type'];
+			$sTarget = $this->qr_appearance_key($iPid, $sType);
+			$sIssued = (string) get_post_meta($iPid, '_tpfw_'.$sType.'_qr_issued_key', true);
+			if(TPFW_Qr_Rewrite::enqueue_if_needed($iPid, $sType, $sIssued, $sTarget) !== null)
 			{
-				continue;
+				$iQueued++;
 			}
-			$this->write_scanner_qr($iPostID, $sType, (string) $oRow->nano_id);
+		}
+		update_option(TPFW_Qr_Rewrite::OPTION_RENDER, TPFW_Qr_Render::RENDER_VERSION, false);
+		return $iQueued;
+	}
+
+	/**
+	 * Schedules the one-shot repair sweep when this site has not yet recorded RENDER_VERSION.
+	 *
+	 * @return void
+	 */
+	public function maybe_queue_qr_rewrite_upgrade()
+	{
+		$iStored = (int) get_option(TPFW_Qr_Rewrite::OPTION_RENDER, 0);
+		if($iStored >= TPFW_Qr_Render::RENDER_VERSION)
+		{
+			return;
+		}
+		TPFW_Qr_Rewrite::schedule_sweep();
+	}
+
+	/**
+	 * Surfaces failed rewrite jobs in wp-admin. Resume is a product save or the next sweep.
+	 *
+	 * @return void
+	 */
+	public function qr_rewrite_admin_notices()
+	{
+		if(!function_exists('current_user_can') || !current_user_can('manage_woocommerce'))
+		{
+			return;
+		}
+		foreach(TPFW_Qr_Rewrite::failure_messages() as $sMessage)
+		{
+			echo '<div class="notice notice-error"><p>'.esc_html($sMessage).'</p></div>';
 		}
 	}
 
@@ -3044,20 +3127,52 @@ class TPFW_Functions
 	 */
 	public function get_file_url($sType, $sName, $sExt = 'webp', $bSigned = false, $iTTL = 0)
 	{
-		$aArgs = array(
-			'tpfw_file' => $sType,
-			'id'        => $sName,
-			'ext'       => $sExt,
-		);
-
+		$sToken  = '';
+		$iExpiry = 0;
 		if($bSigned)
 		{
-			$iExpiry      = ($iTTL > 0) ? time() + (int)$iTTL : 0;
-			$aArgs['exp'] = $iExpiry;
-			$aArgs['t']   = $this->sign_file_token($sType, $sName, $iExpiry);
+			$iExpiry = ($iTTL > 0) ? time() + (int)$iTTL : 0;
+			$sToken  = $this->sign_file_token($sType, $sName, $iExpiry);
 		}
 
+		$aArgs = TPFW_File_Access::file_query_args(
+			$sType,
+			$sName,
+			$sExt,
+			$this->file_url_version($sType, $sName, $sExt),
+			$sToken,
+			$iExpiry
+		);
+
 		return add_query_arg($aArgs, home_url('/'));
+	}
+
+	/**
+	 * mtime-based cache-buster for get_file_url(). 0 when the file is not on disk yet.
+	 *
+	 * PDF version follows the QR/guest webp it embeds, so a rewritten code cannot be hidden
+	 * behind a previously cached PDF URL.
+	 *
+	 * @param string $sType
+	 * @param string $sName
+	 * @param string $sExt
+	 * @return int
+	 */
+	public function file_url_version($sType, $sName, $sExt)
+	{
+		$sPath = $this->get_upload_dir_for_type($sType).$sName.'.'.$sExt;
+		$iFile = is_file($sPath) ? (int) filemtime($sPath) : 0;
+		$iQr   = 0;
+		if($sType === 'pdf')
+		{
+			$sQr    = $this->get_upload_dir_for_type('qr').$sName.'.webp';
+			$sGuest = $this->get_upload_dir_for_type('guest').$sName.'.webp';
+			$iQr    = max(
+				is_file($sQr) ? (int) filemtime($sQr) : 0,
+				is_file($sGuest) ? (int) filemtime($sGuest) : 0
+			);
+		}
+		return TPFW_File_Access::url_version($sType, $iFile, $iQr);
 	}
 
 	/**
@@ -4708,6 +4823,12 @@ class TPFW_Functions
 		}
 
 		$aQRCode = $aWriter->write($qrCode, $aLogo, $aLabel);
-		$aQRCode->saveToFile($sUploadFileDir . $sFileName.'.webp');
+		$sDest   = $sUploadFileDir.$sFileName.'.webp';
+		$sTmp    = $sDest.'.tmp';
+		$aQRCode->saveToFile($sTmp);
+		if(!TPFW_Qr_Rewrite::commit_generated_file($sTmp, $sDest))
+		{
+			throw new RuntimeException('qr_write_failed');
+		}
 		return true;
 	}
