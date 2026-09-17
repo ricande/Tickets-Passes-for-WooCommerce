@@ -157,6 +157,7 @@ Ready to try it? Download the latest release candidate below.
 | SHA-256 | `5fba5389d161ca3c15fb253fe7938a5d5ac3a7d02a9d5fff1133f9289c8759c4` |
 
 [⬇ Download the WordPress plugin](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.3-RC/tickets-passes-for-woocommerce-1.3.3.zip)
+· [SHA-256](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.3-RC/tickets-passes-for-woocommerce-1.3.3.zip.sha256)
 
 > This is a release candidate. Do not use GitHub's automatically generated **Source code** archives as the WordPress plugin package.
 
