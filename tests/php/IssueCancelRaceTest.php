@@ -62,7 +62,7 @@ class IssueCancelRaceTest extends TestCase
 		$oLock = TPFW_Named_Lock::acquire($this->issue, TPFW_Issue_Lock::name('ticket', $iLine), 5);
 		$this->assertTrue($oLock->held(), 'issue connection must hold tpfw_ticket_issue_{line}');
 
-		$aCancel = TPFW_Ticket_Line::cancel($this->cancel, $oItem, $iOrder, $iUser, null, 0);
+		$aCancel = TPFW_Ticket_Line::cancel($this->cancel, $oItem, $iOrder, null, 0);
 		$this->assertFalse($aCancel['bStatus']);
 		$this->assertNull($aCancel['sync']);
 		$this->assertStringContainsString('another request is in progress', $aCancel['sMessage']);
@@ -94,7 +94,7 @@ class IssueCancelRaceTest extends TestCase
 		$oLock = TPFW_Named_Lock::acquire($this->issue, TPFW_Issue_Lock::name('ticket', $iLine), 5);
 		$this->assertTrue($oLock->held());
 
-		$aRefund = TPFW_Ticket_Line::reconcile($this->cancel, $oItem, $iOrder, $iUser, null, null, 0);
+		$aRefund = TPFW_Ticket_Line::reconcile($this->cancel, $oItem, $iOrder, null, null, 0);
 		$this->assertFalse($aRefund['bStatus']);
 		$this->assertStringContainsString('another request is in progress', $aRefund['sMessage']);
 		$this->assertSame(3, $this->liveCount($sTable, $iLine), 'timed-out reconcile must not shrink');
@@ -217,10 +217,10 @@ class IssueCancelRaceTest extends TestCase
 		$oItem  = $this->lineItem($iLine, 2);
 		$this->putOrder($iOrder, 'completed', $iLine, 0);
 
-		$aFirst = TPFW_Ticket_Line::issue($this->issue, $oItem, $iOrder, $iUser, $sNow, function() use ($sTable, $iUser, $iOrder, $iLine, $sNow) {
+		$aFirst = TPFW_Ticket_Line::issue($this->issue, $oItem, $iOrder, $sNow, function() use ($sTable, $iUser, $iOrder, $iLine, $sNow) {
 			return $this->insertTicket($this->issue, $sTable, 11, $iUser, $iOrder, $iLine, $sNow);
 		});
-		$aAgain = TPFW_Ticket_Line::issue($this->cancel, $oItem, $iOrder, $iUser, $sNow, function() {
+		$aAgain = TPFW_Ticket_Line::issue($this->cancel, $oItem, $iOrder, $sNow, function() {
 			$this->fail('second issue must reuse existing nanos');
 		});
 
@@ -244,11 +244,11 @@ class IssueCancelRaceTest extends TestCase
 		$oLock = TPFW_Named_Lock::acquire($this->issue, TPFW_Issue_Lock::name('ticket', $iLine), 5);
 		$this->assertTrue($oLock->held());
 
-		$aIssue = TPFW_Ticket_Line::issue($this->cancel, $oItem, $iOrder, $iUser, $sNow, function() {
+		$aIssue = TPFW_Ticket_Line::issue($this->cancel, $oItem, $iOrder, $sNow, function() {
 			$this->fail('issue must not insert without the lock');
 		}, null, 0);
-		$aCancel = TPFW_Ticket_Line::cancel($this->cancel, $oItem, $iOrder, $iUser, null, 0);
-		$aRefund = TPFW_Ticket_Line::reconcile($this->cancel, $oItem, $iOrder, $iUser, null, null, 0);
+		$aCancel = TPFW_Ticket_Line::cancel($this->cancel, $oItem, $iOrder, null, 0);
+		$aRefund = TPFW_Ticket_Line::reconcile($this->cancel, $oItem, $iOrder, null, null, 0);
 
 		$this->assertFalse($aIssue['bStatus']);
 		$this->assertFalse($aCancel['bStatus']);
@@ -280,7 +280,7 @@ class IssueCancelRaceTest extends TestCase
 		$oLock = TPFW_Named_Lock::acquire($this->issue, TPFW_Issue_Lock::name('ticket', 601), 5);
 		$this->assertTrue($oLock->held());
 
-		$aIssued = TPFW_Ticket_Line::issue($this->cancel, $oFree, $iOrder, 7, $sNow, function() use ($sNow, $iOrder) {
+		$aIssued = TPFW_Ticket_Line::issue($this->cancel, $oFree, $iOrder, $sNow, function() use ($sNow, $iOrder) {
 			return $this->insertTicket($this->cancel, $this->cancel->prefix.'tpfw_tickets', 11, 7, $iOrder, 602, $sNow);
 		}, null, 0);
 
@@ -288,7 +288,7 @@ class IssueCancelRaceTest extends TestCase
 		$this->assertSame(1, $this->liveCount($this->issue->prefix.'tpfw_tickets', 602));
 		$this->assertSame(0, $this->liveCount($this->issue->prefix.'tpfw_tickets', 601));
 
-		$aBlocked = TPFW_Ticket_Line::issue($this->cancel, $oHeld, $iOrder, 7, $sNow, function() {
+		$aBlocked = TPFW_Ticket_Line::issue($this->cancel, $oHeld, $iOrder, $sNow, function() {
 			$this->fail('held line must not issue without its own lock');
 		}, null, 0);
 		$this->assertFalse($aBlocked['bStatus']);

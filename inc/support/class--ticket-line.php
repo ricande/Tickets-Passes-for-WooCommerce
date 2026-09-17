@@ -9,6 +9,12 @@ defined('ABSPATH') or die('No script kiddies please!');
  * composition only: they do not GET_LOCK. Call them only from issue()/cancel()/
  * reconcile()/with_lock() callbacks so the same connection never GET_LOCKs the line
  * twice and so no unlocked caller mutates ticket rows.
+ *
+ * Full cancel/refund identifies live rows by product_id, order_id and order_line_id.
+ * Holder user_id is mutable (admin transfer) and must not be part of that match.
+ *
+ * Dashboard per-nano cancel, reset and transfer are separate operator paths; they
+ * do not take this order-line lock.
  */
 class TPFW_Ticket_Line
 {
@@ -66,20 +72,19 @@ class TPFW_Ticket_Line
 	/**
 	 * Issue or reissue live ticket rows for one line. Re-reads issue_quantity under the lock.
 	 *
-	 * @param object      $wpdb
-	 * @param object      $oOrderItem
-	 * @param int         $iOrderID
-	 * @param int         $iCustomerID
-	 * @param string      $sNow
-	 * @param callable    $fnInsert
+	 * @param object        $wpdb
+	 * @param object        $oOrderItem
+	 * @param int           $iOrderID
+	 * @param string        $sNow
+	 * @param callable      $fnInsert
 	 * @param callable|null $fnAfterCancelRow
-	 * @param int         $iTimeout
+	 * @param int           $iTimeout
 	 * @return array{sMessage:string,bStatus:bool,sync:?array}
 	 */
-	public static function issue($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $sNow, $fnInsert, $fnAfterCancelRow = null, $iTimeout = 5)
+	public static function issue($wpdb, $oOrderItem, $iOrderID, $sNow, $fnInsert, $fnAfterCancelRow = null, $iTimeout = 5)
 	{
-		$m = self::with_lock($wpdb, (int)$oOrderItem->get_id(), function() use ($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $sNow, $fnInsert, $fnAfterCancelRow) {
-			return self::issue_held($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $sNow, $fnInsert, $fnAfterCancelRow);
+		$m = self::with_lock($wpdb, (int)$oOrderItem->get_id(), function() use ($wpdb, $oOrderItem, $iOrderID, $sNow, $fnInsert, $fnAfterCancelRow) {
+			return self::issue_held($wpdb, $oOrderItem, $iOrderID, $sNow, $fnInsert, $fnAfterCancelRow);
 		}, $iTimeout);
 		if($m === null)
 		{
@@ -89,20 +94,19 @@ class TPFW_Ticket_Line
 	}
 
 	/**
-	 * Full cancel of live ticket rows for one line.
+	 * Full cancel of live ticket rows for one line, regardless of current holder user_id.
 	 *
 	 * @param object        $wpdb
 	 * @param object        $oOrderItem
 	 * @param int           $iOrderID
-	 * @param int           $iCustomerID
 	 * @param callable|null $fnAfterRow
 	 * @param int           $iTimeout
 	 * @return array{sMessage:string,bStatus:bool,sync:?array}
 	 */
-	public static function cancel($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterRow = null, $iTimeout = 5)
+	public static function cancel($wpdb, $oOrderItem, $iOrderID, $fnAfterRow = null, $iTimeout = 5)
 	{
-		$m = self::with_lock($wpdb, (int)$oOrderItem->get_id(), function() use ($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterRow) {
-			return self::cancel_held($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterRow);
+		$m = self::with_lock($wpdb, (int)$oOrderItem->get_id(), function() use ($wpdb, $oOrderItem, $iOrderID, $fnAfterRow) {
+			return self::cancel_held($wpdb, $oOrderItem, $iOrderID, $fnAfterRow);
 		}, $iTimeout);
 		if($m === null)
 		{
@@ -117,16 +121,15 @@ class TPFW_Ticket_Line
 	 * @param object        $wpdb
 	 * @param object        $oOrderItem
 	 * @param int           $iOrderID
-	 * @param int           $iCustomerID
 	 * @param callable|null $fnAfterRevoke
 	 * @param callable|null $fnAfterCancelRow
 	 * @param int           $iTimeout
 	 * @return array{sMessage:string,bStatus:bool,sync:?array}
 	 */
-	public static function reconcile($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterRevoke = null, $fnAfterCancelRow = null, $iTimeout = 5)
+	public static function reconcile($wpdb, $oOrderItem, $iOrderID, $fnAfterRevoke = null, $fnAfterCancelRow = null, $iTimeout = 5)
 	{
-		$m = self::with_lock($wpdb, (int)$oOrderItem->get_id(), function() use ($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterRevoke, $fnAfterCancelRow) {
-			return self::reconcile_held($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterRevoke, $fnAfterCancelRow);
+		$m = self::with_lock($wpdb, (int)$oOrderItem->get_id(), function() use ($wpdb, $oOrderItem, $iOrderID, $fnAfterRevoke, $fnAfterCancelRow) {
+			return self::reconcile_held($wpdb, $oOrderItem, $iOrderID, $fnAfterRevoke, $fnAfterCancelRow);
 		}, $iTimeout);
 		if($m === null)
 		{
@@ -142,19 +145,18 @@ class TPFW_Ticket_Line
 	 * @param object        $wpdb
 	 * @param object        $oOrderItem
 	 * @param int           $iOrderID
-	 * @param int           $iCustomerID
 	 * @param string        $sNow
 	 * @param callable      $fnInsert
 	 * @param callable|null $fnAfterCancelRow
 	 * @return array{sMessage:string,bStatus:bool,sync:?array}
 	 */
-	public static function issue_held($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $sNow, $fnInsert, $fnAfterCancelRow = null)
+	public static function issue_held($wpdb, $oOrderItem, $iOrderID, $sNow, $fnInsert, $fnAfterCancelRow = null)
 	{
 		$oOrder = function_exists('wc_get_order') ? wc_get_order($iOrderID) : null;
 		$iQty   = TPFW_Refund_Policy::issue_quantity($oOrder, $oOrderItem);
 		if($iQty <= 0)
 		{
-			return self::cancel_held($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterCancelRow);
+			return self::cancel_held($wpdb, $oOrderItem, $iOrderID, $fnAfterCancelRow);
 		}
 
 		$sTable  = $wpdb->prefix.self::TABLE;
@@ -190,23 +192,21 @@ class TPFW_Ticket_Line
 	 * @param object        $wpdb
 	 * @param object        $oOrderItem
 	 * @param int           $iOrderID
-	 * @param int           $iCustomerID
 	 * @param callable|null $fnAfterRow function(object $oRow, int $iMetaIndex): void
 	 * @return array{sMessage:string,bStatus:bool,sync:?array}
 	 */
-	public static function cancel_held($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterRow = null)
+	public static function cancel_held($wpdb, $oOrderItem, $iOrderID, $fnAfterRow = null)
 	{
 		$sTable = $wpdb->prefix.self::TABLE;
 		$sStats = $wpdb->prefix.self::STATS_TABLE;
 		$sNow   = current_time('mysql');
 		$oExistsPrepared = $wpdb->prepare(
-			'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d AND user_id = %d AND deleted IS NULL',
+			'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d AND deleted IS NULL',
 			array(
 				$sTable,
 				$oOrderItem->get_product_id(),
 				$iOrderID,
 				$oOrderItem->get_id(),
-				$iCustomerID,
 			)
 		);
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $oExistsPrepared is the return value of $wpdb->prepare() above.
@@ -269,18 +269,17 @@ class TPFW_Ticket_Line
 	 * @param object        $wpdb
 	 * @param object        $oOrderItem
 	 * @param int           $iOrderID
-	 * @param int           $iCustomerID
 	 * @param callable|null $fnAfterRevoke
 	 * @param callable|null $fnAfterCancelRow
 	 * @return array{sMessage:string,bStatus:bool,sync:?array}
 	 */
-	public static function reconcile_held($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterRevoke = null, $fnAfterCancelRow = null)
+	public static function reconcile_held($wpdb, $oOrderItem, $iOrderID, $fnAfterRevoke = null, $fnAfterCancelRow = null)
 	{
 		$oOrder  = function_exists('wc_get_order') ? wc_get_order($iOrderID) : null;
 		$iTarget = TPFW_Refund_Policy::target_active_quantity($oOrder, $oOrderItem);
 		if($iTarget <= 0)
 		{
-			return self::cancel_held($wpdb, $oOrderItem, $iOrderID, $iCustomerID, $fnAfterCancelRow);
+			return self::cancel_held($wpdb, $oOrderItem, $iOrderID, $fnAfterCancelRow);
 		}
 
 		$sNow   = current_time('mysql');

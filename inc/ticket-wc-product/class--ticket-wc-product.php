@@ -580,7 +580,6 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
             $wpdb,
             $oOrderItem,
             $iOrderID,
-            $iCustomerID,
             $sCurrentDatetime,
             function() use ($wpdb, $sTicketTable, $oOrderItem, $iCustomerID, $iOrderID, $iProductValidDuration, $iTicketMaxUses, $sCurrentDatetime, $oParentProduct) {
                 $sStartDate = current_time('mysql');
@@ -679,7 +678,6 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
             $wpdb,
             $oOrderItem,
             $iOrderID,
-            $iCustomerID,
             function($oExistResult, $iQuantity) use ($oOrderItem, $iOrderID) {
                 $this->after_cancel_ticket_row($oOrderItem, $iOrderID, $oExistResult, $iQuantity);
             }
@@ -708,7 +706,6 @@ class TPFW_Ticket_WC_Product extends TPFW_Product_Type
 			$wpdb,
 			$oOrderItem,
 			$iOrderID,
-			$iCustomerID,
 			function($sNano) {
 				$this->after_revoke_row($sNano);
 			},

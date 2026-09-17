@@ -55,15 +55,15 @@ $wpdb->query($wpdb->prepare(
 
 if($sOp === 'cancel')
 {
-	$a = TPFW_Ticket_Line::cancel($wpdb, $oItem, $iOrder, $iUser, null, $iTimeout);
+	$a = TPFW_Ticket_Line::cancel($wpdb, $oItem, $iOrder, null, $iTimeout);
 }
 elseif($sOp === 'reconcile')
 {
-	$a = TPFW_Ticket_Line::reconcile($wpdb, $oItem, $iOrder, $iUser, null, null, $iTimeout);
+	$a = TPFW_Ticket_Line::reconcile($wpdb, $oItem, $iOrder, null, null, $iTimeout);
 }
 elseif($sOp === 'reconcile-kv')
 {
-	$a = TPFW_Ticket_Line::with_lock($wpdb, $iLine, function() use ($wpdb, $oItem, $iOrder, $iUser, $iLine) {
+	$a = TPFW_Ticket_Line::with_lock($wpdb, $iLine, function() use ($wpdb, $oItem, $iOrder, $iLine) {
 		$sJson = $wpdb->get_var($wpdb->prepare(
 			'SELECT v FROM %i WHERE k = %s',
 			$wpdb->prefix.'tpfw_kv',
@@ -83,7 +83,7 @@ elseif($sOp === 'reconcile-kv')
 		$oOrder->refunded = array($iLine => (int)$aState['refunded']);
 		$GLOBALS['tpfw_test_orders'][$iOrder] = $oOrder;
 		$oItem->qtyRefunded = (int)$aState['refunded'];
-		return TPFW_Ticket_Line::reconcile_held($wpdb, $oItem, $iOrder, $iUser);
+		return TPFW_Ticket_Line::reconcile_held($wpdb, $oItem, $iOrder);
 	}, $iTimeout);
 	if($a === null)
 	{
