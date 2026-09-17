@@ -12,7 +12,9 @@ class TPFW_DB_Installer
 	const DB_VERSION = '1.0.4';
 
 	/**
-	 * Runs the schema check immediately - the class is only ever instantiated on plugin load.
+	 * Runs the schema check immediately. The return value is discarded here so page
+	 * loads never wp_die; activation reads schema_is_current() after construction
+	 * instead of calling maybe_install() a second time.
 	 */
 	public function __construct()
 	{
@@ -20,15 +22,28 @@ class TPFW_DB_Installer
 	}
 
 	/**
+	 * Whether the stored schema version matches this build.
+	 *
+	 * @return bool
+	 */
+	public static function schema_is_current()
+	{
+		return get_option('tpfw_db_version') === self::DB_VERSION;
+	}
+
+	/**
 	 * Creates the tables once per DB_VERSION bump, then records the new version.
 	 *
-	 * @return void
+	 * Does not bump or repair a site that already stored DB_VERSION after a partial
+	 * install — that needs an explicit version bump or a separate repair pass.
+	 *
+	 * @return bool True when the schema is current or this pass finished every required step.
 	 */
 	public function maybe_install()
 	{
-		if(get_option('tpfw_db_version') === self::DB_VERSION)
+		if(self::schema_is_current())
 		{
-			return;
+			return true;
 		}
 
 		if($this->install() === false)
@@ -37,9 +52,18 @@ class TPFW_DB_Installer
 			{
 				error_log('TPFW: database install/backfill failed; leaving tpfw_db_version unchanged');
 			}
-			return;
+			return false;
 		}
 		update_option('tpfw_db_version', self::DB_VERSION);
+		if(!self::schema_is_current())
+		{
+			if(function_exists('error_log'))
+			{
+				error_log('TPFW: tpfw_db_version was not stored after a successful schema pass');
+			}
+			return false;
+		}
+		return true;
 	}
 
 
@@ -49,7 +73,7 @@ class TPFW_DB_Installer
 	 * CREATE TABLE IF NOT EXISTS never alters a table that already exists, so a schema change
 	 * has to go with a DB_VERSION bump and a matching ALTER.
 	 *
-	 * @return bool False when guest-slot backfill or the unique index cannot be applied.
+	 * @return bool False when any required SQL step fails. 0 affected rows is not a failure.
 	 */
 	public function install()
 	{
@@ -229,25 +253,40 @@ class TPFW_DB_Installer
 		foreach($aTables as $sTableSQL)
 		{
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- schema DDL built from $wpdb->prefix and get_charset_collate(); identifiers cannot be placeholders.
-			$wpdb->query($sTableSQL);
+			if(TPFW_Db_Write::failed($wpdb->query($sTableSQL)))
+			{
+				return false;
+			}
 		}
 
 		// CREATE TABLE IF NOT EXISTS leaves an existing table exactly as it is, so an index added
 		// after a site's first install only arrives through here.
 		foreach(array('tpfw_tickets_stats', 'tpfw_timeslot_tickets_stats', 'tpfw_pass_stats') as $sStatsTable)
 		{
-			$this->maybe_add_index($sPrefix.$sStatsTable, 'user_created', '(`user_id`, `created`)');
+			if(!$this->maybe_add_index($sPrefix.$sStatsTable, 'user_created', '(`user_id`, `created`)'))
+			{
+				return false;
+			}
 		}
 
 		// The three admin dashboards page by ORDER BY created DESC, and the product page and
 		// cron filter timeslots by start; neither had an index, so both were full scans.
 		foreach(array('tpfw_tickets', 'tpfw_timeslot_tickets', 'tpfw_pass') as $sRowTable)
 		{
-			$this->maybe_add_index($sPrefix.$sRowTable, 'created', '(`created`)');
+			if(!$this->maybe_add_index($sPrefix.$sRowTable, 'created', '(`created`)'))
+			{
+				return false;
+			}
 		}
-		$this->maybe_add_index($sPrefix.'tpfw_timeslots', 'product_start', '(`product_id`, `start`)');
+		if(!$this->maybe_add_index($sPrefix.'tpfw_timeslots', 'product_start', '(`product_id`, `start`)'))
+		{
+			return false;
+		}
 
-		$this->maybe_add_column($sPrefix.'tpfw_pass', 'guest_slot', 'TINYINT UNSIGNED NULL DEFAULT NULL AFTER `parent_nano_id_fk`');
+		if(!$this->maybe_add_column($sPrefix.'tpfw_pass', 'guest_slot', 'TINYINT UNSIGNED NULL DEFAULT NULL AFTER `parent_nano_id_fk`'))
+		{
+			return false;
+		}
 		if(!TPFW_Guest_Pass_Issuer::backfill_legacy_slots($wpdb))
 		{
 			return false;
@@ -267,7 +306,7 @@ class TPFW_DB_Installer
 	 * @param string $sTable      Full table name, prefix included.
 	 * @param string $sColumn     Column name.
 	 * @param string $sDefinition Column definition after the name, e.g. 'TINYINT UNSIGNED NULL'.
-	 * @return void
+	 * @return bool False when the inspection query or ALTER fails.
 	 */
 	private function maybe_add_column($sTable, $sColumn, $sDefinition)
 	{
@@ -275,10 +314,17 @@ class TPFW_DB_Installer
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching -- $sTable and $sColumn are literals from install(); identifiers cannot be placeholders.
 		$aExisting = $wpdb->get_results("SHOW COLUMNS FROM `{$sTable}` LIKE '{$sColumn}'");
-		if(!empty($aExisting)) return;
+		if(!$this->inspect_ok($wpdb, $aExisting))
+		{
+			return false;
+		}
+		if(!empty($aExisting))
+		{
+			return true;
+		}
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching -- schema DDL; see above.
-		$wpdb->query("ALTER TABLE `{$sTable}` ADD COLUMN `{$sColumn}` {$sDefinition}");
+		return TPFW_Db_Write::succeeded($wpdb->query("ALTER TABLE `{$sTable}` ADD COLUMN `{$sColumn}` {$sDefinition}"));
 	}
 
 	/**
@@ -287,7 +333,7 @@ class TPFW_DB_Installer
 	 * @param string $sTable   Full table name, prefix included.
 	 * @param string $sIndex   Index name.
 	 * @param string $sColumns Column list, parentheses included.
-	 * @return bool False when the ALTER fails.
+	 * @return bool False when the inspection query or ALTER fails.
 	 */
 	private function maybe_add_unique_index($sTable, $sIndex, $sColumns)
 	{
@@ -295,14 +341,17 @@ class TPFW_DB_Installer
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching -- $sTable and $sIndex are literals from install(); identifiers cannot be placeholders.
 		$aExisting = $wpdb->get_results("SHOW INDEX FROM `{$sTable}` WHERE Key_name = '{$sIndex}'");
+		if(!$this->inspect_ok($wpdb, $aExisting))
+		{
+			return false;
+		}
 		if(!empty($aExisting))
 		{
 			return true;
 		}
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching -- schema DDL; see above.
-		$m = $wpdb->query("ALTER TABLE `{$sTable}` ADD UNIQUE KEY `{$sIndex}` {$sColumns}");
-		return $m !== false;
+		return TPFW_Db_Write::succeeded($wpdb->query("ALTER TABLE `{$sTable}` ADD UNIQUE KEY `{$sIndex}` {$sColumns}"));
 	}
 
 
@@ -316,7 +365,7 @@ class TPFW_DB_Installer
 	 * @param string $sTable   Full table name, prefix included.
 	 * @param string $sIndex   Index name.
 	 * @param string $sColumns Column list, parentheses included: '(`user_id`, `created`)'.
-	 * @return void
+	 * @return bool False when the inspection query or ALTER fails.
 	 */
 	private function maybe_add_index($sTable, $sIndex, $sColumns)
 	{
@@ -324,9 +373,39 @@ class TPFW_DB_Installer
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching -- $sTable and $sIndex are literals from install(); identifiers cannot be placeholders.
 		$aExisting = $wpdb->get_results("SHOW INDEX FROM `{$sTable}` WHERE Key_name = '{$sIndex}'");
-		if(!empty($aExisting)) return;
+		if(!$this->inspect_ok($wpdb, $aExisting))
+		{
+			return false;
+		}
+		if(!empty($aExisting))
+		{
+			return true;
+		}
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching -- schema DDL; see above.
-		$wpdb->query("ALTER TABLE `{$sTable}` ADD KEY `{$sIndex}` {$sColumns}");
+		return TPFW_Db_Write::succeeded($wpdb->query("ALTER TABLE `{$sTable}` ADD KEY `{$sIndex}` {$sColumns}"));
+	}
+
+	/**
+	 * Whether a SHOW COLUMNS / SHOW INDEX result is usable.
+	 *
+	 * An empty list means the object is missing. false, null, or last_error means the
+	 * inspection query itself failed and must not be treated as “not found”.
+	 *
+	 * @param object     $wpdb
+	 * @param mixed      $mResults
+	 * @return bool
+	 */
+	private function inspect_ok($wpdb, $mResults)
+	{
+		if($mResults === false || $mResults === null)
+		{
+			return false;
+		}
+		if(is_object($wpdb) && property_exists($wpdb, 'last_error') && $wpdb->last_error !== '' && $wpdb->last_error !== null)
+		{
+			return false;
+		}
+		return true;
 	}
 }

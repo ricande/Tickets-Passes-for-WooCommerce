@@ -111,6 +111,14 @@ class TPFW_Test_Wpdb
 	}
 
 	/**
+	 * @return string
+	 */
+	public function get_charset_collate()
+	{
+		return 'DEFAULT CHARSET=utf8mb4';
+	}
+
+	/**
 	 * @param string $sql
 	 * @return string|null
 	 */

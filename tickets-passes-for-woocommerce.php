@@ -155,8 +155,16 @@ defined('ABSPATH') or die('No script kiddies please!');
         // Same order as TPFW_Main: support helpers (incl. TPFW_Guest_Pass_Issuer) before the
         // installer, which calls TPFW_Guest_Pass_Issuer::backfill_legacy_slots() from install().
         require_once dirname(__FILE__).'/inc/support/load.php';
-        $oDBInstaller = new TPFW_DB_Installer();
-        $oDBInstaller->maybe_install();
+        new TPFW_DB_Installer();
+        if(!TPFW_DB_Installer::schema_is_current())
+        {
+            deactivate_plugins(plugin_basename(__FILE__));
+            wp_die(
+                esc_html__('Tickets & Passes for WooCommerce could not install its database tables. It has not been activated. Check the server error log and try again.', 'tickets-passes-for-woocommerce'),
+                esc_html__('Plugin activation error', 'tickets-passes-for-woocommerce'),
+                ['back_link' => true]
+            );
+        }
 
         // Defers the rewrite flush to the next request - see the note above.
         delete_option('tpfw_rewrite_version');

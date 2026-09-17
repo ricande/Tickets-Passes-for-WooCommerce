@@ -53,6 +53,7 @@ class TPFW_Failing_Wpdb
 		}
 		$m = $this->inner->query($sql);
 		$this->insert_id = $this->inner->insert_id;
+		$this->last_error = $this->inner->last_error;
 		return $m;
 	}
 
@@ -106,5 +107,13 @@ class TPFW_Failing_Wpdb
 		$this->last_error = $this->inner->last_error;
 		$this->insert_id = $this->inner->insert_id;
 		return $m;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function get_charset_collate()
+	{
+		return $this->inner->get_charset_collate();
 	}
 }
