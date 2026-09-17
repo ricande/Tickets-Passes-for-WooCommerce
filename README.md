@@ -163,4 +163,4 @@ Ready to try it? Download the latest release candidate below.
 
 This RC replaces 1.3.3-RC. Database schema version is 1.0.5 so a site that stored `tpfw_db_version` 1.0.4 after a partial install runs the fail-closed installer again. There is no new table definition. A required SQL failure leaves the stored version unchanged. Existing tickets, passes and guest slots keep their identities; rows from a dropped table are not restored. QR rewrite from 1.3.2 is unchanged.
 
-Local verification: PHPUnit `DbInstallerMigrate105Test` and `DbInstallerFailClosedTest`; disposable WordPress/WooCommerce copy for clean install, healthy 1.0.4 upgrade, incomplete 1.0.4 repair, and failed-then-retry.
+Local verification: PHPUnit `DbInstallerMigrate105Test` and `DbInstallerFailClosedTest` (202 tests). Disposable WordPress/WooCommerce copy of the 1.3.4 plugin zip: header 1.3.4; clean install marked `1.0.5`; healthy 1.0.4 upgrade kept ticket/pass/guest identities; incomplete 1.0.4 (missing table/column/index) repaired; a failed pass stayed on `1.0.4` and the retry marked `1.0.5`. The existing tickets-test site was not modified.
