@@ -6,10 +6,13 @@ defined('ABSPATH') or die('No script kiddies please!');
  *
  * Runs on every load rather than only on activation, because activation does not fire on
  * plugin updates - bumping DB_VERSION is what triggers the next install pass.
+ *
+ * 1.0.5 re-runs the fail-closed installer so a site that stored `tpfw_db_version` `1.0.4`
+ * after a partial pass is repaired. It does not add a new table definition.
  */
 class TPFW_DB_Installer
 {
-	const DB_VERSION = '1.0.4';
+	const DB_VERSION = '1.0.5';
 
 	/**
 	 * Runs the schema check immediately. The return value is discarded here so page
@@ -34,8 +37,10 @@ class TPFW_DB_Installer
 	/**
 	 * Creates the tables once per DB_VERSION bump, then records the new version.
 	 *
-	 * Does not bump or repair a site that already stored DB_VERSION after a partial
-	 * install — that needs an explicit version bump or a separate repair pass.
+	 * 1.0.5 exists so a `1.0.4` marker written after a partial install is not treated as
+	 * current. CREATE TABLE IF NOT EXISTS fills in a missing table; maybe_add_* only the
+	 * column and indexes listed in install(). Rows from a table that was dropped are not
+	 * restored. A failed pass leaves the stored version unchanged so the next request retries.
 	 *
 	 * @return bool True when the schema is current or this pass finished every required step.
 	 */

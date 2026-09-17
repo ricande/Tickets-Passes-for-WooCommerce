@@ -79,6 +79,25 @@ Upload the 1.3.3 zip over 1.3.2, 1.3.1 or 1.3.0. Leave the plugin active if it a
 
 Verification of this RC: PHPUnit `FunctionsFacadeTest` asserts that `tpfw_activate_plugin()` includes `inc/support/load.php` before `new TPFW_DB_Installer`. On a local WordPress 7.1 (sv_SE) + WooCommerce 11.1.0 + PHP 8.3.6 guest, 1.3.2 failed on **Plugins → Activate** with that fatal. After the load-order fix, `wp plugin activate` succeeded, created the nine tables, recorded `tpfw_db_version` `1.0.4`, and a second activate with that option cleared (so `install()` and backfill ran again) produced no new fatal.
 
+## Upcoming: schema 1.0.5 (unpublished)
+
+Not in **1.3.3 RC**. The next plugin release will bump `tpfw_db_version` from `1.0.4` to `1.0.5` so a site that stored `1.0.4` after a partial install runs `install()` again. There is no new table definition. There is no per-request health probe and no separate repair option.
+
+**Why.** Older installer code could record `1.0.4` even when a required `CREATE`/`ALTER` had failed. `schema_is_current()` trusts that marker, so those sites skip `install()` forever until the constant differs.
+
+**What a 1.0.4 → 1.0.5 pass repairs**
+
+- A **missing table** among the nine (`CREATE TABLE IF NOT EXISTS`).
+- Column `tpfw_pass.guest_slot` (`maybe_add_column`).
+- Indexes `user_created` on `tpfw_tickets_stats`, `tpfw_timeslot_tickets_stats`, `tpfw_pass_stats`; `created` on `tpfw_tickets`, `tpfw_timeslot_tickets`, `tpfw_pass`; `product_start` on `tpfw_timeslots`; unique `parent_guest_slot` on `tpfw_pass` (`maybe_add_index` / `maybe_add_unique_index`).
+- Guest-slot **backfill** of NULL/0 slots. Already assigned slots stay as they are.
+
+`CREATE TABLE IF NOT EXISTS` does **not** reshape a table that already exists. Arbitrary missing columns or indexes beyond the list above are not added. Rows that lived in a table that was dropped are **not** restored.
+
+**On failure.** The stored version stays `1.0.4` (or whatever it was). The next request retries. Activation still constructs the installer once and reads `schema_is_current()`; it does not run a second `maybe_install()` to hide a first failure. Ordinary page loads still do not `wp_die`.
+
+A healthy `1.0.4` site: the pass is a no-op on existing objects, live tickets/passes/guest slots keep their identities and relations, then the marker becomes `1.0.5`. A later load with `1.0.5` already stored does not start another install pass.
+
 ## Upgrade to 1.3.2 (QR rewrite)
 
 **1.3.2 RC** is a pre-release for review and staging, not a stable WordPress.org build.
