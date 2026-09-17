@@ -6,7 +6,7 @@ How those records are written: [product-types.md](product-types.md), [check-in.m
 
 ## Tables
 
-Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db-installer.php` (`DB_VERSION` `1.0.5`, unpublished relative to 1.3.3-RC). Rows are soft-deleted with `deleted` (timestamp); they are not removed.
+Prefix: `$wpdb->prefix` plus the name below. Schema: `inc/db-installer/class--db-installer.php` (`DB_VERSION` `1.0.5`). Rows are soft-deleted with `deleted` (timestamp); they are not removed.
 
 | Table | Contents |
 |---|---|

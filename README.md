@@ -6,15 +6,15 @@ Email a QR code. Scan guests at the door.
 
 No external ticketing platform.
 
-[![Release](https://img.shields.io/github/v/release/ricande/Tickets-Passes-for-WooCommerce?include_prereleases&label=release)](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/tag/1.3.3-RC)
+[![Release](https://img.shields.io/github/v/release/ricande/Tickets-Passes-for-WooCommerce?include_prereleases&label=release)](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/tag/1.3.4-RC)
 [![WordPress](https://img.shields.io/badge/WordPress-6.5%2B-21759b)](https://wordpress.org)
 [![WooCommerce](https://img.shields.io/badge/WooCommerce-required-7f54b3)](https://woocommerce.com)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-777bb4)](https://www.php.net)
 [![License](https://img.shields.io/badge/license-GPLv2%2B-blue.svg)](LICENSE)
 
-**1.3.3 RC** is a pre-release. Use it for review and staging, not as a “stable” WordPress.org build. It replaces **1.3.2 RC**, which could not be activated.
+**1.3.4 RC** is a pre-release. Use it for review and staging, not as a “stable” WordPress.org build. It replaces **1.3.3 RC**. Schema version is 1.0.5 so a site that stored 1.0.4 after a partial install runs the installer again.
 
-[**Download 1.3.3 RC**](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.3-RC/tickets-passes-for-woocommerce-1.3.3.zip)
+[**Download 1.3.4 RC**](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.4-RC/tickets-passes-for-woocommerce-1.3.4.zip)
 · [Documentation](#documentation)
 · [Report an issue](https://github.com/ricande/Tickets-Passes-for-WooCommerce/issues/new/choose)
 
@@ -59,7 +59,7 @@ Product editor, QR ticket, door scanner, and admin overview images are not in th
 
 **Requirements:** WordPress 6.5+, WooCommerce (active), PHP 8.0+, HTTPS for the door camera.
 
-1. Download the [1.3.3 RC plugin zip](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.3-RC/tickets-passes-for-woocommerce-1.3.3.zip) — not GitHub’s *Source code* archive.
+1. Download the [1.3.4 RC plugin zip](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.4-RC/tickets-passes-for-woocommerce-1.3.4.zip) — not GitHub’s *Source code* archive.
 2. In wp-admin: **Plugins → Add New → Upload Plugin**.
 3. Activate with WooCommerce already active.
 4. Enable the product types you sell under **Ticket & Passes → Settings**.
@@ -86,7 +86,7 @@ This is a self-hosted model, not a security guarantee. Details: [`docs/check-in.
 
 | Document | Contents |
 |---|---|
-| [docs/install.md](docs/install.md) | Requirements, activate, scanner users, 1.2.3 → 1.3.3, uninstall |
+| [docs/install.md](docs/install.md) | Requirements, activate, scanner users, 1.2.3 → 1.3.4, uninstall |
 | [docs/product-types.md](docs/product-types.md) | Ticket, timeslot and pass behaviour |
 | [docs/check-in.md](docs/check-in.md) | Who may scan, QR payload, REST auth |
 | [docs/emails-and-admin.md](docs/emails-and-admin.md) | Order emails, My Account, dashboards |
@@ -147,20 +147,20 @@ GPLv2 or later. See [`LICENSE`](LICENSE).
 
 Ready to try it? Download the latest release candidate below.
 
-**Tickets & Passes for WooCommerce 1.3.3 RC**
+**Tickets & Passes for WooCommerce 1.3.4 RC**
 
 | | |
 |---|---|
-| Version | 1.3.3 RC |
+| Version | 1.3.4 RC |
 | Status | Pre-release / release candidate |
-| File | `tickets-passes-for-woocommerce-1.3.3.zip` |
-| SHA-256 | `5fba5389d161ca3c15fb253fe7938a5d5ac3a7d02a9d5fff1133f9289c8759c4` |
+| File | `tickets-passes-for-woocommerce-1.3.4.zip` |
+| SHA-256 | `434c2cff72ffcdb590155d9375ec4e7e1688ebf885bf8087f9f409f924016bd4` |
 
-[⬇ Download the WordPress plugin](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.3-RC/tickets-passes-for-woocommerce-1.3.3.zip)
-· [SHA-256](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.3-RC/tickets-passes-for-woocommerce-1.3.3.zip.sha256)
+[⬇ Download the WordPress plugin](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.4-RC/tickets-passes-for-woocommerce-1.3.4.zip)
+· [SHA-256](https://github.com/ricande/Tickets-Passes-for-WooCommerce/releases/download/1.3.4-RC/tickets-passes-for-woocommerce-1.3.4.zip.sha256)
 
 > This is a release candidate. Do not use GitHub's automatically generated **Source code** archives as the WordPress plugin package.
 
-This RC replaces 1.3.2-RC: activating 1.3.2 fatals because `TPFW_Guest_Pass_Issuer` is not loaded before the database installer. 1.3.3 loads `inc/support/load.php` first. The database schema is unchanged. QR rewrite from 1.3.2 is unchanged.
+This RC replaces 1.3.3-RC. Database schema version is 1.0.5 so a site that stored `tpfw_db_version` 1.0.4 after a partial install runs the fail-closed installer again. There is no new table definition. A required SQL failure leaves the stored version unchanged. Existing tickets, passes and guest slots keep their identities; rows from a dropped table are not restored. QR rewrite from 1.3.2 is unchanged.
 
-Local verification: PHPUnit contract test on activation load order; WordPress 7.1 (sv_SE), WooCommerce 11.1.0, PHP 8.3.6 — 1.3.2 failed on Plugins → Activate; after the fix, `wp plugin activate` succeeded and a second install pass (version option cleared) produced no new fatal.
+Local verification: PHPUnit `DbInstallerMigrate105Test` and `DbInstallerFailClosedTest`; disposable WordPress/WooCommerce copy for clean install, healthy 1.0.4 upgrade, incomplete 1.0.4 repair, and failed-then-retry.

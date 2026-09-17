@@ -2,6 +2,11 @@
 
 Full release history for Tickets & Passes for WooCommerce. The three most recent releases are also listed in readme.txt.
 
+= 1.3.4 =
+* Bumped `tpfw_db_version` from 1.0.4 to 1.0.5 so a site that stored 1.0.4 after a partial install runs `install()` again. There is no new table definition and no per-request health probe.
+* Database install is fail-closed: a required SQL `false` aborts the pass and does not write the new version. Zero affected rows is not a failure. Activation constructs the installer once and then reads `schema_is_current()`; it does not run a second `maybe_install()` to hide a first failure. Ordinary page loads still do not `wp_die`.
+* `CREATE TABLE IF NOT EXISTS` recreates a missing table. `maybe_add_*` only adds `tpfw_pass.guest_slot` and the listed indexes. Rows that lived in a table that was dropped are not restored. A healthy 1.0.4 site keeps live ticket/pass/guest identities and relations.
+
 = 1.3.3 =
 * Fixed a PHP fatal that stopped 1.3.2 from activating: Class "TPFW_Guest_Pass_Issuer" was not loaded when the database installer ran from the activation hook.
 * Activation now loads the support helpers (`inc/support/load.php`, including the guest-pass class) before constructing `TPFW_DB_Installer`. That matches the normal `TPFW_Main` boot order. The installer constructor still runs `maybe_install()` → `install()` → `TPFW_Guest_Pass_Issuer::backfill_legacy_slots()`.

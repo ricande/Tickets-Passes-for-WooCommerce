@@ -5,7 +5,7 @@ Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
 Requires Plugins: woocommerce
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -116,7 +116,7 @@ A Scanner account can log in and check people in. It cannot open Ticket & Passes
 
 = Upgrading from 1.2.3 =
 
-Replace the plugin folder (or upload the 1.3.3 zip over 1.2.3). Leave the plugin active. The first page load migrates the database. Existing tickets, QR codes and upload files keep working.
+Replace the plugin folder (or upload the 1.3.4 zip over 1.2.3). Leave the plugin active. The first page load migrates the database. Existing tickets, QR codes and upload files keep working.
 
 Check-in is now POST only. The built-in scanner already uses POST. If you have a separate scanner app that still uses GET, change it to POST or it will not check anyone in (HTTP 405 when the app is authenticated). New guest passes stay inactive until the holder is scanned. Paid orders receive QR codes when WooCommerce marks the payment complete. An order that only goes to Processing (for example cash on delivery) waits until Completed, or until you press Create on the order. Refunding an item quantity removes that many issued codes; refunding an amount only does not.
 
@@ -248,6 +248,11 @@ repositories.
 
 The three most recent releases are below. The full history is in `changelog.txt` in the plugin folder.
 
+= 1.3.4 =
+* Sites that stored `tpfw_db_version` 1.0.4 after a partial install now run the installer again. Schema version is 1.0.5; there is no new table definition.
+* A required SQL failure aborts the install pass and leaves the stored version unchanged. Zero affected rows is not a failure. Activation does not run a second install pass to hide a first failure.
+* A missing table is created. Only `guest_slot` and the listed indexes are added on existing tables. Rows from a dropped table are not restored.
+
 = 1.3.3 =
 * Fixed a PHP fatal that stopped 1.3.2 from activating (the guest-pass helper was not loaded yet when the installer ran).
 * Activation now loads support classes before the database installer, the same order as a normal page load.
@@ -258,14 +263,12 @@ The three most recent releases are below. The full history is in `changelog.txt`
 * A stranded rewrite job resumes when the product is saved. Concurrent jobs are serialised and unwritable retries are capped. Links and ETags follow the file content, so a rewritten image is not kept from cache.
 * Already-sent emails and already-downloaded files are not updated. The current code is in My Account, a new PDF download, or Resend. No automatic mail is sent.
 
-= 1.3.1 =
-* Fixed QR codes with a centre image being unreadable at the door. A logo now uses high error correction, and a tall product photo is capped on its longer side instead of being sized only by width.
-* Issued QR files are rewritten in the background after an upgrade or when the look changes. Unchanged product saves no longer regenerate every code in the request.
-* QR and PDF links are versioned so a previously cached image is not kept. Already-sent emails are not resent; the customer uses My Account, a new PDF download, or Resend.
-
 Older releases: see `changelog.txt`.
 
 == Upgrade Notice ==
+
+= 1.3.4 =
+Upload the 1.3.4 zip over 1.3.3, 1.3.2, 1.3.1 or 1.3.0. This is a release candidate, not a stable WordPress.org build. It replaces 1.3.3-RC. The first page load runs the installer because schema version is now 1.0.5, so a site that stored 1.0.4 after a partial install is repaired. Existing tickets, passes and guest slots keep their identities. A dropped table's rows are not restored.
 
 = 1.3.3 =
 Upload the 1.3.3 zip over 1.3.2, 1.3.1 or 1.3.0. This is a release candidate, not a stable WordPress.org build. It replaces 1.3.2-RC: 1.3.2 could not activate because a guest-pass class was missing during install. The database schema is unchanged. QR rewrite from 1.3.2 is unchanged.

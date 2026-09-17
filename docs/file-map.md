@@ -132,7 +132,7 @@ Both have `class--*.php`, `template/page-content.php`, `js/` and `css/`.
 |---|---|
 | `inc/admin/` | Order metabox: force issue or cancel without moving order status (`js/admin-single.js`) |
 | `inc/analytics-dashboard/` | Check-in charts + CSV (reads `*_stats`, not the sales tables) |
-| `inc/db-installer/` | Creates/updates the nine tables (`DB_VERSION` `1.0.5`; unpublished relative to 1.3.3-RC) |
+| `inc/db-installer/` | Creates/updates the nine tables (`DB_VERSION` `1.0.5`) |
 | `inc/cronjobs/` | Hourly: new recurring timeslots. Minutely: release expired reservations |
 | `inc/support/` | Extracted helpers loaded by `load.php` (see below) |
 | `tests/` | PHPUnit + Node; `bash tests/run.sh` fetches PHPUnit via `tests/ensure-phpunit.sh` |
