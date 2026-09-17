@@ -13,7 +13,7 @@ The plugin is split into **subsystems**. Each subsystem is a class that register
 
 Rewrite rules (`/check-in/`, My Account tabs) flush once per `TPFW_REWRITE_VERSION`, late on `wp_loaded`, after every class has registered its rules.
 
-Activation creates the tables and the upload folder. It does **not** flush permalinks — that happens on the next request. Deactivation clears cron (timeslots and QR rewrite batches) and rewrite. Uninstall (`uninstall.php`) always removes settings and the scanner role; tables and QR/PDF files are removed only when `TPFW_REMOVE_ALL_DATA` is `true`.
+Activation creates the tables and the upload folder. It loads `inc/support/load.php` (including `TPFW_Guest_Pass_Issuer`) **before** constructing `TPFW_DB_Installer`, because the installer constructor runs `install()` and backfills guest slots. It does **not** flush permalinks — that happens on the next request. Deactivation clears cron (timeslots and QR rewrite batches) and rewrite. Uninstall (`uninstall.php`) always removes settings and the scanner role; tables and QR/PDF files are removed only when `TPFW_REMOVE_ALL_DATA` is `true`.
 
 ## Subsystems
 

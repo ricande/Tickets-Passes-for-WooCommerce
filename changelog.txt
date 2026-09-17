@@ -2,6 +2,11 @@
 
 Full release history for Tickets & Passes for WooCommerce. The three most recent releases are also listed in readme.txt.
 
+= 1.3.3 =
+* Fixed a PHP fatal that stopped 1.3.2 from activating: Class "TPFW_Guest_Pass_Issuer" was not loaded when the database installer ran from the activation hook.
+* Activation now loads the support helpers (`inc/support/load.php`, including the guest-pass class) before constructing `TPFW_DB_Installer`. That matches the normal `TPFW_Main` boot order. The installer constructor still runs `maybe_install()` → `install()` → `TPFW_Guest_Pass_Issuer::backfill_legacy_slots()`.
+* This release candidate replaces 1.3.2-RC for that activation failure. The database schema version is unchanged. QR rewrite behaviour from 1.3.2 is unchanged.
+
 = 1.3.2 =
 * QR codes with a centre logo stay scannable at the door: high error correction, and a tall logo is capped on its longer side.
 * Issued QR files are rewritten in bounded background batches when the look or renderer version changes. A one-shot repair queue runs after upgrade without opening every product. Unchanged product saves do not start a new job.

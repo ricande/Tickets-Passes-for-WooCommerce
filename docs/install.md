@@ -63,6 +63,22 @@ The first request after the swap runs the installer because `tpfw_db_version` is
 
 Existing tickets, passes, QR codes, PDFs and `tpfw_upload_slug` keep working. Guest rows that already have `valid_from` stay valid. **New** guest passes stay inactive until the holder is scanned.
 
+## Upgrade to 1.3.3 (activation)
+
+**1.3.3 RC** is a pre-release for review and staging, not a stable WordPress.org build. It replaces **1.3.2 RC** for a fatal that blocked activation.
+
+**Symptom.** Activating 1.3.2 with WooCommerce already active fatals:
+
+`Class "TPFW_Guest_Pass_Issuer" not found` in `inc/db-installer/class--db-installer.php` (the `backfill_legacy_slots()` call).
+
+**Cause.** `tpfw_activate_plugin()` constructed `TPFW_DB_Installer` before `inc/support/load.php`. The installer constructor runs `maybe_install()` → `install()` → `TPFW_Guest_Pass_Issuer::backfill_legacy_slots()`. WooCommerce being present is not enough; this is load order on `register_activation_hook`.
+
+**Fix.** Activation now requires `inc/support/load.php` first, then constructs the installer — the same order as `TPFW_Main`. Database schema version stays `1.0.4`. QR rewrite behaviour from 1.3.2 is unchanged.
+
+Upload the 1.3.3 zip over 1.3.2, 1.3.1 or 1.3.0. Leave the plugin active if it already is. If 1.3.2 never activated, upload and activate with WooCommerce already active.
+
+Verification of this RC: PHPUnit `FunctionsFacadeTest` asserts that `tpfw_activate_plugin()` includes `inc/support/load.php` before `new TPFW_DB_Installer`. On a local WordPress 7.1 (sv_SE) + WooCommerce 11.1.0 + PHP 8.3.6 guest, 1.3.2 failed on **Plugins → Activate** with that fatal. After the load-order fix, `wp plugin activate` succeeded, created the nine tables, recorded `tpfw_db_version` `1.0.4`, and a second activate with that option cleared (so `install()` and backfill ran again) produced no new fatal.
+
 ## Upgrade to 1.3.2 (QR rewrite)
 
 **1.3.2 RC** is a pre-release for review and staging, not a stable WordPress.org build.
@@ -126,6 +142,6 @@ Production ZIP (runtime only, no tests or credentials):
 bash scripts/build-plugin-zip.sh
 ```
 
-Writes `dist/tickets-passes-for-woocommerce-1.3.2.zip`. See [release.md](release.md).
+Writes `dist/tickets-passes-for-woocommerce-1.3.3.zip`. See [release.md](release.md).
 
 Regenerate the POT after string changes with `wp i18n make-pot`. Bundled library versions in `readme.txt` must match `inc/functions/lib/*/composer/installed.json`.

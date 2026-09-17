@@ -3,7 +3,7 @@ defined('ABSPATH') or die('No script kiddies please!');
     /*
      *  Plugin Name: Tickets & Passes for WooCommerce
      *  Description: Sell tickets, timeslot bookings and passes with WooCommerce, and check visitors in at the door with a built-in QR scanner.
-     *  Version: 1.3.2
+     *  Version: 1.3.3
      *  Requires at least: 6.5
      *  Tested up to: 7.1
      *  Requires PHP: 8.0
@@ -22,7 +22,7 @@ defined('ABSPATH') or die('No script kiddies please!');
     define('TPFW_PLUGIN_URL',  plugin_dir_url(__FILE__));
 
     // Keep in step with the Version: header above - asset cache-busting keys off it.
-    define('TPFW_VERSION', '1.3.2');
+    define('TPFW_VERSION', '1.3.3');
 
     // Bump to force a one-time rewrite flush on existing sites. See tpfw_maybe_flush_rewrites().
     // 4: the My Account endpoints gained the plugin prefix (/pass -> /tpfw-pass).
@@ -152,6 +152,9 @@ defined('ABSPATH') or die('No script kiddies please!');
             );
         }
 
+        // Same order as TPFW_Main: support helpers (incl. TPFW_Guest_Pass_Issuer) before the
+        // installer, which calls TPFW_Guest_Pass_Issuer::backfill_legacy_slots() from install().
+        require_once dirname(__FILE__).'/inc/support/load.php';
         $oDBInstaller = new TPFW_DB_Installer();
         $oDBInstaller->maybe_install();
 
@@ -160,7 +163,6 @@ defined('ABSPATH') or die('No script kiddies please!');
 
         // Creates the randomised upload base and its guard files up front, so the first customer
         // order is not the thing that discovers the folder cannot be written.
-        require_once dirname(__FILE__).'/inc/support/load.php';
         require_once dirname(__FILE__).'/inc/functions/class--functions.php';
         $oFunctions = new TPFW_Functions('tpfw');
         foreach(array_keys(TPFW_Functions::FILE_TYPE_FOLDERS) as $sFileType)
