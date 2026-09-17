@@ -82,8 +82,8 @@ PHP;
 	{
 		$sSrc = file_get_contents(TPFW_PLUGIN_DIR.'inc/ticket-wc-product/class--ticket-wc-product.php');
 		$this->assertNotFalse(strpos($sSrc, 'TPFW_Db_Write::inserted_row'));
-		$this->assertNotFalse(strpos($sSrc, "empty(\$aSync['ok'])"));
-		$iOk = strpos($sSrc, "empty(\$aSync['ok'])");
+		$this->assertNotFalse(strpos($sSrc, "empty(\$aIssued['sync']['ok'])"));
+		$iOk = strpos($sSrc, "empty(\$aIssued['sync']['ok'])");
 		$iQr = strpos($sSrc, 'write_scanner_qr');
 		$this->assertNotFalse($iQr);
 		$this->assertLessThan($iQr, $iOk);

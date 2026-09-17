@@ -28,6 +28,10 @@ class FunctionsFacadeTest extends TestCase
 			'class--guest-pass-issuer.php'
 		));
 		$this->assertNotFalse(strpos(
+			file_get_contents(TPFW_PLUGIN_DIR.'inc/support/load.php'),
+			'class--ticket-line.php'
+		));
+		$this->assertNotFalse(strpos(
 			file_get_contents(TPFW_PLUGIN_DIR.'inc/db-installer/class--db-installer.php'),
 			'TPFW_Guest_Pass_Issuer::backfill_legacy_slots'
 		));

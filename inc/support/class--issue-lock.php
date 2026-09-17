@@ -47,6 +47,30 @@ class TPFW_Issue_Lock
 	}
 
 	/**
+	 * Upsert for a ticket (or pass-parent) line.
+	 *
+	 * @internal Call only from TPFW_Issue_Lock::sync_line() or from a callback that already
+	 *           holds tpfw_{type}_issue_{line} on this connection. Does not GET_LOCK.
+	 *
+	 *
+	 * @param object   $wpdb
+	 * @param string   $sTable    Prefixed table.
+	 * @param string   $sSelect   Prepared SELECT of existing rows for this line.
+	 * @param int      $iQuantity
+	 * @param string   $sNow
+	 * @param callable $fnInsert
+	 * @return array{keep:string[],inserted:string[],deleted:string[],ok:bool}
+	 */
+	public static function sync_held($wpdb, $sTable, $sSelect, $iQuantity, $sNow, $fnInsert)
+	{
+		$sPrefix    = (string)$wpdb->prefix;
+		$sSyncTable = $wpdb->prefix.(strpos((string)$sTable, $sPrefix) === 0 ? substr((string)$sTable, strlen($sPrefix)) : (string)$sTable);
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sSelect is the return value of $wpdb->prepare() at the caller.
+		$aExisting = $wpdb->get_results($sSelect);
+		return TPFW_Order_Line_Upsert::sync($wpdb, $sSyncTable, $aExisting, $iQuantity, $sNow, $fnInsert);
+	}
+
+	/**
 	 * Locked read + upsert for a ticket (or pass-parent) line.
 	 *
 	 * @param object   $wpdb
@@ -63,11 +87,7 @@ class TPFW_Issue_Lock
 	public static function sync_line($wpdb, $sType, $sTable, $sSelect, $iOrderLineId, $iQuantity, $sNow, $fnInsert, $iTimeout = 5)
 	{
 		return self::with_line($wpdb, $sType, $iOrderLineId, function() use ($wpdb, $sTable, $sSelect, $iQuantity, $sNow, $fnInsert) {
-			$sPrefix    = (string)$wpdb->prefix;
-			$sSyncTable = $wpdb->prefix.(strpos((string)$sTable, $sPrefix) === 0 ? substr((string)$sTable, strlen($sPrefix)) : (string)$sTable);
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sSelect is the return value of $wpdb->prepare() at the caller.
-			$aExisting = $wpdb->get_results($sSelect);
-			return TPFW_Order_Line_Upsert::sync($wpdb, $sSyncTable, $aExisting, $iQuantity, $sNow, $fnInsert);
+			return self::sync_held($wpdb, $sTable, $sSelect, $iQuantity, $sNow, $fnInsert);
 		}, $iTimeout);
 	}
 }

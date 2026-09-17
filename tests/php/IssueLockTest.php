@@ -162,7 +162,9 @@ class IssueLockTest extends TestCase
 	{
 		$sTicket = file_get_contents(TPFW_PLUGIN_DIR.'inc/ticket-wc-product/class--ticket-wc-product.php');
 		$sPass   = file_get_contents(TPFW_PLUGIN_DIR.'inc/pass-wc-product/class--pass-wc-product.php');
-		$this->assertNotFalse(strpos($sTicket, "TPFW_Issue_Lock::sync_line"));
+		$this->assertNotFalse(strpos($sTicket, 'TPFW_Ticket_Line::issue'));
+		$this->assertNotFalse(strpos($sTicket, 'TPFW_Ticket_Line::cancel'));
+		$this->assertFalse(strpos($sTicket, 'TPFW_Issue_Lock::sync_line'));
 		$this->assertNotFalse(strpos($sPass, "TPFW_Issue_Lock::with_line(\$wpdb, 'pass'"));
 		$sTimeslot = file_get_contents(TPFW_PLUGIN_DIR.'inc/timeslot-ticket-wc-product/class--timeslot-ticket-wc-product.php');
 		$this->assertFalse(strpos($sTimeslot, 'TPFW_Issue_Lock'));
