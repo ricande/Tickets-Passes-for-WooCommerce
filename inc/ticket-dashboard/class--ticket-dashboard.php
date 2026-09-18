@@ -35,6 +35,17 @@ class TPFW_Ticket_Dashboard extends TPFW_Dashboard
 		$this->sResetStatusLabel = __('Unused', 'tickets-passes-for-woocommerce');
 		parent::__construct($sPrefix, $oFunctions);
 	}
+
+	/**
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @param int    $iNewUserID
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object,iOldUserID?:int}
+	 */
+	protected function transfer_live_row($wpdb, $sNanoID, $iNewUserID)
+	{
+		return TPFW_Ticket_Line::transfer_nano($wpdb, $sNanoID, $iNewUserID);
+	}
 }
 
 /**

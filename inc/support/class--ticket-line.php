@@ -2,19 +2,23 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 /**
- * Serialises every ticket-row mutation for one WooCommerce order line.
+ * Serialises every regular-ticket admission and lifecycle write for one order line.
  *
- * Lock name: tpfw_ticket_issue_{order_line_id}, taken through TPFW_Issue_Lock::with_line().
- * Public wrappers acquire that lock. The *_held methods are public for same-class
- * composition only: they do not GET_LOCK. Call them only from issue()/cancel()/
- * reconcile()/with_lock() callbacks so the same connection never GET_LOCKs the line
- * twice and so no unlocked caller mutates ticket rows.
+ * The only named lock is tpfw_ticket_issue_{order_line_id}, taken through
+ * TPFW_Issue_Lock::with_line(). Public wrappers acquire that lock. The *_held
+ * methods do not GET_LOCK: call them only from a callback that already holds
+ * the line lock so this connection never nests GET_LOCK.
+ *
+ * Issue, full cancel, refund/shrink, dashboard nano cancel/reset/transfer and
+ * ticket check-in all use that same lock. A ticket operation never holds a
+ * second named lock. Pass, timeslot and guest-pass check-in keep tpfw_checkin_{nano}.
  *
  * Full cancel/refund identifies live rows by product_id, order_id and order_line_id.
  * Holder user_id is mutable (admin transfer) and must not be part of that match.
  *
- * Dashboard per-nano cancel, reset and transfer are separate operator paths; they
- * do not take this order-line lock.
+ * The first nano lookup is only for the line id. The row is re-read under the
+ * lock before any write. A later sequential issue() may still undelete a
+ * dashboard-cancelled nano so the live count matches purchased quantity.
  */
 class TPFW_Ticket_Line
 {
@@ -31,6 +35,15 @@ class TPFW_Ticket_Line
 	public static function with_lock($wpdb, $iOrderLineId, $fnHeld, $iTimeout = 5)
 	{
 		return TPFW_Issue_Lock::with_line($wpdb, 'ticket', $iOrderLineId, $fnHeld, $iTimeout);
+	}
+
+	/**
+	 * @param int $iOrderLineId
+	 * @return string
+	 */
+	public static function lock_name($iOrderLineId)
+	{
+		return TPFW_Issue_Lock::name('ticket', $iOrderLineId);
 	}
 
 	/**
@@ -198,10 +211,8 @@ class TPFW_Ticket_Line
 	public static function cancel_held($wpdb, $oOrderItem, $iOrderID, $fnAfterRow = null)
 	{
 		$sTable = $wpdb->prefix.self::TABLE;
-		$sStats = $wpdb->prefix.self::STATS_TABLE;
-		$sNow   = current_time('mysql');
 		$oExistsPrepared = $wpdb->prepare(
-			'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d AND deleted IS NULL',
+			'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d AND deleted IS NULL ORDER BY id ASC',
 			array(
 				$sTable,
 				$oOrderItem->get_product_id(),
@@ -211,6 +222,14 @@ class TPFW_Ticket_Line
 		);
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $oExistsPrepared is the return value of $wpdb->prepare() above.
 		$oExistsResult = $wpdb->get_results($oExistsPrepared);
+		if($oExistsResult === false)
+		{
+			return array(
+				'sMessage' => __('Could not cancel tickets for this order line because the database write failed.', 'tickets-passes-for-woocommerce'),
+				'bStatus'  => false,
+				'sync'     => null,
+			);
+		}
 		if(empty($oExistsResult))
 		{
 			return array(
@@ -219,46 +238,7 @@ class TPFW_Ticket_Line
 				'sync'     => null,
 			);
 		}
-
-		$iQuantity = 1;
-		foreach($oExistsResult as $oExistResult)
-		{
-			$mUpdate = $wpdb->query($wpdb->prepare(
-				'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id = %s',
-				$sTable,
-				$sNow,
-				$sNow,
-				$oExistResult->nano_id
-			));
-			if(TPFW_Db_Write::failed($mUpdate))
-			{
-				return array(
-					'sMessage' => __('Could not cancel tickets for this order line because the database write failed.', 'tickets-passes-for-woocommerce'),
-					'bStatus'  => false,
-					'sync'     => null,
-				);
-			}
-
-			$wpdb->query($wpdb->prepare(
-				'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id_fk = %s',
-				$sStats,
-				$sNow,
-				$sNow,
-				$oExistResult->nano_id
-			));
-
-			if(is_callable($fnAfterRow))
-			{
-				call_user_func($fnAfterRow, $oExistResult, $iQuantity);
-			}
-			$iQuantity++;
-		}
-
-		return array(
-			'sMessage' => __('All related tickets have been cancelled', 'tickets-passes-for-woocommerce'),
-			'bStatus'  => false,
-			'sync'     => null,
-		);
+		return self::cancel_live_rows($wpdb, $oOrderItem, $iOrderID, $oExistsResult, $fnAfterRow);
 	}
 
 	/**
@@ -295,7 +275,463 @@ class TPFW_Ticket_Line
 		));
 		if($aLive === false)
 		{
-			$aLive = array();
+			return array(
+				'sMessage' => __('Could not reconcile issued quantity because the database write failed.', 'tickets-passes-for-woocommerce'),
+				'bStatus'  => false,
+				'sync'     => null,
+			);
+		}
+		$aDelete = self::surplus_nanos($aLive, $iTarget);
+		if($aDelete === array())
+		{
+			return array(
+				'sMessage' => '',
+				'bStatus'  => true,
+				'sync'     => array(
+					'keep'     => self::keep_nanos($aLive, $iTarget),
+					'inserted' => array(),
+					'deleted'  => array(),
+					'ok'       => true,
+				),
+			);
+		}
+		return self::shrink_live_rows($wpdb, $oOrderItem, $iOrderID, $sTable, $aLive, $aDelete, $iTarget, $sNow, $fnAfterRevoke);
+	}
+
+	/**
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	public static function lock_failed_nano_cancel()
+	{
+		return array(
+			'bSuccess' => false,
+			'sMessage' => __('Could not cancel this ticket because another request is in progress. The ticket was not changed.', 'tickets-passes-for-woocommerce'),
+			'oRow'     => null,
+		);
+	}
+
+	/**
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	public static function lock_failed_nano_reset()
+	{
+		return array(
+			'bSuccess' => false,
+			'sMessage' => __('Could not reset this ticket because another request is in progress. The ticket was not changed.', 'tickets-passes-for-woocommerce'),
+			'oRow'     => null,
+		);
+	}
+
+	/**
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	public static function lock_failed_nano_transfer()
+	{
+		return array(
+			'bSuccess' => false,
+			'sMessage' => __('Could not transfer this ticket because another request is in progress. The ticket was not changed.', 'tickets-passes-for-woocommerce'),
+			'oRow'     => null,
+		);
+	}
+
+	/**
+	 * Dashboard per-nano cancel. Probe is not authoritative.
+	 *
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @param int    $iTimeout
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	public static function cancel_nano($wpdb, $sNanoID, $iTimeout = 5)
+	{
+		$aProbe = self::probe_line($wpdb, $sNanoID);
+		if($aProbe['bSuccess'] === false)
+		{
+			return $aProbe;
+		}
+		$iLine = (int)$aProbe['iLine'];
+		$m = self::with_lock($wpdb, $iLine, function() use ($wpdb, $sNanoID, $iLine) {
+			return self::cancel_nano_held($wpdb, $sNanoID, $iLine);
+		}, $iTimeout);
+		if($m === null)
+		{
+			return self::lock_failed_nano_cancel();
+		}
+		return $m;
+	}
+
+	/**
+	 * @internal Call only from cancel_nano() while tpfw_ticket_issue_{line} is held.
+	 *
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @param int    $iOrderLineId
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	public static function cancel_nano_held($wpdb, $sNanoID, $iOrderLineId)
+	{
+		$oRow = self::read_nano($wpdb, $sNanoID);
+		if($oRow === false)
+		{
+			return self::nano_write_failed_cancel();
+		}
+		if(!self::row_matches_line($oRow, $sNanoID, $iOrderLineId))
+		{
+			return self::nano_gone();
+		}
+		$sNow    = current_time('mysql');
+		$sTable  = $wpdb->prefix.self::TABLE;
+		$mTicket = $wpdb->query($wpdb->prepare(
+			'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id = %s AND order_line_id = %d',
+			$sTable,
+			$sNow,
+			$sNow,
+			$sNanoID,
+			$iOrderLineId
+		));
+		if(TPFW_Db_Write::failed($mTicket))
+		{
+			return self::nano_write_failed_cancel();
+		}
+		if((int)$mTicket === 0)
+		{
+			$oAgain = self::read_nano($wpdb, $sNanoID);
+			if($oAgain === false)
+			{
+				return self::nano_write_failed_cancel();
+			}
+			if(!self::row_matches_line($oAgain, $sNanoID, $iOrderLineId))
+			{
+				return self::nano_gone();
+			}
+		}
+		$mStats = self::revoke_stats($wpdb, $sNanoID, $sNow);
+		if($mStats === false)
+		{
+			return self::nano_write_failed_cancel();
+		}
+		return array(
+			'bSuccess' => true,
+			'sMessage' => sprintf(
+				/* translators: %s: ticket nano id */
+				__('Cancelled Ticket with Nano ID: %s', 'tickets-passes-for-woocommerce'),
+				$sNanoID
+			),
+			'oRow'     => $oRow,
+		);
+	}
+
+	/**
+	 * Dashboard per-nano reset.
+	 *
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @param int    $iTimeout
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	public static function reset_nano($wpdb, $sNanoID, $iTimeout = 5)
+	{
+		$aProbe = self::probe_line($wpdb, $sNanoID);
+		if($aProbe['bSuccess'] === false)
+		{
+			return $aProbe;
+		}
+		$iLine = (int)$aProbe['iLine'];
+		$m = self::with_lock($wpdb, $iLine, function() use ($wpdb, $sNanoID, $iLine) {
+			return self::reset_nano_held($wpdb, $sNanoID, $iLine);
+		}, $iTimeout);
+		if($m === null)
+		{
+			return self::lock_failed_nano_reset();
+		}
+		return $m;
+	}
+
+	/**
+	 * @internal Call only from reset_nano() while tpfw_ticket_issue_{line} is held.
+	 *
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @param int    $iOrderLineId
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	public static function reset_nano_held($wpdb, $sNanoID, $iOrderLineId)
+	{
+		$oRow = self::read_nano($wpdb, $sNanoID);
+		if($oRow === false)
+		{
+			return self::nano_write_failed_reset();
+		}
+		if(!self::row_matches_line($oRow, $sNanoID, $iOrderLineId))
+		{
+			return self::nano_gone();
+		}
+		$sNow    = current_time('mysql');
+		$sTable  = $wpdb->prefix.self::TABLE;
+		$mTicket = $wpdb->query($wpdb->prepare(
+			'UPDATE %i SET deleted = NULL, updated = %s WHERE nano_id = %s AND order_line_id = %d',
+			$sTable,
+			$sNow,
+			$sNanoID,
+			$iOrderLineId
+		));
+		if(TPFW_Db_Write::failed($mTicket))
+		{
+			return self::nano_write_failed_reset();
+		}
+		if((int)$mTicket === 0)
+		{
+			$oAgain = self::read_nano($wpdb, $sNanoID);
+			if($oAgain === false)
+			{
+				return self::nano_write_failed_reset();
+			}
+			if(!self::row_matches_line($oAgain, $sNanoID, $iOrderLineId))
+			{
+				return self::nano_gone();
+			}
+		}
+		$mStats = $wpdb->query($wpdb->prepare(
+			'DELETE FROM %i WHERE nano_id_fk = %s',
+			$wpdb->prefix.self::STATS_TABLE,
+			$sNanoID
+		));
+		if(TPFW_Db_Write::failed($mStats))
+		{
+			return self::nano_write_failed_reset();
+		}
+		return array(
+			'bSuccess' => true,
+			'sMessage' => sprintf(
+				/* translators: %s: ticket nano id */
+				__('Ticket with ID, %s, has been reset', 'tickets-passes-for-woocommerce'),
+				$sNanoID
+			),
+			'oRow'     => $oRow,
+		);
+	}
+
+	/**
+	 * Dashboard transfer. Refuses a row that is no longer live.
+	 *
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @param int    $iNewUserID
+	 * @param int    $iTimeout
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	public static function transfer_nano($wpdb, $sNanoID, $iNewUserID, $iTimeout = 5)
+	{
+		$iNewUserID = (int)$iNewUserID;
+		if($iNewUserID <= 0)
+		{
+			return self::nano_gone();
+		}
+		$aProbe = self::probe_line($wpdb, $sNanoID);
+		if($aProbe['bSuccess'] === false)
+		{
+			return $aProbe;
+		}
+		$iLine = (int)$aProbe['iLine'];
+		$m = self::with_lock($wpdb, $iLine, function() use ($wpdb, $sNanoID, $iLine, $iNewUserID) {
+			return self::transfer_nano_held($wpdb, $sNanoID, $iLine, $iNewUserID);
+		}, $iTimeout);
+		if($m === null)
+		{
+			return self::lock_failed_nano_transfer();
+		}
+		return $m;
+	}
+
+	/**
+	 * @internal Call only from transfer_nano() while tpfw_ticket_issue_{line} is held.
+	 *
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @param int    $iOrderLineId
+	 * @param int    $iNewUserID
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	public static function transfer_nano_held($wpdb, $sNanoID, $iOrderLineId, $iNewUserID)
+	{
+		$oRow = self::read_nano($wpdb, $sNanoID);
+		if($oRow === false)
+		{
+			return self::nano_write_failed_transfer();
+		}
+		if(!self::row_matches_line($oRow, $sNanoID, $iOrderLineId) || self::row_is_deleted($oRow))
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('No active row was found for the provided Nano ID', 'tickets-passes-for-woocommerce'),
+				'oRow'     => null,
+			);
+		}
+		if((int)$oRow->user_id === (int)$iNewUserID)
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('That account already holds this item.', 'tickets-passes-for-woocommerce'),
+				'oRow'     => $oRow,
+			);
+		}
+		$iOldUserID = (int)$oRow->user_id;
+		$sNow   = current_time('mysql');
+		$mUp    = $wpdb->query($wpdb->prepare(
+			'UPDATE %i SET user_id = %d, updated = %s WHERE nano_id = %s AND order_line_id = %d AND deleted IS NULL',
+			$wpdb->prefix.self::TABLE,
+			(int)$iNewUserID,
+			$sNow,
+			$sNanoID,
+			$iOrderLineId
+		));
+		if(TPFW_Db_Write::failed($mUp))
+		{
+			return self::nano_write_failed_transfer();
+		}
+		if((int)$mUp === 0)
+		{
+			$oAgain = self::read_nano($wpdb, $sNanoID);
+			if($oAgain === false)
+			{
+				return self::nano_write_failed_transfer();
+			}
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('No active row was found for the provided Nano ID', 'tickets-passes-for-woocommerce'),
+				'oRow'     => null,
+			);
+		}
+		$oFresh = self::read_nano($wpdb, $sNanoID);
+		if($oFresh === false)
+		{
+			return self::nano_write_failed_transfer();
+		}
+		if($oFresh === null
+			|| self::row_is_deleted($oFresh)
+			|| (int)$oFresh->order_line_id !== (int)$iOrderLineId
+			|| (int)$oFresh->user_id !== (int)$iNewUserID)
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('No active row was found for the provided Nano ID', 'tickets-passes-for-woocommerce'),
+				'oRow'     => null,
+			);
+		}
+		return array(
+			'bSuccess'   => true,
+			'sMessage'   => '',
+			'oRow'       => $oFresh,
+			'iOldUserID' => $iOldUserID,
+		);
+	}
+
+	/**
+	 * @param object        $wpdb
+	 * @param object        $oOrderItem
+	 * @param int           $iOrderID
+	 * @param array         $aRows
+	 * @param callable|null $fnAfterRow
+	 * @return array{sMessage:string,bStatus:bool,sync:?array}
+	 */
+	private static function cancel_live_rows($wpdb, $oOrderItem, $iOrderID, $aRows, $fnAfterRow)
+	{
+		$sTable    = $wpdb->prefix.self::TABLE;
+		$sNow      = current_time('mysql');
+		$iQuantity = 1;
+		foreach($aRows as $oExistResult)
+		{
+			$oFresh = self::read_nano($wpdb, (string)$oExistResult->nano_id);
+			if($oFresh === false)
+			{
+				return array(
+					'sMessage' => __('Could not cancel tickets for this order line because the database write failed.', 'tickets-passes-for-woocommerce'),
+					'bStatus'  => false,
+					'sync'     => null,
+				);
+			}
+			if(!self::victim_matches($oFresh, $oExistResult->nano_id, $oOrderItem, $iOrderID))
+			{
+				return array(
+					'sMessage' => __('Could not cancel tickets for this order line because the ticket row changed.', 'tickets-passes-for-woocommerce'),
+					'bStatus'  => false,
+					'sync'     => null,
+				);
+			}
+			if(!self::row_is_deleted($oFresh))
+			{
+				$mUpdate = $wpdb->query($wpdb->prepare(
+					'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id = %s AND order_line_id = %d',
+					$sTable,
+					$sNow,
+					$sNow,
+					$oExistResult->nano_id,
+					(int)$oOrderItem->get_id()
+				));
+				if(TPFW_Db_Write::failed($mUpdate))
+				{
+					return array(
+						'sMessage' => __('Could not cancel tickets for this order line because the database write failed.', 'tickets-passes-for-woocommerce'),
+						'bStatus'  => false,
+						'sync'     => null,
+					);
+				}
+			}
+			$mStats = self::revoke_stats($wpdb, (string)$oExistResult->nano_id, $sNow);
+			if($mStats === false)
+			{
+				return array(
+					'sMessage' => __('Could not cancel tickets for this order line because the database write failed.', 'tickets-passes-for-woocommerce'),
+					'bStatus'  => false,
+					'sync'     => null,
+				);
+			}
+			if(is_callable($fnAfterRow))
+			{
+				call_user_func($fnAfterRow, $oExistResult, $iQuantity);
+			}
+			$iQuantity++;
+		}
+		return array(
+			'sMessage' => __('All related tickets have been cancelled', 'tickets-passes-for-woocommerce'),
+			'bStatus'  => false,
+			'sync'     => null,
+		);
+	}
+
+	/**
+	 * @param object        $wpdb
+	 * @param object        $oOrderItem
+	 * @param int           $iOrderID
+	 * @param string        $sTable
+	 * @param array         $aLive
+	 * @param list<string>  $aDelete
+	 * @param int           $iTarget
+	 * @param string        $sNow
+	 * @param callable|null $fnAfterRevoke
+	 * @return array{sMessage:string,bStatus:bool,sync:?array}
+	 */
+	private static function shrink_live_rows($wpdb, $oOrderItem, $iOrderID, $sTable, $aLive, $aDelete, $iTarget, $sNow, $fnAfterRevoke)
+	{
+		foreach($aDelete as $sNano)
+		{
+			$oFresh = self::read_nano($wpdb, $sNano);
+			if($oFresh === false)
+			{
+				return array(
+					'sMessage' => __('Could not reconcile issued quantity because the database write failed.', 'tickets-passes-for-woocommerce'),
+					'bStatus'  => false,
+					'sync'     => null,
+				);
+			}
+			if(!self::victim_matches($oFresh, $sNano, $oOrderItem, $iOrderID))
+			{
+				return array(
+					'sMessage' => __('Could not reconcile issued quantity because the ticket row changed.', 'tickets-passes-for-woocommerce'),
+					'bStatus'  => false,
+					'sync'     => null,
+				);
+			}
 		}
 		$aSync = TPFW_Order_Line_Upsert::shrink($wpdb, $sTable, $aLive, $iTarget, $sNow);
 		if(empty($aSync['ok']))
@@ -306,9 +742,18 @@ class TPFW_Ticket_Line
 				'sync'     => $aSync,
 			);
 		}
-		if(is_callable($fnAfterRevoke))
+		foreach($aSync['deleted'] as $sNano)
 		{
-			foreach($aSync['deleted'] as $sNano)
+			$mStats = self::revoke_stats($wpdb, (string)$sNano, $sNow);
+			if($mStats === false)
+			{
+				return array(
+					'sMessage' => __('Could not reconcile issued quantity because the database write failed.', 'tickets-passes-for-woocommerce'),
+					'bStatus'  => false,
+					'sync'     => $aSync,
+				);
+			}
+			if(is_callable($fnAfterRevoke))
 			{
 				call_user_func($fnAfterRevoke, $sNano);
 			}
@@ -330,6 +775,221 @@ class TPFW_Ticket_Line
 			),
 			'bStatus'  => true,
 			'sync'     => $aSync,
+		);
+	}
+
+	/**
+	 * Surplus nano ids in the same id-ASC order as TPFW_Order_Line_Upsert::shrink().
+	 *
+	 * @param array $aLive
+	 * @param int   $iTarget
+	 * @return list<string>
+	 */
+	private static function surplus_nanos($aLive, $iTarget)
+	{
+		$aDelete = array();
+		$iQty    = max(0, (int)$iTarget);
+		$i       = 0;
+		foreach((array)$aLive as $mRow)
+		{
+			$sNano = is_object($mRow) ? (string)$mRow->nano_id : '';
+			if($sNano === '')
+			{
+				continue;
+			}
+			if($i < $iQty)
+			{
+				$i++;
+				continue;
+			}
+			$aDelete[] = $sNano;
+		}
+		return $aDelete;
+	}
+
+	/**
+	 * @param array $aLive
+	 * @param int   $iTarget
+	 * @return list<string>
+	 */
+	private static function keep_nanos($aLive, $iTarget)
+	{
+		$aKeep = array();
+		$iQty  = max(0, (int)$iTarget);
+		$i     = 0;
+		foreach((array)$aLive as $mRow)
+		{
+			$sNano = is_object($mRow) ? (string)$mRow->nano_id : '';
+			if($sNano === '')
+			{
+				continue;
+			}
+			if($i < $iQty)
+			{
+				$aKeep[] = $sNano;
+				$i++;
+			}
+		}
+		return $aKeep;
+	}
+
+	/**
+	 * @param object|null $oRow
+	 * @param string      $sNanoID
+	 * @param object      $oOrderItem
+	 * @param int         $iOrderID
+	 * @return bool
+	 */
+	private static function victim_matches($oRow, $sNanoID, $oOrderItem, $iOrderID)
+	{
+		return is_object($oRow)
+			&& (string)$oRow->nano_id === (string)$sNanoID
+			&& (int)$oRow->product_id === (int)$oOrderItem->get_product_id()
+			&& (int)$oRow->order_id === (int)$iOrderID
+			&& (int)$oRow->order_line_id === (int)$oOrderItem->get_id();
+	}
+
+	/**
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @param string $sNow
+	 * @return mixed false on write error
+	 */
+	private static function revoke_stats($wpdb, $sNanoID, $sNow)
+	{
+		$mStats = $wpdb->query($wpdb->prepare(
+			'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id_fk = %s',
+			$wpdb->prefix.self::STATS_TABLE,
+			$sNow,
+			$sNow,
+			$sNanoID
+		));
+		if(TPFW_Db_Write::failed($mStats))
+		{
+			return false;
+		}
+		return $mStats;
+	}
+
+	/**
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object,iLine?:int}
+	 */
+	private static function probe_line($wpdb, $sNanoID)
+	{
+		$sNanoID = (string)$sNanoID;
+		if($sNanoID === '')
+		{
+			return self::nano_gone();
+		}
+		$oProbe = $wpdb->get_row($wpdb->prepare(
+			'SELECT nano_id, order_line_id FROM %i WHERE nano_id = %s LIMIT 1',
+			$wpdb->prefix.self::TABLE,
+			$sNanoID
+		));
+		if($oProbe === false || ($oProbe === null && !empty($wpdb->last_error)))
+		{
+			return self::nano_write_failed_cancel();
+		}
+		if(empty($oProbe) || (int)$oProbe->order_line_id <= 0)
+		{
+			return self::nano_gone();
+		}
+		return array(
+			'bSuccess' => true,
+			'sMessage' => '',
+			'oRow'     => null,
+			'iLine'    => (int)$oProbe->order_line_id,
+		);
+	}
+
+	/**
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @return object|null|false false on a database error; null when the row is missing.
+	 */
+	private static function read_nano($wpdb, $sNanoID)
+	{
+		$oRow = $wpdb->get_row($wpdb->prepare(
+			'SELECT * FROM %i WHERE nano_id = %s LIMIT 1',
+			$wpdb->prefix.self::TABLE,
+			$sNanoID
+		));
+		if($oRow === false || ($oRow === null && !empty($wpdb->last_error)))
+		{
+			return false;
+		}
+		return $oRow ?: null;
+	}
+
+	/**
+	 * @param object $oRow
+	 * @return bool
+	 */
+	private static function row_is_deleted($oRow)
+	{
+		return is_object($oRow) && $oRow->deleted !== null && $oRow->deleted !== '';
+	}
+
+	/**
+	 * @param object|null $oRow
+	 * @param string      $sNanoID
+	 * @param int         $iOrderLineId
+	 * @return bool
+	 */
+	private static function row_matches_line($oRow, $sNanoID, $iOrderLineId)
+	{
+		return is_object($oRow)
+			&& (string)$oRow->nano_id === (string)$sNanoID
+			&& (int)$oRow->order_line_id === (int)$iOrderLineId;
+	}
+
+	/**
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	private static function nano_gone()
+	{
+		return array(
+			'bSuccess' => false,
+			'sMessage' => __('Ticket with given Nano ID does not seem to exist', 'tickets-passes-for-woocommerce'),
+			'oRow'     => null,
+		);
+	}
+
+	/**
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	private static function nano_write_failed_cancel()
+	{
+		return array(
+			'bSuccess' => false,
+			'sMessage' => __('Could not cancel the ticket because the database write failed.', 'tickets-passes-for-woocommerce'),
+			'oRow'     => null,
+		);
+	}
+
+	/**
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	private static function nano_write_failed_reset()
+	{
+		return array(
+			'bSuccess' => false,
+			'sMessage' => __('Could not reset the ticket because the database write failed.', 'tickets-passes-for-woocommerce'),
+			'oRow'     => null,
+		);
+	}
+
+	/**
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object}
+	 */
+	private static function nano_write_failed_transfer()
+	{
+		return array(
+			'bSuccess' => false,
+			'sMessage' => __('Could not transfer the ticket because the database write failed.', 'tickets-passes-for-woocommerce'),
+			'oRow'     => null,
 		);
 	}
 }

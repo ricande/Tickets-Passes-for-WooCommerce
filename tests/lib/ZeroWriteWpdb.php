@@ -1,8 +1,8 @@
 <?php
 /**
- * $wpdb stand-in that returns false from query() when the injected predicate matches.
+ * $wpdb stand-in that returns 0 from query() when the injected predicate matches.
  */
-class TPFW_Failing_Wpdb
+class TPFW_Zero_Write_Wpdb
 {
 	/** @var string */
 	public $prefix;
@@ -17,17 +17,17 @@ class TPFW_Failing_Wpdb
 	private $inner;
 
 	/** @var callable */
-	private $fnFail;
+	private $fnZero;
 
 	/**
 	 * @param TPFW_Test_Wpdb $inner
-	 * @param callable       $fnFail function(string $sql): bool
+	 * @param callable       $fnZero function(string $sql): bool
 	 */
-	public function __construct($inner, $fnFail)
+	public function __construct($inner, $fnZero)
 	{
 		$this->inner  = $inner;
 		$this->prefix = $inner->prefix;
-		$this->fnFail = $fnFail;
+		$this->fnZero = $fnZero;
 	}
 
 	/**
@@ -46,10 +46,10 @@ class TPFW_Failing_Wpdb
 	 */
 	public function query($sql)
 	{
-		if(call_user_func($this->fnFail, (string)$sql))
+		if(call_user_func($this->fnZero, (string)$sql))
 		{
-			$this->last_error = 'injected failure';
-			return false;
+			$this->last_error = '';
+			return 0;
 		}
 		$m = $this->inner->query($sql);
 		$this->insert_id = $this->inner->insert_id;
@@ -63,11 +63,6 @@ class TPFW_Failing_Wpdb
 	 */
 	public function get_var($sql)
 	{
-		if(call_user_func($this->fnFail, (string)$sql))
-		{
-			$this->last_error = 'injected failure';
-			return str_contains((string)$sql, 'GET_LOCK') ? '0' : null;
-		}
 		$m = $this->inner->get_var($sql);
 		$this->last_error = $this->inner->last_error;
 		$this->insert_id = $this->inner->insert_id;
@@ -80,11 +75,6 @@ class TPFW_Failing_Wpdb
 	 */
 	public function get_row($sql)
 	{
-		if(call_user_func($this->fnFail, (string)$sql))
-		{
-			$this->last_error = 'injected failure';
-			return null;
-		}
 		$m = $this->inner->get_row($sql);
 		$this->last_error = $this->inner->last_error;
 		$this->insert_id = $this->inner->insert_id;
@@ -95,33 +85,11 @@ class TPFW_Failing_Wpdb
 	 * @param string $sql
 	 * @return array
 	 */
-	public function get_col($sql)
-	{
-		return $this->inner->get_col($sql);
-	}
-
-	/**
-	 * @param string $sql
-	 * @return array
-	 */
 	public function get_results($sql)
 	{
-		if(call_user_func($this->fnFail, (string)$sql))
-		{
-			$this->last_error = 'injected failure';
-			return false;
-		}
 		$m = $this->inner->get_results($sql);
 		$this->last_error = $this->inner->last_error;
 		$this->insert_id = $this->inner->insert_id;
 		return $m;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function get_charset_collate()
-	{
-		return $this->inner->get_charset_collate();
 	}
 }

@@ -3394,22 +3394,111 @@ class TPFW_Functions
 	 * Checks a code in, serialised against concurrent scans of the same code.
 	 *
 	 * This is the entry point for every check-in - the door scanner, the REST API and the three
-	 * admin dashboards all arrive here.
+	 * admin dashboards all arrive here. A regular ticket takes tpfw_ticket_issue_{line} — the
+	 * same lock as issue/cancel/reconcile — then re-reads the live row before usage and stats.
+	 * Pass, timeslot and guest pass still use tpfw_checkin_{nano}.
 	 *
 	 * @param wpdb   $wpdb    Database handle.
 	 * @param string $sType   One of ticket, timeslot, pass, guestpass.
 	 * @param object $oRow    Row from the matching table; needs nano_id, product_id, max_uses
-	 *                        and the valid_from/valid_to window.
+	 *                        and the valid_from/valid_to window. For tickets, order_line_id is
+	 *                        used only to find the line lock.
 	 * @param int    $iUserID Scanner/admin performing the check-in.
 	 * @param bool   $bManual True to skip the validity-window check (admin screens).
+	 * @param int    $iTimeout Seconds to wait for the ticket line lock.
 	 * @return WP_REST_Response|array Refusals are a response, success is a data array.
 	 */
-	public function checkin($wpdb, $sType, $oRow, $iUserID, $bManual = false)
+	public function checkin($wpdb, $sType, $oRow, $iUserID, $bManual = false, $iTimeout = 5)
 	{
+		if($sType === 'ticket')
+		{
+			return $this->checkin_ticket_under_line_lock($wpdb, $oRow, $iUserID, $bManual, $iTimeout);
+		}
 		$oSelf = $this;
 		return $this->with_checkin_lock($wpdb, $oRow->nano_id, function() use ($oSelf, $wpdb, $sType, $oRow, $iUserID, $bManual) {
 			return $oSelf->checkin_row($wpdb, $sType, $oRow, $iUserID, $bManual);
 		});
+	}
+
+	/**
+	 * Ticket check-in: probe line id, take tpfw_ticket_issue_{line}, re-read, then stats.
+	 *
+	 * Locked work is only the live-row SELECT, usage/cooldown/max_uses reads and the
+	 * stats INSERT. QR, email and order notes stay outside this lock.
+	 *
+	 * @param wpdb   $wpdb
+	 * @param object $oRow
+	 * @param int    $iUserID
+	 * @param bool   $bManual
+	 * @param int    $iTimeout
+	 * @return WP_REST_Response|array
+	 */
+	private function checkin_ticket_under_line_lock($wpdb, $oRow, $iUserID, $bManual, $iTimeout)
+	{
+		$sNanoID = isset($oRow->nano_id) ? (string)$oRow->nano_id : '';
+		$iLine   = isset($oRow->order_line_id) ? (int)$oRow->order_line_id : 0;
+		if($iLine <= 0 && $sNanoID !== '')
+		{
+			$oProbe = $wpdb->get_row($wpdb->prepare(
+				'SELECT order_line_id FROM %i WHERE nano_id = %s LIMIT 1',
+				$wpdb->prefix.'tpfw_tickets',
+				$sNanoID
+			));
+			if($oProbe === false || ($oProbe === null && !empty($wpdb->last_error)))
+			{
+				$aSettings = $this->get_api_settings_options();
+				return new WP_REST_Response(array(
+					'sMessage'  => __('The check-in could not be recorded - nobody was let through, try again', 'tickets-passes-for-woocommerce'),
+					'sHexColor' => $aSettings['status_406'],
+				), 401);
+			}
+			$iLine = $oProbe ? (int)$oProbe->order_line_id : 0;
+		}
+		if($sNanoID === '' || $iLine <= 0)
+		{
+			$aSettings = $this->get_api_settings_options();
+			return new WP_REST_Response(array(
+				'sMessage'  => __('This ticket has been cancelled and cannot be checked in', 'tickets-passes-for-woocommerce'),
+				'sHexColor' => $aSettings['status_202'],
+			), 202);
+		}
+
+		$oSelf = $this;
+		$m = TPFW_Ticket_Line::with_lock($wpdb, $iLine, function() use ($oSelf, $wpdb, $sNanoID, $iLine, $iUserID, $bManual) {
+			$oFresh = $wpdb->get_row($wpdb->prepare(
+				'SELECT * FROM %i WHERE nano_id = %s AND deleted IS NULL LIMIT 1',
+				$wpdb->prefix.'tpfw_tickets',
+				$sNanoID
+			));
+			if($oFresh === false || ($oFresh === null && !empty($wpdb->last_error)))
+			{
+				$aSettings = $oSelf->get_api_settings_options();
+				return new WP_REST_Response(array(
+					'sMessage'  => __('The check-in could not be recorded - nobody was let through, try again', 'tickets-passes-for-woocommerce'),
+					'sHexColor' => $aSettings['status_406'],
+				), 401);
+			}
+			if(empty($oFresh)
+				|| (string)$oFresh->nano_id !== $sNanoID
+				|| (int)$oFresh->order_line_id !== $iLine)
+			{
+				$aSettings = $oSelf->get_api_settings_options();
+				return new WP_REST_Response(array(
+					'sMessage'  => __('This ticket has been cancelled and cannot be checked in', 'tickets-passes-for-woocommerce'),
+					'sHexColor' => $aSettings['status_202'],
+				), 202);
+			}
+			return $oSelf->checkin_row($wpdb, 'ticket', $oFresh, $iUserID, $bManual);
+		}, (int)$iTimeout);
+		if($m === null)
+		{
+			$aSettings = $this->get_api_settings_options();
+			return new WP_REST_Response(array(
+				'sMessage'  => __('This code is already being checked in on another scanner. Try again in a moment.', 'tickets-passes-for-woocommerce'),
+				'sHexColor' => $aSettings['status_202'],
+			), 202);
+		}
+		return $m;
 	}
 
 
@@ -3423,9 +3512,9 @@ class TPFW_Functions
 	 * @param bool   $bManual       True to skip the validity-window check.
 	 * @return WP_REST_Response|array
 	 */
-	public function checkin_ticket($wpdb, $oTicketResult, $iUserID, $bManual = false)
+	public function checkin_ticket($wpdb, $oTicketResult, $iUserID, $bManual = false, $iTimeout = 5)
 	{
-		return $this->checkin($wpdb, 'ticket', $oTicketResult, $iUserID, $bManual);
+		return $this->checkin($wpdb, 'ticket', $oTicketResult, $iUserID, $bManual, $iTimeout);
 	}
 
 
@@ -3921,8 +4010,28 @@ class TPFW_Functions
 		}
 		$wpdb->query($wpdb->prepare('DELETE FROM %i WHERE nano_id_fk = %s', $wpdb->prefix . $aRules['sStatsTable'], $sNanoID));
 
-		// wc_get_order() returns false when the order has since been deleted. The ticket row
-		// still has to be reset in that case, so the order bookkeeping is simply skipped.
+		$this->after_ticket_row_reset($aRules, $oRow, $sNanoID);
+
+		return array(
+			'bSuccess' => true,
+			'sMessage' => sprintf($aRules['sResetNote'], $sNanoID),
+		);
+	}
+
+	/**
+	 * Order-line meta, order note and QR after a reset DB write. Not under a named lock.
+	 *
+	 * @param array  $aRules
+	 * @param object $oRow
+	 * @param string $sNanoID
+	 * @return void
+	 */
+	private function after_ticket_row_reset($aRules, $oRow, $sNanoID)
+	{
+		if(empty($oRow))
+		{
+			return;
+		}
 		$oOrder = wc_get_order((int) $oRow->order_id);
 		if($oOrder && !empty($oOrder->get_items()))
 		{
@@ -3942,11 +4051,6 @@ class TPFW_Functions
 		}
 
 		$this->write_scanner_qr((int) $oRow->product_id, $aRules['sQRType'], $sNanoID);
-
-		return array(
-			'bSuccess' => true,
-			'sMessage' => sprintf($aRules['sResetNote'], $sNanoID),
-		);
 	}
 
 	/**
@@ -3977,6 +4081,28 @@ class TPFW_Functions
 		}
 		$wpdb->query($wpdb->prepare('UPDATE %i SET deleted = %s, updated = %s WHERE nano_id_fk = %s', $wpdb->prefix . $aRules['sStatsTable'], $sCurrentDatetime, $sCurrentDatetime, $sNanoID));
 
+		$this->after_ticket_row_cancel($aRules, $oRow, $sNanoID);
+
+		return array(
+			'bSuccess' => true,
+			'sMessage' => sprintf($aRules['sCancelNote'], $sNanoID),
+		);
+	}
+
+	/**
+	 * Order-line meta, order note and QR after a cancel DB write. Not under a named lock.
+	 *
+	 * @param array  $aRules
+	 * @param object $oRow
+	 * @param string $sNanoID
+	 * @return void
+	 */
+	private function after_ticket_row_cancel($aRules, $oRow, $sNanoID)
+	{
+		if(empty($oRow))
+		{
+			return;
+		}
 		$oOrder = wc_get_order((int) $oRow->order_id);
 		if($oOrder && !empty($oOrder->get_items()))
 		{
@@ -3991,8 +4117,6 @@ class TPFW_Functions
 					{
 						$oOrderLine->delete_meta_data($sMetaKey);
 					}
-					// Renumber the survivors under this type's own prefix, 1..n with no gaps: the
-					// emails and the order-completion path walk the ids by index.
 					$iIndex = 1;
 					foreach($aExisting as $sExistingNanoID)
 					{
@@ -4008,11 +4132,6 @@ class TPFW_Functions
 		}
 
 		$this->delete_qr_code($sNanoID);
-
-		return array(
-			'bSuccess' => true,
-			'sMessage' => sprintf($aRules['sCancelNote'], $sNanoID),
-		);
 	}
 
 	/**
@@ -4043,20 +4162,57 @@ class TPFW_Functions
 	 * @param string $sNanoID Ticket nano id.
 	 * @return array bSuccess and sMessage.
 	 */
-	public function reset_ticket($sNanoID)
+	public function reset_ticket($sNanoID, $iTimeout = 5)
 	{
-		return $this->reset_ticket_row('ticket', $sNanoID);
+		$aRules = $this->get_ticket_type_rules('ticket');
+		if($aRules === null || empty($sNanoID))
+		{
+			return $this->reset_ticket_row('ticket', $sNanoID);
+		}
+		global $wpdb;
+		$aLocked = TPFW_Ticket_Line::reset_nano($wpdb, $sNanoID, $iTimeout);
+		if(empty($aLocked['bSuccess']))
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => $aLocked['sMessage'],
+			);
+		}
+		$this->after_ticket_row_reset($aRules, $aLocked['oRow'], $sNanoID);
+		return array(
+			'bSuccess' => true,
+			'sMessage' => $aLocked['sMessage'],
+		);
 	}
 
 	/**
 	 * Cancels a ticket: soft-deletes the row, removes the QR image and notes the order.
 	 *
-	 * @param string $sNanoID Ticket nano id.
+	 * @param string $sNanoID   Ticket nano id.
+	 * @param int    $iTimeout  Seconds to wait for the ticket line lock.
 	 * @return array bSuccess (bool) and sMessage (string).
 	 */
-	public function cancel_ticket($sNanoID)
+	public function cancel_ticket($sNanoID, $iTimeout = 5)
 	{
-		return $this->cancel_ticket_row('ticket', $sNanoID);
+		$aRules = $this->get_ticket_type_rules('ticket');
+		if($aRules === null || empty($sNanoID))
+		{
+			return $this->cancel_ticket_row('ticket', $sNanoID);
+		}
+		global $wpdb;
+		$aLocked = TPFW_Ticket_Line::cancel_nano($wpdb, $sNanoID, $iTimeout);
+		if(empty($aLocked['bSuccess']))
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => $aLocked['sMessage'],
+			);
+		}
+		$this->after_ticket_row_cancel($aRules, $aLocked['oRow'], $sNanoID);
+		return array(
+			'bSuccess' => true,
+			'sMessage' => $aLocked['sMessage'],
+		);
 	}
 
 	/**

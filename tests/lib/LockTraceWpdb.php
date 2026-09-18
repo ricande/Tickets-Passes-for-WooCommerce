@@ -1,8 +1,11 @@
 <?php
 /**
- * $wpdb stand-in that returns false from query() when the injected predicate matches.
+ * Test-only $wpdb that records GET_LOCK / RELEASE_LOCK and the live lock depth.
+ *
+ * Support-only. Production still talks to the real connection; this wrapper
+ * exists so ticket operations can prove they never nest named locks.
  */
-class TPFW_Failing_Wpdb
+class TPFW_Lock_Trace_Wpdb
 {
 	/** @var string */
 	public $prefix;
@@ -13,21 +16,36 @@ class TPFW_Failing_Wpdb
 	/** @var string */
 	public $last_error = '';
 
+	/** @var int */
+	public $iDepth = 0;
+
+	/** @var int */
+	public $iMaxDepth = 0;
+
+	/** @var list<array{0:string,1:string,2:mixed}> */
+	public $aEvents = array();
+
+	/** @var list<string> */
+	public $aAcquired = array();
+
 	/** @var TPFW_Test_Wpdb */
 	private $inner;
 
-	/** @var callable */
-	private $fnFail;
-
 	/**
 	 * @param TPFW_Test_Wpdb $inner
-	 * @param callable       $fnFail function(string $sql): bool
 	 */
-	public function __construct($inner, $fnFail)
+	public function __construct($inner)
 	{
 		$this->inner  = $inner;
 		$this->prefix = $inner->prefix;
-		$this->fnFail = $fnFail;
+	}
+
+	/**
+	 * @return TPFW_Test_Wpdb
+	 */
+	public function inner()
+	{
+		return $this->inner;
 	}
 
 	/**
@@ -46,11 +64,6 @@ class TPFW_Failing_Wpdb
 	 */
 	public function query($sql)
 	{
-		if(call_user_func($this->fnFail, (string)$sql))
-		{
-			$this->last_error = 'injected failure';
-			return false;
-		}
 		$m = $this->inner->query($sql);
 		$this->insert_id = $this->inner->insert_id;
 		$this->last_error = $this->inner->last_error;
@@ -63,14 +76,31 @@ class TPFW_Failing_Wpdb
 	 */
 	public function get_var($sql)
 	{
-		if(call_user_func($this->fnFail, (string)$sql))
-		{
-			$this->last_error = 'injected failure';
-			return str_contains((string)$sql, 'GET_LOCK') ? '0' : null;
-		}
-		$m = $this->inner->get_var($sql);
+		$sSql = (string)$sql;
+		$m = $this->inner->get_var($sSql);
 		$this->last_error = $this->inner->last_error;
 		$this->insert_id = $this->inner->insert_id;
+		if(preg_match("/GET_LOCK\\('([^']+)'/", $sSql, $aM))
+		{
+			$this->aEvents[] = array('get', $aM[1], $m);
+			if(TPFW_Named_Lock::is_acquired($m))
+			{
+				$this->iDepth++;
+				if($this->iDepth > $this->iMaxDepth)
+				{
+					$this->iMaxDepth = $this->iDepth;
+				}
+				$this->aAcquired[] = $aM[1];
+			}
+		}
+		if(preg_match("/RELEASE_LOCK\\('([^']+)'/", $sSql, $aM))
+		{
+			$this->aEvents[] = array('release', $aM[1], $m);
+			if($this->iDepth > 0)
+			{
+				$this->iDepth--;
+			}
+		}
 		return $m;
 	}
 
@@ -80,12 +110,19 @@ class TPFW_Failing_Wpdb
 	 */
 	public function get_row($sql)
 	{
-		if(call_user_func($this->fnFail, (string)$sql))
-		{
-			$this->last_error = 'injected failure';
-			return null;
-		}
 		$m = $this->inner->get_row($sql);
+		$this->last_error = $this->inner->last_error;
+		$this->insert_id = $this->inner->insert_id;
+		return $m;
+	}
+
+	/**
+	 * @param string $sql
+	 * @return array
+	 */
+	public function get_results($sql)
+	{
+		$m = $this->inner->get_results($sql);
 		$this->last_error = $this->inner->last_error;
 		$this->insert_id = $this->inner->insert_id;
 		return $m;
@@ -98,30 +135,5 @@ class TPFW_Failing_Wpdb
 	public function get_col($sql)
 	{
 		return $this->inner->get_col($sql);
-	}
-
-	/**
-	 * @param string $sql
-	 * @return array
-	 */
-	public function get_results($sql)
-	{
-		if(call_user_func($this->fnFail, (string)$sql))
-		{
-			$this->last_error = 'injected failure';
-			return false;
-		}
-		$m = $this->inner->get_results($sql);
-		$this->last_error = $this->inner->last_error;
-		$this->insert_id = $this->inner->insert_id;
-		return $m;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function get_charset_collate()
-	{
-		return $this->inner->get_charset_collate();
 	}
 }

@@ -4,10 +4,11 @@ use PHPUnit\Framework\TestCase;
 /**
  * Full order-line cancel/refund must follow product_id + order_id + order_line_id.
  *
- * Admin transfer (inc/dashboard/class--dashboard.php) rewrites ticket.user_id to the new
- * holder and leaves the WooCommerce order on the original purchaser. Dashboard per-nano
- * cancel/reset/transfer are separate operator paths and are not covered by
- * tpfw_ticket_issue_{line}.
+ * Admin transfer rewrites ticket.user_id to the new holder and leaves the WooCommerce
+ * order on the original purchaser. Full-line cancel must still match the line, not the
+ * current holder. Dashboard per-nano cancel/reset/transfer for regular tickets take
+ * tpfw_ticket_issue_{line} in TPFW_Ticket_Line; this file covers full-line cancel after
+ * that holder rewrite.
  */
 class TransferredTicketCancelTest extends TestCase
 {

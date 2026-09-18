@@ -461,24 +461,18 @@ abstract class TPFW_Dashboard
 		}
 
 		global $wpdb;
-		$sTable = $wpdb->prefix . $this->sTable;
-		$oRow   = $wpdb->get_row($wpdb->prepare('SELECT * FROM %i WHERE nano_id = %s AND deleted IS NULL', $sTable, $sNanoID));
-		if(!$oRow)
+		$aMoved = $this->transfer_live_row($wpdb, $sNanoID, (int) $oNewUser->ID);
+		if(empty($aMoved['bSuccess']) || empty($aMoved['oRow']))
 		{
-			wp_send_json_error(array('sMessage' => __('No active row was found for the provided Nano ID', 'tickets-passes-for-woocommerce')));
-		}
-		if((int) $oRow->user_id === (int) $oNewUser->ID)
-		{
-			wp_send_json_error(array('sMessage' => __('That account already holds this item.', 'tickets-passes-for-woocommerce')));
+			wp_send_json_error(array('sMessage' => $aMoved['sMessage'] ?? __('No active row was found for the provided Nano ID', 'tickets-passes-for-woocommerce')));
 		}
 
-		$oOldUser = get_user_by('ID', (int) $oRow->user_id);
-		$wpdb->query($wpdb->prepare('UPDATE %i SET user_id = %d, updated = %s WHERE nano_id = %s', $sTable, $oNewUser->ID, current_time('mysql'), $sNanoID));
-
-		$sOld   = $oOldUser ? sprintf('%s (#%d)', $oOldUser->user_email, $oOldUser->ID) : sprintf('#%d', (int) $oRow->user_id);
-		$sNew   = sprintf('%s (#%d)', $oNewUser->user_email, $oNewUser->ID);
-		$oAdmin = wp_get_current_user();
-		$oOrder = wc_get_order((int) $oRow->order_id);
+		$oRow     = $aMoved['oRow'];
+		$oOldUser = get_user_by('ID', (int) ($aMoved['iOldUserID'] ?? $oRow->user_id));
+		$sOld     = $oOldUser ? sprintf('%s (#%d)', $oOldUser->user_email, $oOldUser->ID) : sprintf('#%d', (int) ($aMoved['iOldUserID'] ?? 0));
+		$sNew     = sprintf('%s (#%d)', $oNewUser->user_email, $oNewUser->ID);
+		$oAdmin   = wp_get_current_user();
+		$oOrder   = wc_get_order((int) $oRow->order_id);
 		if($oOrder)
 		{
 			$oOrder->add_order_note(sprintf(
@@ -500,6 +494,46 @@ abstract class TPFW_Dashboard
 		$response['iNewUserID']   = (int) $oNewUser->ID;
 		$response['sNewUserHtml'] = '<a target="_blank" href="' . esc_url(get_edit_user_link($oNewUser->ID)) . '">' . esc_html($oNewUser->ID) . '</a>';
 		wp_send_json_success($response);
+	}
+
+	/**
+	 * Rewrites the holder of one live row. Timeslot tickets keep the unlocked path;
+	 * the tickets screen overrides this to take tpfw_ticket_issue_{line}.
+	 *
+	 * @param object $wpdb
+	 * @param string $sNanoID
+	 * @param int    $iNewUserID
+	 * @return array{bSuccess:bool,sMessage:string,oRow:?object,iOldUserID?:int}
+	 */
+	protected function transfer_live_row($wpdb, $sNanoID, $iNewUserID)
+	{
+		$sTable = $wpdb->prefix . $this->sTable;
+		$oRow   = $wpdb->get_row($wpdb->prepare('SELECT * FROM %i WHERE nano_id = %s AND deleted IS NULL', $sTable, $sNanoID));
+		if(!$oRow)
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('No active row was found for the provided Nano ID', 'tickets-passes-for-woocommerce'),
+				'oRow'     => null,
+			);
+		}
+		if((int) $oRow->user_id === (int) $iNewUserID)
+		{
+			return array(
+				'bSuccess' => false,
+				'sMessage' => __('That account already holds this item.', 'tickets-passes-for-woocommerce'),
+				'oRow'     => $oRow,
+			);
+		}
+		$iOldUserID = (int) $oRow->user_id;
+		$wpdb->query($wpdb->prepare('UPDATE %i SET user_id = %d, updated = %s WHERE nano_id = %s', $sTable, (int) $iNewUserID, current_time('mysql'), $sNanoID));
+		$oRow->user_id = (int) $iNewUserID;
+		return array(
+			'bSuccess'   => true,
+			'sMessage'   => '',
+			'oRow'       => $oRow,
+			'iOldUserID' => $iOldUserID,
+		);
 	}
 
 	/** @return bool */

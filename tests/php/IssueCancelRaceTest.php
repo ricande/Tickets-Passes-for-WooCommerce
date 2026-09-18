@@ -359,7 +359,15 @@ class IssueCancelRaceTest extends TestCase
 				continue;
 			}
 			$sSrc = file_get_contents($sFile);
-			foreach(array('sync_held(', 'issue_held(', 'cancel_held(', 'reconcile_held(') as $sCall)
+			foreach(array(
+				'sync_held(',
+				'issue_held(',
+				'cancel_held(',
+				'reconcile_held(',
+				'cancel_nano_held(',
+				'reset_nano_held(',
+				'transfer_nano_held(',
+			) as $sCall)
 			{
 				if(strpos($sSrc, $sCall) !== false)
 				{

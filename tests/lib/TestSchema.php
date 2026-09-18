@@ -16,6 +16,7 @@ class TPFW_Test_Schema
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_timeslot_reservations`");
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_timeslot_tickets`");
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_timeslots`");
+		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_tickets_stats`");
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_tickets`");
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_kv`");
 
@@ -122,6 +123,17 @@ class TPFW_Test_Schema
 			UNIQUE KEY `nano_id` (`nano_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+		$wpdb->query("CREATE TABLE `{$p}tpfw_tickets_stats` (
+			`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			`nano_id_fk` VARCHAR(32) NOT NULL,
+			`user_id` BIGINT UNSIGNED NOT NULL,
+			`created` DATETIME NULL DEFAULT NULL,
+			`updated` DATETIME NULL DEFAULT NULL,
+			`deleted` DATETIME NULL DEFAULT NULL,
+			PRIMARY KEY (`id`),
+			KEY `nano_id_fk` (`nano_id_fk`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
 		$wpdb->query("CREATE TABLE `{$p}tpfw_kv` (
 			`k` VARCHAR(191) NOT NULL,
 			`v` LONGTEXT NOT NULL,
@@ -136,7 +148,7 @@ class TPFW_Test_Schema
 	public static function drop($wpdb)
 	{
 		$p = $wpdb->prefix;
-		foreach(array('tpfw_kv', 'tpfw_pass_stats', 'tpfw_pass', 'tpfw_timeslot_reservations', 'tpfw_timeslot_tickets', 'tpfw_timeslots', 'tpfw_tickets') as $sTable)
+		foreach(array('tpfw_kv', 'tpfw_pass_stats', 'tpfw_pass', 'tpfw_timeslot_reservations', 'tpfw_timeslot_tickets', 'tpfw_timeslots', 'tpfw_tickets_stats', 'tpfw_tickets') as $sTable)
 		{
 			$wpdb->query("DROP TABLE IF EXISTS `{$p}{$sTable}`");
 		}
