@@ -37,7 +37,7 @@ $m = TPFW_Timeslot_Capacity::with_lock($wpdb, $sTimeslotID, function() use ($wpd
 		return 'missing';
 	}
 	$iLeft = TPFW_Timeslot_Capacity::remaining($wpdb, $sTimeslotID, (int)$oSlot->available_slots, $sNow, true);
-	if($iLeft < 1)
+	if($iLeft === false || $iLeft < 1)
 	{
 		return 'full';
 	}

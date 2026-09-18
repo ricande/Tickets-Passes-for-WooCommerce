@@ -190,7 +190,7 @@ class TPFW_Test_Wpdb
 		if($m === false)
 		{
 			$this->last_error = $this->mysqli->error;
-			return false;
+			return array();
 		}
 		$this->last_error = '';
 		$a = array();

@@ -67,6 +67,10 @@ class TPFW_Issue_Lock
 		$sSyncTable = $wpdb->prefix.(strpos((string)$sTable, $sPrefix) === 0 ? substr((string)$sTable, strlen($sPrefix)) : (string)$sTable);
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sSelect is the return value of $wpdb->prepare() at the caller.
 		$aExisting = $wpdb->get_results($sSelect);
+		if(TPFW_Db_Read::results_failed($wpdb, $aExisting))
+		{
+			return array('keep' => array(), 'inserted' => array(), 'deleted' => array(), 'ok' => false);
+		}
 		return TPFW_Order_Line_Upsert::sync($wpdb, $sSyncTable, $aExisting, $iQuantity, $sNow, $fnInsert);
 	}
 

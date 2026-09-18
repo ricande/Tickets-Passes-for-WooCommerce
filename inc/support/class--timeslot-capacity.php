@@ -54,33 +54,43 @@ class TPFW_Timeslot_Capacity
 	 * @param bool   $bCountReservations
 	 * @param int    $iExcludeOrderID      Order whose own tickets should not count (issue path).
 	 * @param int    $iExcludeLineID
-	 * @return int
+	 * @return int|false Remaining seats, or false when a capacity read failed.
 	 */
 	public static function remaining($wpdb, $sTimeslotID, $iCapacity, $sNow, $bCountReservations, $iExcludeOrderID = 0, $iExcludeLineID = 0)
 	{
 		$sTickets = $wpdb->prefix.'tpfw_timeslot_tickets';
 		if((int)$iExcludeOrderID > 0 && (int)$iExcludeLineID > 0)
 		{
-			$iSold = (int)$wpdb->get_var($wpdb->prepare(
+			$mSold = $wpdb->get_var($wpdb->prepare(
 				'SELECT COUNT(*) FROM %i WHERE timeslot_id = %s AND deleted IS NULL AND NOT (order_id = %d AND order_line_id = %d);',
 				$sTickets, $sTimeslotID, (int)$iExcludeOrderID, (int)$iExcludeLineID
 			));
 		}
 		else
 		{
-			$iSold = (int)$wpdb->get_var($wpdb->prepare(
+			$mSold = $wpdb->get_var($wpdb->prepare(
 				'SELECT COUNT(*) FROM %i WHERE timeslot_id = %s AND deleted IS NULL;',
 				$sTickets, $sTimeslotID
 			));
 		}
+		if(TPFW_Db_Read::var_failed($wpdb, $mSold))
+		{
+			return false;
+		}
+		$iSold = (int)$mSold;
 
 		$iReserved = 0;
 		if($bCountReservations)
 		{
-			$iReserved = (int)$wpdb->get_var($wpdb->prepare(
+			$mReserved = $wpdb->get_var($wpdb->prepare(
 				'SELECT COALESCE(SUM(quantity), 0) FROM %i WHERE deleted IS NULL AND valid_to > %s AND timeslot_id = %s;',
 				$wpdb->prefix.'tpfw_timeslot_reservations', $sNow, $sTimeslotID
 			));
+			if(TPFW_Db_Read::var_failed($wpdb, $mReserved))
+			{
+				return false;
+			}
+			$iReserved = (int)$mReserved;
 		}
 
 		return max(0, (int)$iCapacity - $iSold - $iReserved);

@@ -182,7 +182,7 @@ class TPFW_Ticket_Line
 				$oOrderItem->get_id(),
 			)
 		));
-		if($aExisting === false)
+		if(TPFW_Db_Read::results_failed($wpdb, $aExisting))
 		{
 			return array(
 				'sMessage' => __('Could not issue tickets for this order line because the database write failed. No extra tickets were created.', 'tickets-passes-for-woocommerce'),
@@ -230,7 +230,7 @@ class TPFW_Ticket_Line
 		);
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $oExistsPrepared is the return value of $wpdb->prepare() above.
 		$oExistsResult = $wpdb->get_results($oExistsPrepared);
-		if($oExistsResult === false)
+		if(TPFW_Db_Read::results_failed($wpdb, $oExistsResult))
 		{
 			return array(
 				'sMessage' => __('Could not cancel tickets for this order line because the database write failed.', 'tickets-passes-for-woocommerce'),
@@ -281,7 +281,7 @@ class TPFW_Ticket_Line
 				$oOrderItem->get_id(),
 			)
 		));
-		if($aRows === false)
+		if(TPFW_Db_Read::results_failed($wpdb, $aRows))
 		{
 			return array(
 				'sMessage' => __('Could not reconcile issued quantity because the database write failed.', 'tickets-passes-for-woocommerce'),
@@ -947,7 +947,7 @@ class TPFW_Ticket_Line
 			$wpdb->prefix.self::TABLE,
 			$sNanoID
 		));
-		if($oProbe === false || ($oProbe === null && !empty($wpdb->last_error)))
+		if(TPFW_Db_Read::row_failed($wpdb, $oProbe))
 		{
 			return self::nano_write_failed_cancel();
 		}
@@ -975,7 +975,7 @@ class TPFW_Ticket_Line
 			$wpdb->prefix.self::TABLE,
 			$sNanoID
 		));
-		if($oRow === false || ($oRow === null && !empty($wpdb->last_error)))
+		if(TPFW_Db_Read::row_failed($wpdb, $oRow))
 		{
 			return false;
 		}
@@ -1113,7 +1113,7 @@ class TPFW_Ticket_Line
 			(int)$oRow->order_id,
 			(int)$oRow->order_line_id
 		));
-		if($iIssued === null && !empty($wpdb->last_error))
+		if(TPFW_Db_Read::var_failed($wpdb, $iIssued))
 		{
 			return false;
 		}
@@ -1166,7 +1166,7 @@ class TPFW_Ticket_Line
 			(int)$oRow->order_id,
 			(int)$oRow->order_line_id
 		));
-		if($aSlots === false)
+		if(TPFW_Db_Read::results_failed($wpdb, $aSlots))
 		{
 			return false;
 		}

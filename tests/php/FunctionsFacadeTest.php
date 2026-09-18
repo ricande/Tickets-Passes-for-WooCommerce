@@ -32,6 +32,10 @@ class FunctionsFacadeTest extends TestCase
 			'class--ticket-line.php'
 		));
 		$this->assertNotFalse(strpos(
+			file_get_contents(TPFW_PLUGIN_DIR.'inc/support/load.php'),
+			'class--db-read.php'
+		));
+		$this->assertNotFalse(strpos(
 			file_get_contents(TPFW_PLUGIN_DIR.'inc/db-installer/class--db-installer.php'),
 			'TPFW_Guest_Pass_Issuer::backfill_legacy_slots'
 		));
@@ -49,5 +53,6 @@ class FunctionsFacadeTest extends TestCase
 		$sLoad = file_get_contents(TPFW_PLUGIN_DIR.'inc/support/load.php');
 		$this->assertNotFalse(strpos($sLoad, 'class--qr-render.php'));
 		$this->assertNotFalse(strpos($sLoad, 'class--qr-rewrite.php'));
+		$this->assertNotFalse(strpos($sLoad, 'class--db-read.php'));
 	}
 }

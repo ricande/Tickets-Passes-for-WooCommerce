@@ -105,7 +105,7 @@ class TPFW_Timeslot_Ticket_Checkout
 				$bReservations
 			);
 
-			if($iAvailable <= 0 || $iAvailable < $iRequestQuantity)
+			if($iAvailable === false || $iAvailable <= 0 || $iAvailable < $iRequestQuantity)
 			{
 				return array('ok' => false, 'reason' => 'capacity');
 			}

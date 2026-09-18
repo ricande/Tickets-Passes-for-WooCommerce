@@ -88,6 +88,26 @@ class TimeslotCapacityTest extends TestCase
 		$this->assertNotFalse(strpos($sNote, 'maximum'));
 	}
 
+	public function test_remaining_count_error_is_false_not_zero(): void
+	{
+		$sSlot = 'slot'.bin2hex(random_bytes(6));
+		$sNow  = gmdate('Y-m-d H:i:s', time() + 3600);
+		$this->wpdb->query($this->wpdb->prepare(
+			'INSERT INTO %i (id, product_id, user_id, start, end, available_slots) VALUES (%s, %d, %d, %s, %s, %d)',
+			array($this->wpdb->prefix.'tpfw_timeslots', $sSlot, 1, 1, $sNow, $sNow, 1)
+		));
+		$this->wpdb->query($this->wpdb->prepare(
+			'INSERT INTO %i (timeslot_id, nano_id, product_id, user_id, order_id, order_line_id, max_uses, created, updated)
+			VALUES (%s, %s, %d, %d, %d, %d, %d, %s, %s)',
+			array($this->wpdb->prefix.'tpfw_timeslot_tickets', $sSlot, 'full'.bin2hex(random_bytes(4)), 1, 1, 50, 60, 1, gmdate('Y-m-d H:i:s'), gmdate('Y-m-d H:i:s'))
+		));
+		$this->assertSame(0, TPFW_Timeslot_Capacity::remaining($this->wpdb, $sSlot, 1, $sNow, false));
+		$oFail = new TPFW_Failing_Wpdb($this->wpdb, static function($sSql) use ($sSlot) {
+			return str_contains($sSql, 'COUNT(*)') && str_contains($sSql, $sSlot);
+		});
+		$this->assertFalse(TPFW_Timeslot_Capacity::remaining($oFail, $sSlot, 1, $sNow, false));
+	}
+
 	public function test_checkout_class_exists(): void
 	{
 		require_once TPFW_PLUGIN_DIR.'inc/timeslot-ticket-wc-product/class--timeslot-ticket-checkout.php';

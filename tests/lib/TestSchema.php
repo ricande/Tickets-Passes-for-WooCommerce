@@ -15,6 +15,7 @@ class TPFW_Test_Schema
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_pass`");
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_timeslot_reservations`");
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_timeslot_tickets`");
+		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_timeslots_recurring`");
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_timeslots`");
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_tickets_stats`");
 		$wpdb->query("DROP TABLE IF EXISTS `{$p}tpfw_tickets`");
@@ -63,6 +64,27 @@ class TPFW_Test_Schema
 			`start` DATETIME NULL DEFAULT NULL,
 			`end` DATETIME NULL DEFAULT NULL,
 			`available_slots` INT UNSIGNED NOT NULL DEFAULT 0,
+			`timeslot_recurring_id_fk` VARCHAR(32) NULL DEFAULT NULL,
+			`manual` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+			`created` DATETIME NULL DEFAULT NULL,
+			`updated` DATETIME NULL DEFAULT NULL,
+			`deleted` DATETIME NULL DEFAULT NULL,
+			PRIMARY KEY (`id`),
+			KEY `timeslot_recurring_id_fk` (`timeslot_recurring_id_fk`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+		$wpdb->query("CREATE TABLE `{$p}tpfw_timeslots_recurring` (
+			`id` VARCHAR(32) NOT NULL,
+			`start` DATETIME NULL DEFAULT NULL,
+			`end` DATETIME NULL DEFAULT NULL,
+			`slot_start` TIME NULL DEFAULT NULL,
+			`slot_end` TIME NULL DEFAULT NULL,
+			`weekday` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+			`week_number_start` INT NOT NULL DEFAULT 0,
+			`week_number_end` INT NOT NULL DEFAULT 0,
+			`available_slots` INT UNSIGNED NOT NULL DEFAULT 0,
+			`product_id` BIGINT UNSIGNED NOT NULL,
+			`user_id` BIGINT UNSIGNED NOT NULL,
 			`created` DATETIME NULL DEFAULT NULL,
 			`updated` DATETIME NULL DEFAULT NULL,
 			`deleted` DATETIME NULL DEFAULT NULL,
@@ -149,7 +171,7 @@ class TPFW_Test_Schema
 	public static function drop($wpdb)
 	{
 		$p = $wpdb->prefix;
-		foreach(array('tpfw_kv', 'tpfw_pass_stats', 'tpfw_pass', 'tpfw_timeslot_reservations', 'tpfw_timeslot_tickets', 'tpfw_timeslots', 'tpfw_tickets_stats', 'tpfw_tickets') as $sTable)
+		foreach(array('tpfw_kv', 'tpfw_pass_stats', 'tpfw_pass', 'tpfw_timeslot_reservations', 'tpfw_timeslot_tickets', 'tpfw_timeslots_recurring', 'tpfw_timeslots', 'tpfw_tickets_stats', 'tpfw_tickets') as $sTable)
 		{
 			$wpdb->query("DROP TABLE IF EXISTS `{$p}{$sTable}`");
 		}

@@ -48,7 +48,11 @@ if(!function_exists('get_post_meta'))
 {
 	function get_post_meta($iId, $sKey, $bSingle = false)
 	{
-		unset($iId, $sKey, $bSingle);
+		unset($bSingle);
+		if(isset($GLOBALS['tpfw_test_post_meta'][(int)$iId][$sKey]))
+		{
+			return $GLOBALS['tpfw_test_post_meta'][(int)$iId][$sKey];
+		}
 		return '';
 	}
 }
@@ -57,7 +61,10 @@ if(!function_exists('wc_get_product'))
 {
 	function wc_get_product($iId)
 	{
-		unset($iId);
+		if(isset($GLOBALS['tpfw_test_products'][(int)$iId]))
+		{
+			return $GLOBALS['tpfw_test_products'][(int)$iId];
+		}
 		return new TPFW_Product_Ticket();
 	}
 }

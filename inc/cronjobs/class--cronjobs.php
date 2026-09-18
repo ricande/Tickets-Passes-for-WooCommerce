@@ -102,7 +102,11 @@ class TPFW_Cronjobs
 		$sUpdateReservationSQL = $wpdb->prepare('	SELECT * FROM %i				
 				WHERE deleted IS NULL AND valid_to <= %s AND order_id IS NOT NULL AND order_line_id IS NOT NULL', $sReservationTableName, $sCurrentDatetime);                                                        
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sUpdateReservationSQL is the return value of $wpdb->prepare() above.
-		$oOrderCreatedReservationResult = $wpdb->query($sUpdateReservationSQL); 	
+		$oOrderCreatedReservationResult = $wpdb->get_results($sUpdateReservationSQL);
+		if(TPFW_Db_Read::results_failed($wpdb, $oOrderCreatedReservationResult))
+		{
+			$oOrderCreatedReservationResult = array();
+		}
 		if(!empty($oOrderCreatedReservationResult))
 		{
 			foreach($oOrderCreatedReservationResult as $iOrderCreatedReservationKey => $oOrderCreatedReservation)

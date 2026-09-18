@@ -20,7 +20,15 @@ if(!function_exists('current_time'))
 {
 	function current_time($sType)
 	{
-		return $sType === 'mysql' ? gmdate('Y-m-d H:i:s') : time();
+		if($sType === 'mysql')
+		{
+			return gmdate('Y-m-d H:i:s');
+		}
+		if($sType === 'timestamp')
+		{
+			return time();
+		}
+		return gmdate((string)$sType);
 	}
 }
 if(!function_exists('wc_get_order'))

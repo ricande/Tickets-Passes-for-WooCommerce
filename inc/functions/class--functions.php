@@ -3367,7 +3367,7 @@ class TPFW_Functions
 	 * @param wpdb   $wpdb        Database handle.
 	 * @param string $sStatsTable Stats table name, without the site's table prefix.
 	 * @param string $sNanoID     Code to count uses for.
-	 * @return array iUses and sLastUsed (null when never used).
+	 * @return array{ok:bool,iUses:?int,sLastUsed:?string} iUses and sLastUsed when ok; iUses is 0 when never used.
 	 */
 	private function get_checkin_usage($wpdb, $sStatsTable, $sNanoID)
 	{
@@ -3381,8 +3381,17 @@ class TPFW_Functions
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $oPrepared is the return value of $wpdb->prepare() above.
 		$oRow = $wpdb->get_row($oPrepared);
+		if(TPFW_Db_Read::row_failed($wpdb, $oRow))
+		{
+			return array(
+				'ok'        => false,
+				'iUses'     => null,
+				'sLastUsed' => null,
+			);
+		}
 
 		return array(
+			'ok'        => true,
 			'iUses'     => $oRow ? (int)$oRow->iUses : 0,
 			'sLastUsed' => ($oRow && $oRow->sLastUsed !== null) ? $oRow->sLastUsed : null,
 		);
@@ -3444,7 +3453,7 @@ class TPFW_Functions
 				$wpdb->prefix.'tpfw_tickets',
 				$sNanoID
 			));
-			if($oProbe === false || ($oProbe === null && !empty($wpdb->last_error)))
+			if(TPFW_Db_Read::row_failed($wpdb, $oProbe))
 			{
 				$aSettings = $this->get_api_settings_options();
 				return new WP_REST_Response(array(
@@ -3470,7 +3479,7 @@ class TPFW_Functions
 				$wpdb->prefix.'tpfw_tickets',
 				$sNanoID
 			));
-			if($oFresh === false || ($oFresh === null && !empty($wpdb->last_error)))
+			if(TPFW_Db_Read::row_failed($wpdb, $oFresh))
 			{
 				$aSettings = $oSelf->get_api_settings_options();
 				return new WP_REST_Response(array(
@@ -3612,6 +3621,13 @@ class TPFW_Functions
 			if($oParent)
 			{
 				$aParentUsage = $this->get_checkin_usage($wpdb, 'tpfw_pass_stats', $oParent->nano_id);
+				if(empty($aParentUsage['ok']))
+				{
+					return new WP_REST_Response(array(
+						'sMessage'  => __('The check-in could not be recorded - nobody was let through, try again', 'tickets-passes-for-woocommerce'),
+						'sHexColor' => $aSettings['status_406'],
+					), 401);
+				}
 				$iParentUses  = $aParentUsage['iUses'];
 			}
 			$sGate = TPFW_Guest_Pass_Issuer::may_checkin($oRow, (bool)$oParent, $iParentUses);
@@ -3647,6 +3663,13 @@ class TPFW_Functions
 		}
 
 		$aUsage = $this->get_checkin_usage($wpdb, $aRules['sStatsTable'], $oRow->nano_id);
+		if(empty($aUsage['ok']))
+		{
+			return new WP_REST_Response(array(
+				'sMessage'  => __('The check-in could not be recorded - nobody was let through, try again', 'tickets-passes-for-woocommerce'),
+				'sHexColor' => $aSettings['status_406'],
+			), 401);
+		}
 
 		if($aUsage['iUses'] >= (int)$oRow->max_uses)
 		{
@@ -3770,9 +3793,10 @@ class TPFW_Functions
 	 * skipped, and strays left behind by a moved week window are retired unless they sold.
 	 *
 	 * @param string|int|null $sRecurringTimeslotID Series to fill, or null for the cron sweep.
+	 * @param int             $iLockTimeout         Seconds to wait for the per-series named lock.
 	 * @return void
 	 */
-	public function create_recurring_timeslots($sRecurringTimeslotID = NULL)
+	public function create_recurring_timeslots($sRecurringTimeslotID = NULL, $iLockTimeout = 5)
 	{
 		global $wpdb;
 		$sTimeslotTableName           = $wpdb->prefix . "tpfw_timeslots";
@@ -3801,87 +3825,136 @@ class TPFW_Functions
 		                                            
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sRecurringTimeslotsSQL is the return value of $wpdb->prepare() above.
 		$aRecurringTimeslotsResult = $wpdb->get_results($sRecurringTimeslotsSQL);
-
-		if(!empty($aRecurringTimeslotsResult))
+		if(TPFW_Db_Read::results_failed($wpdb, $aRecurringTimeslotsResult) || empty($aRecurringTimeslotsResult))
 		{
-			foreach($aRecurringTimeslotsResult as $iRecurringTimeslotKey => $oRecurringTimeslot)
+			return;
+		}
+
+		foreach($aRecurringTimeslotsResult as $iRecurringTimeslotKey => $oRecurringTimeslot)
+		{
+			unset($iRecurringTimeslotKey);
+			$_timeslot_ticket_recurring_enable = get_post_meta($oRecurringTimeslot->product_id, '_tpfw_timeslot_ticket_recurring_enable', true);
+			if($_timeslot_ticket_recurring_enable != 'yes') continue;
+
+			$_timeslot_ticket_recurring_future = (int)get_post_meta($oRecurringTimeslot->product_id, '_tpfw_timeslot_ticket_recurring_future', true);
+			if($_timeslot_ticket_recurring_future <= 0) continue;
+
+			$oLock = TPFW_Named_Lock::acquire($wpdb, self::recurring_timeslot_lock_name($oRecurringTimeslot->id), (int)$iLockTimeout);
+			if(!$oLock->held())
 			{
-				$_timeslot_ticket_recurring_enable = get_post_meta($oRecurringTimeslot->product_id, '_tpfw_timeslot_ticket_recurring_enable', true); 
-				if($_timeslot_ticket_recurring_enable != 'yes') continue;
-				
-				$_timeslot_ticket_recurring_future = (int)get_post_meta($oRecurringTimeslot->product_id, '_tpfw_timeslot_ticket_recurring_future', true);
-				if($_timeslot_ticket_recurring_future <= 0) continue;
-
-				// start/end already carry a datetime (e.g. "2027-08-11 00:00:00") - appending
-				// slot_start/slot_end onto them (as this used to do) built an unparsable string
-				// like "2027-08-11 00:00:00 00:00:00", so strtotime() silently returned false
-				// for every candidate slot and the continue guards below always fired. Strip
-				// start/end down to just the date before pairing them with a slot time.
-				$sRecurringStartDate = gmdate('Y-m-d', strtotime($oRecurringTimeslot->start));
-				$sRecurringEndDate   = gmdate('Y-m-d', strtotime($oRecurringTimeslot->end));
-				$iSlotDurationSec    = strtotime($sRecurringStartDate . ' ' . $oRecurringTimeslot->slot_end) - strtotime($sRecurringStartDate . ' ' . $oRecurringTimeslot->slot_start);
-
-				// Editing a rule's weeks moves its window, but the slots the old window generated
-				// stay behind - and they still count towards the "how many future slots exist"
-				// total below, so the slots the new window covers never get generated at all.
-				// Strays are retired first, though never one that has already sold a ticket.
-				$sRetireStrayTimeslotsSQL = $wpdb->prepare('	UPDATE %i SET deleted = %s, updated = %s
-															WHERE deleted IS NULL AND manual = 0 AND timeslot_recurring_id_fk = %s
-															AND (start < %s OR start >= %s)
-															AND id NOT IN (SELECT timeslot_id FROM %i WHERE deleted IS NULL)', $sTimeslotTableName,
-						$sCurrentDatetime,
-						$sCurrentDatetime,
-						$oRecurringTimeslot->id,
-						$sRecurringStartDate . ' 00:00:00',
-						$sRecurringEndDate . ' 00:00:00',
-						$wpdb->prefix . 'tpfw_timeslot_tickets'
-				);
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sRetireStrayTimeslotsSQL is the return value of $wpdb->prepare() above.
-				$wpdb->query($sRetireStrayTimeslotsSQL);
-
-				// Every child the series already has (manual ones included, so a hand-made slot at
-				// the same time is not doubled), keyed by start so the walk below can skip it.
-				$sRecurringChildTimeslotsSQL = $wpdb->prepare('	SELECT start FROM %i
-															WHERE deleted IS NULL AND timeslot_recurring_id_fk = %s', $sTimeslotTableName,
-						$oRecurringTimeslot->id
-				);
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sRecurringChildTimeslotsSQL is the return value of $wpdb->prepare() above.
-				$aExistingStarts = array_flip((array) $wpdb->get_col($sRecurringChildTimeslotsSQL));
-
-				// Walk the rule week by week from its first occurrence. A slot is created when it
-				// is still ahead, inside the series window, within the product's "weeks ahead of
-				// today" horizon, and not already there. Because the horizon is measured from
-				// today rather than from the series start, the series keeps rolling forward on
-				// every run instead of stopping once the first N weeks exist.
-				$iNow       = current_time('timestamp');
-				$iHorizon   = strtotime('+'.$_timeslot_ticket_recurring_future.' weeks', $iNow);
-				$iSeriesEnd = strtotime($sRecurringEndDate);
-				for($iFutureTimeslot = strtotime($sRecurringStartDate . ' ' . $oRecurringTimeslot->slot_start); $iFutureTimeslot < $iSeriesEnd && $iFutureTimeslot <= $iHorizon; $iFutureTimeslot = strtotime('+1 week', $iFutureTimeslot))
-				{
-					if($iFutureTimeslot < $iNow) continue;
-					$sSlotStart = gmdate('Y-m-d H:i:s', $iFutureTimeslot);
-					if(isset($aExistingStarts[$sSlotStart])) continue;
-
-					$sCreateFutureTimeslotPrepared = $wpdb->prepare(
-						'INSERT INTO %i (id, product_id, user_id, start, end, available_slots, timeslot_recurring_id_fk, created, updated)
-						 VALUES (%s, %d, %d, %s, %s, %d, %s, %s, %s);',
-						array(
-							$sTimeslotTableName,
-							$this->generateNanoId(),
-							$oRecurringTimeslot->product_id,
-							$oRecurringTimeslot->user_id,
-							$sSlotStart,
-							gmdate('Y-m-d H:i:s', $iFutureTimeslot + $iSlotDurationSec),
-							$oRecurringTimeslot->available_slots,
-							$oRecurringTimeslot->id,
-							$sCurrentDatetime,
-							$sCurrentDatetime
-						)
-					);
-					// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sCreateFutureTimeslotPrepared is the return value of $wpdb->prepare() above.
-					$wpdb->query($sCreateFutureTimeslotPrepared);
-				}
+				continue;
 			}
+			try
+			{
+				$this->create_recurring_timeslot_children_held(
+					$wpdb,
+					$oRecurringTimeslot,
+					$sTimeslotTableName,
+					$sCurrentDatetime,
+					$_timeslot_ticket_recurring_future
+				);
+			}
+			finally
+			{
+				$oLock->release();
+			}
+		}
+	}
+
+	/**
+	 * @param string $sRecurringTimeslotID
+	 * @return string
+	 */
+	public static function recurring_timeslot_lock_name($sRecurringTimeslotID)
+	{
+		return 'tpfw_recurring_'.(string)$sRecurringTimeslotID;
+	}
+
+	/**
+	 * @internal Call only while tpfw_recurring_{series} is held. Does not GET_LOCK.
+	 *
+	 * @param object $wpdb
+	 * @param object $oRecurringTimeslot
+	 * @param string $sTimeslotTableName
+	 * @param string $sCurrentDatetime
+	 * @param int    $iFutureWeeks
+	 * @return void
+	 */
+	private function create_recurring_timeslot_children_held($wpdb, $oRecurringTimeslot, $sTimeslotTableName, $sCurrentDatetime, $iFutureWeeks)
+	{
+		// start/end already carry a datetime (e.g. "2027-08-11 00:00:00") - appending
+		// slot_start/slot_end onto them (as this used to do) built an unparsable string
+		// like "2027-08-11 00:00:00 00:00:00", so strtotime() silently returned false
+		// for every candidate slot and the continue guards below always fired. Strip
+		// start/end down to just the date before pairing them with a slot time.
+		$sRecurringStartDate = gmdate('Y-m-d', strtotime($oRecurringTimeslot->start));
+		$sRecurringEndDate   = gmdate('Y-m-d', strtotime($oRecurringTimeslot->end));
+		$iSlotDurationSec    = strtotime($sRecurringStartDate . ' ' . $oRecurringTimeslot->slot_end) - strtotime($sRecurringStartDate . ' ' . $oRecurringTimeslot->slot_start);
+
+		// Editing a rule's weeks moves its window, but the slots the old window generated
+		// stay behind - and they still count towards the "how many future slots exist"
+		// total below, so the slots the new window covers never get generated at all.
+		// Strays are retired first, though never one that has already sold a ticket.
+		$sRetireStrayTimeslotsSQL = $wpdb->prepare('	UPDATE %i SET deleted = %s, updated = %s
+													WHERE deleted IS NULL AND manual = 0 AND timeslot_recurring_id_fk = %s
+													AND (start < %s OR start >= %s)
+													AND id NOT IN (SELECT timeslot_id FROM %i WHERE deleted IS NULL)', $sTimeslotTableName,
+				$sCurrentDatetime,
+				$sCurrentDatetime,
+				$oRecurringTimeslot->id,
+				$sRecurringStartDate . ' 00:00:00',
+				$sRecurringEndDate . ' 00:00:00',
+				$wpdb->prefix . 'tpfw_timeslot_tickets'
+		);
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sRetireStrayTimeslotsSQL is the return value of $wpdb->prepare() above.
+		$wpdb->query($sRetireStrayTimeslotsSQL);
+
+		// Every child the series already has (manual ones included, so a hand-made slot at
+		// the same time is not doubled), keyed by start so the walk below can skip it.
+		$sRecurringChildTimeslotsSQL = $wpdb->prepare('	SELECT start FROM %i
+													WHERE deleted IS NULL AND timeslot_recurring_id_fk = %s', $sTimeslotTableName,
+				$oRecurringTimeslot->id
+		);
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sRecurringChildTimeslotsSQL is the return value of $wpdb->prepare() above.
+		$aExistingStartRows = $wpdb->get_col($sRecurringChildTimeslotsSQL);
+		if(TPFW_Db_Read::results_failed($wpdb, $aExistingStartRows))
+		{
+			return;
+		}
+		$aExistingStarts = array_flip((array)$aExistingStartRows);
+
+		// Walk the rule week by week from its first occurrence. A slot is created when it
+		// is still ahead, inside the series window, within the product's "weeks ahead of
+		// today" horizon, and not already there. Because the horizon is measured from
+		// today rather than from the series start, the series keeps rolling forward on
+		// every run instead of stopping once the first N weeks exist.
+		$iNow       = current_time('timestamp');
+		$iHorizon   = strtotime('+'.$iFutureWeeks.' weeks', $iNow);
+		$iSeriesEnd = strtotime($sRecurringEndDate);
+		for($iFutureTimeslot = strtotime($sRecurringStartDate . ' ' . $oRecurringTimeslot->slot_start); $iFutureTimeslot < $iSeriesEnd && $iFutureTimeslot <= $iHorizon; $iFutureTimeslot = strtotime('+1 week', $iFutureTimeslot))
+		{
+			if($iFutureTimeslot < $iNow) continue;
+			$sSlotStart = gmdate('Y-m-d H:i:s', $iFutureTimeslot);
+			if(isset($aExistingStarts[$sSlotStart])) continue;
+
+			$sCreateFutureTimeslotPrepared = $wpdb->prepare(
+				'INSERT INTO %i (id, product_id, user_id, start, end, available_slots, timeslot_recurring_id_fk, created, updated)
+				 VALUES (%s, %d, %d, %s, %s, %d, %s, %s, %s);',
+				array(
+					$sTimeslotTableName,
+					$this->generateNanoId(),
+					$oRecurringTimeslot->product_id,
+					$oRecurringTimeslot->user_id,
+					$sSlotStart,
+					gmdate('Y-m-d H:i:s', $iFutureTimeslot + $iSlotDurationSec),
+					$oRecurringTimeslot->available_slots,
+					$oRecurringTimeslot->id,
+					$sCurrentDatetime,
+					$sCurrentDatetime
+				)
+			);
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sCreateFutureTimeslotPrepared is the return value of $wpdb->prepare() above.
+			$wpdb->query($sCreateFutureTimeslotPrepared);
 		}
 	}
 

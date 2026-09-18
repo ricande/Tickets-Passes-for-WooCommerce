@@ -83,7 +83,7 @@ class TimeslotCheckoutValidationTest extends TestCase
 		$sTo  = gmdate('Y-m-d H:i:s', time() + 600);
 		$m = TPFW_Timeslot_Capacity::with_lock($wpdb, $sSlot, function() use ($wpdb, $sSlot, $sNow, $sTo, $iCapacity, $iQty) {
 			$iAvailable = TPFW_Timeslot_Capacity::remaining($wpdb, $sSlot, $iCapacity, $sNow, true);
-			if($iAvailable <= 0 || $iAvailable < $iQty)
+			if($iAvailable === false || $iAvailable <= 0 || $iAvailable < $iQty)
 			{
 				return array('ok' => false, 'reason' => 'capacity');
 			}

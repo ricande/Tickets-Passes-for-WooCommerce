@@ -134,6 +134,9 @@ class TPFW_Lock_Trace_Wpdb
 	 */
 	public function get_col($sql)
 	{
-		return $this->inner->get_col($sql);
+		$m = $this->inner->get_col($sql);
+		$this->last_error = $this->inner->last_error;
+		$this->insert_id = $this->inner->insert_id;
+		return $m;
 	}
 }
