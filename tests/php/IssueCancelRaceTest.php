@@ -367,6 +367,7 @@ class IssueCancelRaceTest extends TestCase
 				'cancel_nano_held(',
 				'reset_nano_held(',
 				'transfer_nano_held(',
+				'sync_slots_held(',
 			) as $sCall)
 			{
 				if(strpos($sSrc, $sCall) !== false)

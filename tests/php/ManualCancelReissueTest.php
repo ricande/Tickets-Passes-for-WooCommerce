@@ -4,12 +4,9 @@ use PHPUnit\Framework\TestCase;
 require_once TPFW_TEST_ROOT.'/lib/TicketFunctionsHarness.php';
 
 /**
- * Known product gap: sequential issue undeletes a dashboard-cancelled ticket.
- *
- * Not discovered by phpunit.xml (tests/php only). Run explicitly:
- *   php tests/phpunit.phar -c phpunit.xml tests/repro/ManualCancelReissueReproTest.php
+ * Dashboard cancel of a regular ticket must survive a later issue/reissue.
  */
-class ManualCancelReissueReproTest extends TestCase
+class ManualCancelReissueTest extends TestCase
 {
 	private ?TPFW_Test_Wpdb $a = null;
 
@@ -25,8 +22,8 @@ class ManualCancelReissueReproTest extends TestCase
 		{
 			$this->markTestSkipped('No database credentials');
 		}
-		$this->a = new TPFW_Test_Wpdb($mysqliA, 'tpfwrepro_');
-		$this->b = new TPFW_Test_Wpdb($mysqliB, 'tpfwrepro_');
+		$this->a = new TPFW_Test_Wpdb($mysqliA, 'tpfwmcir_');
+		$this->b = new TPFW_Test_Wpdb($mysqliB, 'tpfwmcir_');
 		TPFW_Test_Schema::install($this->a);
 		tpfw_test_install_ticket_stats($this->a);
 		$GLOBALS['tpfw_test_orders'] = array();

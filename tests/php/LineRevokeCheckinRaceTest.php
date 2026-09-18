@@ -7,8 +7,8 @@ require_once TPFW_TEST_ROOT.'/lib/TicketFunctionsHarness.php';
  * Bite 2A.2b: order-line cancel/shrink versus ticket check-in.
  *
  * Safe end state: never a successful check-in plus a live stats row on a
- * cancelled or shrinked ticket. Sequential issue-after-dashboard-cancel lives
- * in tests/repro/, not this suite.
+ * cancelled or shrinked ticket. Sequential issue-after-dashboard-cancel is
+ * covered by ManualCancelReissueTest and ManualCancelStateMatrixTest.
  */
 class LineRevokeCheckinRaceTest extends TestCase
 {

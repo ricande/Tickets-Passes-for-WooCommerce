@@ -17,8 +17,8 @@ defined('ABSPATH') or die('No script kiddies please!');
  * Holder user_id is mutable (admin transfer) and must not be part of that match.
  *
  * The first nano lookup is only for the line id. The row is re-read under the
- * lock before any write. A later sequential issue() may still undelete a
- * dashboard-cancelled nano so the live count matches purchased quantity.
+ * lock before any write. Dashboard cancel writes deleted and manual_cancelled_at.
+ * Later issue/reconcile must not undelete a still-blocked nano or mint a replacement.
  */
 class TPFW_Ticket_Line
 {
@@ -173,16 +173,24 @@ class TPFW_Ticket_Line
 		}
 
 		$sTable  = $wpdb->prefix.self::TABLE;
-		$sSelect = $wpdb->prepare(
-			'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY (deleted IS NULL) DESC, id ASC',
+		$aExisting = $wpdb->get_results($wpdb->prepare(
+			'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY id ASC',
 			array(
 				$sTable,
 				$oOrderItem->get_product_id(),
 				$iOrderID,
 				$oOrderItem->get_id(),
 			)
-		);
-		$aSync = TPFW_Issue_Lock::sync_held($wpdb, $sTable, $sSelect, $iQty, $sNow, $fnInsert);
+		));
+		if($aExisting === false)
+		{
+			return array(
+				'sMessage' => __('Could not issue tickets for this order line because the database write failed. No extra tickets were created.', 'tickets-passes-for-woocommerce'),
+				'bStatus'  => false,
+				'sync'     => null,
+			);
+		}
+		$aSync = self::sync_slots_held($wpdb, $sTable, $aExisting, $iQty, $sNow, $fnInsert);
 		if(empty($aSync['ok']))
 		{
 			return array(
@@ -264,8 +272,8 @@ class TPFW_Ticket_Line
 
 		$sNow   = current_time('mysql');
 		$sTable = $wpdb->prefix.self::TABLE;
-		$aLive  = $wpdb->get_results($wpdb->prepare(
-			'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d AND deleted IS NULL ORDER BY id ASC',
+		$aRows  = $wpdb->get_results($wpdb->prepare(
+			'SELECT * FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY id ASC',
 			array(
 				$sTable,
 				$oOrderItem->get_product_id(),
@@ -273,7 +281,7 @@ class TPFW_Ticket_Line
 				$oOrderItem->get_id(),
 			)
 		));
-		if($aLive === false)
+		if($aRows === false)
 		{
 			return array(
 				'sMessage' => __('Could not reconcile issued quantity because the database write failed.', 'tickets-passes-for-woocommerce'),
@@ -281,21 +289,44 @@ class TPFW_Ticket_Line
 				'sync'     => null,
 			);
 		}
-		$aDelete = self::surplus_nanos($aLive, $iTarget);
+		$iBlockedRetained = 0;
+		$iSlot            = 0;
+		foreach((array)$aRows as $oRow)
+		{
+			if(!is_object($oRow) || (string)$oRow->nano_id === '')
+			{
+				continue;
+			}
+			if($iSlot < $iTarget && self::row_is_manual_cancelled($oRow))
+			{
+				$iBlockedRetained++;
+			}
+			$iSlot++;
+		}
+		$aLive = array();
+		foreach((array)$aRows as $oRow)
+		{
+			if(is_object($oRow) && (string)$oRow->nano_id !== '' && !self::row_is_deleted($oRow))
+			{
+				$aLive[] = $oRow;
+			}
+		}
+		$iLiveTarget = max(0, $iTarget - $iBlockedRetained);
+		$aDelete     = self::surplus_nanos($aLive, $iLiveTarget);
 		if($aDelete === array())
 		{
 			return array(
 				'sMessage' => '',
 				'bStatus'  => true,
 				'sync'     => array(
-					'keep'     => self::keep_nanos($aLive, $iTarget),
+					'keep'     => self::keep_nanos($aLive, $iLiveTarget),
 					'inserted' => array(),
 					'deleted'  => array(),
 					'ok'       => true,
 				),
 			);
 		}
-		return self::shrink_live_rows($wpdb, $oOrderItem, $iOrderID, $sTable, $aLive, $aDelete, $iTarget, $sNow, $fnAfterRevoke);
+		return self::shrink_live_rows($wpdb, $oOrderItem, $iOrderID, $sTable, $aLive, $aDelete, $iLiveTarget, $sNow, $fnAfterRevoke);
 	}
 
 	/**
@@ -382,8 +413,9 @@ class TPFW_Ticket_Line
 		$sNow    = current_time('mysql');
 		$sTable  = $wpdb->prefix.self::TABLE;
 		$mTicket = $wpdb->query($wpdb->prepare(
-			'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id = %s AND order_line_id = %d',
+			'UPDATE %i SET deleted = %s, manual_cancelled_at = %s, updated = %s WHERE nano_id = %s AND order_line_id = %d',
 			$sTable,
+			$sNow,
 			$sNow,
 			$sNow,
 			$sNanoID,
@@ -393,17 +425,18 @@ class TPFW_Ticket_Line
 		{
 			return self::nano_write_failed_cancel();
 		}
-		if((int)$mTicket === 0)
+		$oAgain = self::read_nano($wpdb, $sNanoID);
+		if($oAgain === false)
 		{
-			$oAgain = self::read_nano($wpdb, $sNanoID);
-			if($oAgain === false)
-			{
-				return self::nano_write_failed_cancel();
-			}
-			if(!self::row_matches_line($oAgain, $sNanoID, $iOrderLineId))
-			{
-				return self::nano_gone();
-			}
+			return self::nano_write_failed_cancel();
+		}
+		if(!self::row_matches_line($oAgain, $sNanoID, $iOrderLineId))
+		{
+			return self::nano_gone();
+		}
+		if(!self::row_is_deleted($oAgain) || !self::row_is_manual_cancelled($oAgain))
+		{
+			return self::nano_write_failed_cancel();
 		}
 		$mStats = self::revoke_stats($wpdb, $sNanoID, $sNow);
 		if($mStats === false)
@@ -468,28 +501,54 @@ class TPFW_Ticket_Line
 		}
 		$sNow    = current_time('mysql');
 		$sTable  = $wpdb->prefix.self::TABLE;
-		$mTicket = $wpdb->query($wpdb->prepare(
-			'UPDATE %i SET deleted = NULL, updated = %s WHERE nano_id = %s AND order_line_id = %d',
-			$sTable,
-			$sNow,
-			$sNanoID,
-			$iOrderLineId
-		));
+		$iTarget = self::reset_target_quantity($wpdb, $oRow);
+		if($iTarget === false)
+		{
+			return self::nano_write_failed_reset();
+		}
+		$iSlot = self::slot_index_held($wpdb, $oRow, $sNanoID);
+		if($iSlot === false)
+		{
+			return self::nano_write_failed_reset();
+		}
+		$bLive = $iSlot >= 0 && $iSlot < (int)$iTarget;
+		if($bLive)
+		{
+			$mTicket = $wpdb->query($wpdb->prepare(
+				'UPDATE %i SET deleted = NULL, manual_cancelled_at = NULL, updated = %s WHERE nano_id = %s AND order_line_id = %d',
+				$sTable,
+				$sNow,
+				$sNanoID,
+				$iOrderLineId
+			));
+		}
+		else
+		{
+			$mTicket = $wpdb->query($wpdb->prepare(
+				'UPDATE %i SET deleted = %s, manual_cancelled_at = NULL, updated = %s WHERE nano_id = %s AND order_line_id = %d',
+				$sTable,
+				$sNow,
+				$sNow,
+				$sNanoID,
+				$iOrderLineId
+			));
+		}
 		if(TPFW_Db_Write::failed($mTicket))
 		{
 			return self::nano_write_failed_reset();
 		}
-		if((int)$mTicket === 0)
+		$oAgain = self::read_nano($wpdb, $sNanoID);
+		if($oAgain === false)
 		{
-			$oAgain = self::read_nano($wpdb, $sNanoID);
-			if($oAgain === false)
-			{
-				return self::nano_write_failed_reset();
-			}
-			if(!self::row_matches_line($oAgain, $sNanoID, $iOrderLineId))
-			{
-				return self::nano_gone();
-			}
+			return self::nano_write_failed_reset();
+		}
+		if(!self::row_matches_line($oAgain, $sNanoID, $iOrderLineId))
+		{
+			return self::nano_gone();
+		}
+		if(self::row_is_manual_cancelled($oAgain) || ($bLive && self::row_is_deleted($oAgain)) || (!$bLive && !self::row_is_deleted($oAgain)))
+		{
+			return self::nano_write_failed_reset();
 		}
 		$mStats = $wpdb->query($wpdb->prepare(
 			'DELETE FROM %i WHERE nano_id_fk = %s',
@@ -924,12 +983,228 @@ class TPFW_Ticket_Line
 	}
 
 	/**
+	 * Slot-aware ticket upsert. Existing rows occupy id-ASC slots. A manually
+	 * cancelled row stays deleted, keeps its nano, and is not replaced.
+	 *
+	 * @internal Call only while tpfw_ticket_issue_{line} is held. Does not GET_LOCK.
+	 *
+	 * @param object   $wpdb
+	 * @param string   $sTable
+	 * @param array    $aExisting
+	 * @param int      $iQuantity
+	 * @param string   $sNow
+	 * @param callable $fnInsert
+	 * @return array{keep:string[],inserted:string[],deleted:string[],ok:bool}
+	 */
+	private static function sync_slots_held($wpdb, $sTable, $aExisting, $iQuantity, $sNow, $fnInsert)
+	{
+		$aKeepLive = array();
+		$aDelete   = array();
+		$iQty      = max(0, (int)$iQuantity);
+		$iHave     = 0;
+		$i         = 0;
+
+		foreach((array)$aExisting as $mRow)
+		{
+			$sNano = is_object($mRow) ? (string)$mRow->nano_id : (string)$mRow['nano_id'];
+			if($sNano === '')
+			{
+				continue;
+			}
+			$iHave++;
+			if($i < $iQty)
+			{
+				if(!self::row_is_manual_cancelled($mRow))
+				{
+					$aKeepLive[] = $sNano;
+				}
+				$i++;
+			}
+			else
+			{
+				$aDelete[] = $sNano;
+			}
+		}
+
+		if(!empty($aKeepLive))
+		{
+			$sPlaceholders = implode(', ', array_fill(0, count($aKeepLive), '%s'));
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholder list matches $aKeepLive.
+			$mUndelete = $wpdb->query($wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- IN() list is generated from count($aKeepLive).
+				'UPDATE %i SET deleted = NULL, updated = %s WHERE nano_id IN ('.$sPlaceholders.')',
+				array_merge(array($sTable, $sNow), $aKeepLive)
+			));
+			if(TPFW_Db_Write::failed($mUndelete))
+			{
+				return array('keep' => $aKeepLive, 'inserted' => array(), 'deleted' => array(), 'ok' => false);
+			}
+		}
+
+		if(!empty($aDelete))
+		{
+			$sPlaceholders = implode(', ', array_fill(0, count($aDelete), '%s'));
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholder list matches $aDelete.
+			$mDelete = $wpdb->query($wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- IN() list is generated from count($aDelete).
+				'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id IN ('.$sPlaceholders.')',
+				array_merge(array($sTable, $sNow, $sNow), $aDelete)
+			));
+			if(TPFW_Db_Write::failed($mDelete))
+			{
+				return array('keep' => $aKeepLive, 'inserted' => array(), 'deleted' => $aDelete, 'ok' => false);
+			}
+		}
+
+		$aInserted = array();
+		$iNeed     = $iQty - $iHave;
+		for($n = 0; $n < $iNeed; $n++)
+		{
+			$sNano = call_user_func($fnInsert);
+			if($sNano === false)
+			{
+				return array(
+					'keep'     => array_merge($aKeepLive, $aInserted),
+					'inserted' => $aInserted,
+					'deleted'  => $aDelete,
+					'ok'       => false,
+				);
+			}
+			if(is_string($sNano) && $sNano !== '')
+			{
+				$aInserted[] = $sNano;
+			}
+		}
+
+		return array(
+			'keep'     => array_merge($aKeepLive, $aInserted),
+			'inserted' => $aInserted,
+			'deleted'  => $aDelete,
+			'ok'       => true,
+		);
+	}
+
+	/**
+	 * @param object $wpdb
+	 * @param object $oRow
+	 * @return int|false
+	 */
+	private static function reset_target_quantity($wpdb, $oRow)
+	{
+		$oOrder = function_exists('wc_get_order') ? wc_get_order((int)$oRow->order_id) : null;
+		$oItem  = self::order_item_for_row($oOrder, $oRow);
+		if($oItem)
+		{
+			return TPFW_Refund_Policy::target_active_quantity($oOrder, $oItem);
+		}
+		$sStatus = '';
+		if(is_object($oOrder) && method_exists($oOrder, 'get_status'))
+		{
+			$sStatus = $oOrder->get_status();
+		}
+		if(TPFW_Issue_Policy::should_revoke($sStatus))
+		{
+			return 0;
+		}
+		$iIssued = $wpdb->get_var($wpdb->prepare(
+			'SELECT COUNT(*) FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d',
+			$wpdb->prefix.self::TABLE,
+			(int)$oRow->product_id,
+			(int)$oRow->order_id,
+			(int)$oRow->order_line_id
+		));
+		if($iIssued === null && !empty($wpdb->last_error))
+		{
+			return false;
+		}
+		$iRefunded = 0;
+		if(is_object($oOrder) && method_exists($oOrder, 'get_qty_refunded_for_item'))
+		{
+			$iRefunded = abs((int)$oOrder->get_qty_refunded_for_item((int)$oRow->order_line_id));
+		}
+		return max(0, (int)$iIssued - $iRefunded);
+	}
+
+	/**
+	 * @param object|null $oOrder
+	 * @param object      $oRow
+	 * @return object|null
+	 */
+	private static function order_item_for_row($oOrder, $oRow)
+	{
+		if(!is_object($oOrder) || !method_exists($oOrder, 'get_items'))
+		{
+			return null;
+		}
+		$aItems = $oOrder->get_items();
+		if(!is_array($aItems) && !($aItems instanceof \Traversable))
+		{
+			return null;
+		}
+		foreach($aItems as $oLine)
+		{
+			if(is_object($oLine) && method_exists($oLine, 'get_id') && (int)$oLine->get_id() === (int)$oRow->order_line_id)
+			{
+				return $oLine;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * @param object $wpdb
+	 * @param object $oRow
+	 * @param string $sNanoID
+	 * @return int|false
+	 */
+	private static function slot_index_held($wpdb, $oRow, $sNanoID)
+	{
+		$aSlots = $wpdb->get_results($wpdb->prepare(
+			'SELECT nano_id FROM %i WHERE product_id = %d AND order_id = %d AND order_line_id = %d ORDER BY id ASC',
+			$wpdb->prefix.self::TABLE,
+			(int)$oRow->product_id,
+			(int)$oRow->order_id,
+			(int)$oRow->order_line_id
+		));
+		if($aSlots === false)
+		{
+			return false;
+		}
+		$i = 0;
+		foreach((array)$aSlots as $oSlot)
+		{
+			if(!is_object($oSlot) || (string)$oSlot->nano_id === '')
+			{
+				continue;
+			}
+			if((string)$oSlot->nano_id === (string)$sNanoID)
+			{
+				return $i;
+			}
+			$i++;
+		}
+		return -1;
+	}
+
+	/**
 	 * @param object $oRow
 	 * @return bool
 	 */
 	private static function row_is_deleted($oRow)
 	{
 		return is_object($oRow) && $oRow->deleted !== null && $oRow->deleted !== '';
+	}
+
+	/**
+	 * @param object|array $mRow
+	 * @return bool
+	 */
+	private static function row_is_manual_cancelled($mRow)
+	{
+		$mAt = is_object($mRow)
+			? (isset($mRow->manual_cancelled_at) ? $mRow->manual_cancelled_at : null)
+			: (isset($mRow['manual_cancelled_at']) ? $mRow['manual_cancelled_at'] : null);
+		return $mAt !== null && $mAt !== '' && $mAt !== '0';
 	}
 
 	/**

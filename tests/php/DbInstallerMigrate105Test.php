@@ -46,7 +46,8 @@ class DbInstallerMigrate105Test extends TestCase
 		$GLOBALS['wpdb'] = $this->countingWpdb($iCreates);
 		$this->assertTrue($o->maybe_install());
 		$this->assertSame(TPFW_DB_Installer::DB_VERSION, get_option('tpfw_db_version'));
-		$this->assertSame('1.0.5', get_option('tpfw_db_version'));
+		$this->assertSame('1.0.6', get_option('tpfw_db_version'));
+		$this->assertTrue($this->columnExists('tpfw_tickets', 'manual_cancelled_at'));
 		$this->assertGreaterThan(0, $iCreates);
 		$this->assertRepresentativeRows($aSeed);
 		$this->assertTrue($this->indexExists('tpfw_tickets', 'created'));
@@ -85,11 +86,12 @@ class DbInstallerMigrate105Test extends TestCase
 
 		$GLOBALS['wpdb'] = $this->wpdb;
 		$this->assertTrue($o->maybe_install());
-		$this->assertSame('1.0.5', get_option('tpfw_db_version'));
+		$this->assertSame('1.0.6', get_option('tpfw_db_version'));
 		$this->assertTrue($this->tableExists('tpfw_tickets_stats'));
 		$this->assertTrue($this->indexExists('tpfw_tickets', 'created'));
 		$this->assertTrue($this->indexExists('tpfw_tickets_stats', 'user_created'));
 		$this->assertTrue($this->columnExists('tpfw_pass', 'guest_slot'));
+		$this->assertTrue($this->columnExists('tpfw_tickets', 'manual_cancelled_at'));
 		$this->assertTrue($this->indexExists('tpfw_pass', 'parent_guest_slot'));
 		$this->assertSame(0, (int)$this->wpdb->get_var('SELECT COUNT(*) FROM `'.$sStats.'`'));
 		$oTicket = $this->wpdb->get_row($this->wpdb->prepare(
@@ -130,7 +132,7 @@ class DbInstallerMigrate105Test extends TestCase
 
 		$GLOBALS['wpdb'] = $this->wpdb;
 		$this->assertTrue($o->maybe_install());
-		$this->assertSame('1.0.5', get_option('tpfw_db_version'));
+		$this->assertSame('1.0.6', get_option('tpfw_db_version'));
 		$this->assertTrue($this->tableExists('tpfw_tickets_stats'));
 		$this->assertRepresentativeRows($aSeed);
 		$this->assertSame(1, (int)$this->wpdb->get_var(
@@ -138,22 +140,57 @@ class DbInstallerMigrate105Test extends TestCase
 		));
 	}
 
-	public function test_clean_install_creates_schema_and_marks_1_0_5(): void
+	public function test_clean_install_creates_schema_and_marks_1_0_6(): void
 	{
 		$this->assertFalse($this->tableExists('tpfw_tickets'));
 		$this->assertFalse(get_option('tpfw_db_version'));
 		new TPFW_DB_Installer();
-		$this->assertSame('1.0.5', get_option('tpfw_db_version'));
+		$this->assertSame('1.0.6', get_option('tpfw_db_version'));
 		$this->assertTrue(TPFW_DB_Installer::schema_is_current());
 		foreach($this->installerTables() as $sTable)
 		{
 			$this->assertTrue($this->tableExists($sTable), $sTable);
 		}
+		$this->assertTrue($this->columnExists('tpfw_tickets', 'manual_cancelled_at'));
 		$this->assertTrue($this->columnExists('tpfw_pass', 'guest_slot'));
 		$this->assertTrue($this->indexExists('tpfw_pass', 'parent_guest_slot'));
 		$this->assertTrue($this->indexExists('tpfw_tickets', 'created'));
 		$this->assertTrue($this->indexExists('tpfw_timeslots', 'product_start'));
 		$this->assertTrue($this->indexExists('tpfw_tickets_stats', 'user_created'));
+	}
+
+	public function test_healthy_1_0_5_adds_manual_cancelled_at_without_backfill(): void
+	{
+		$o = $this->installerSkippingBootInstall();
+		$this->assertTrue($o->maybe_install());
+		$aSeed = $this->seedRepresentativeRows();
+		$sNow  = gmdate('Y-m-d H:i:s');
+		$this->wpdb->query($this->wpdb->prepare(
+			'UPDATE %i SET deleted = %s, updated = %s WHERE nano_id = %s',
+			array($this->wpdb->prefix.'tpfw_tickets', $sNow, $sNow, $aSeed['ticket'])
+		));
+		$this->wpdb->query('ALTER TABLE `'.$this->wpdb->prefix.'tpfw_tickets` DROP COLUMN `manual_cancelled_at`');
+		$this->assertFalse($this->columnExists('tpfw_tickets', 'manual_cancelled_at'));
+		update_option('tpfw_db_version', '1.0.5');
+
+		$GLOBALS['wpdb'] = $this->wpdb;
+		$this->assertTrue($o->maybe_install());
+		$this->assertSame('1.0.6', get_option('tpfw_db_version'));
+		$this->assertTrue($this->columnExists('tpfw_tickets', 'manual_cancelled_at'));
+		$this->assertRepresentativeRows($aSeed);
+		$oTicket = $this->wpdb->get_row($this->wpdb->prepare(
+			'SELECT deleted, manual_cancelled_at FROM %i WHERE nano_id = %s',
+			$this->wpdb->prefix.'tpfw_tickets',
+			$aSeed['ticket']
+		));
+		$this->assertNotNull($oTicket->deleted);
+		$this->assertNull($oTicket->manual_cancelled_at);
+
+		$iCreates = 0;
+		$GLOBALS['wpdb'] = $this->countingWpdb($iCreates);
+		$this->assertTrue($o->maybe_install());
+		$this->assertSame(0, $iCreates);
+		$this->assertSame('1.0.6', get_option('tpfw_db_version'));
 	}
 
 	/**

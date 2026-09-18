@@ -24,8 +24,8 @@ class TPFW_Test_Nano_Order extends TPFW_Test_Refund_Order
 /**
  * Locked dashboard nano cancel/reset/transfer and ticket check-in on the line lock.
  *
- * Sequential issue-after-dashboard-cancel is a known product gap, not a lock miss.
- * That repro lives in tests/repro/ and is not in this suite.
+ * Sequential issue-after-dashboard-cancel is covered by ManualCancelReissueTest
+ * and ManualCancelStateMatrixTest.
  */
 class DashboardNanoRaceTest extends TestCase
 {

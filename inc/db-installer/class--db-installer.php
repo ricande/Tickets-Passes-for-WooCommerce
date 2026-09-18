@@ -7,12 +7,13 @@ defined('ABSPATH') or die('No script kiddies please!');
  * Runs on every load rather than only on activation, because activation does not fire on
  * plugin updates - bumping DB_VERSION is what triggers the next install pass.
  *
- * 1.0.5 re-runs the fail-closed installer so a site that stored `tpfw_db_version` `1.0.4`
- * after a partial pass is repaired. It does not add a new table definition.
+ * 1.0.6 adds `manual_cancelled_at` on `tpfw_tickets`. Existing deleted rows stay NULL
+ * (not classified as a dashboard cancel). A failed ALTER leaves the stored version on
+ * 1.0.5 so the next request retries.
  */
 class TPFW_DB_Installer
 {
-	const DB_VERSION = '1.0.5';
+	const DB_VERSION = '1.0.6';
 
 	/**
 	 * Runs the schema check immediately. The return value is discarded here so page
@@ -37,10 +38,9 @@ class TPFW_DB_Installer
 	/**
 	 * Creates the tables once per DB_VERSION bump, then records the new version.
 	 *
-	 * 1.0.5 exists so a `1.0.4` marker written after a partial install is not treated as
-	 * current. CREATE TABLE IF NOT EXISTS fills in a missing table; maybe_add_* only the
-	 * column and indexes listed in install(). Rows from a table that was dropped are not
-	 * restored. A failed pass leaves the stored version unchanged so the next request retries.
+ * CREATE TABLE IF NOT EXISTS fills in a missing table; maybe_add_* only the column
+ * and indexes listed in install(). Rows from a table that was dropped are not
+ * restored. A failed pass leaves the stored version unchanged so the next request retries.
 	 *
 	 * @return bool True when the schema is current or this pass finished every required step.
 	 */
@@ -102,6 +102,7 @@ class TPFW_DB_Installer
 			`created` DATETIME NULL DEFAULT NULL,
 			`updated` DATETIME NULL DEFAULT NULL,
 			`deleted` DATETIME NULL DEFAULT NULL,
+			`manual_cancelled_at` DATETIME NULL DEFAULT NULL,
 			PRIMARY KEY (`id`),
 			UNIQUE KEY `nano_id` (`nano_id`),
 			KEY `product_id` (`product_id`),
@@ -288,6 +289,10 @@ class TPFW_DB_Installer
 			return false;
 		}
 
+		if(!$this->maybe_add_column($sPrefix.'tpfw_tickets', 'manual_cancelled_at', 'DATETIME NULL DEFAULT NULL'))
+		{
+			return false;
+		}
 		if(!$this->maybe_add_column($sPrefix.'tpfw_pass', 'guest_slot', 'TINYINT UNSIGNED NULL DEFAULT NULL AFTER `parent_nano_id_fk`'))
 		{
 			return false;

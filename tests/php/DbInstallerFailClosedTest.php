@@ -71,6 +71,44 @@ class DbInstallerFailClosedTest extends TestCase
 		$this->assertSame(array(), $this->wpdb->get_results("SHOW COLUMNS FROM `{$this->wpdb->prefix}tpfw_pass` LIKE 'guest_slot'"));
 	}
 
+	public function test_failed_manual_cancelled_at_alter_stays_on_1_0_5_then_retries(): void
+	{
+		$o = $this->installerSkippingBootInstall();
+		delete_option('tpfw_db_version');
+		$this->assertTrue($o->maybe_install());
+		$sNano = 'keep'.bin2hex(random_bytes(6));
+		$sNow  = gmdate('Y-m-d H:i:s');
+		$this->wpdb->query($this->wpdb->prepare(
+			'INSERT INTO %i (nano_id, product_id, user_id, order_id, order_line_id, valid_duration, max_uses, created, updated, deleted)
+			VALUES (%s, %d, %d, %d, %d, %d, %d, %s, %s, %s)',
+			array($this->wpdb->prefix.'tpfw_tickets', $sNano, 1, 2, 3, 4, 86400, 1, $sNow, $sNow, $sNow)
+		));
+		$this->wpdb->query('ALTER TABLE `'.$this->wpdb->prefix.'tpfw_tickets` DROP COLUMN `manual_cancelled_at`');
+		update_option('tpfw_db_version', '1.0.5');
+
+		$wpdb = new TPFW_Failing_Wpdb($this->wpdb, static function($sSql) {
+			return stripos($sSql, 'ADD COLUMN') !== false && str_contains($sSql, 'manual_cancelled_at');
+		});
+		$GLOBALS['wpdb'] = $wpdb;
+		$this->assertFalse($o->maybe_install());
+		$this->assertSame('1.0.5', get_option('tpfw_db_version'));
+		$this->assertSame(array(), $this->wpdb->get_results("SHOW COLUMNS FROM `{$this->wpdb->prefix}tpfw_tickets` LIKE 'manual_cancelled_at'"));
+
+		$GLOBALS['wpdb'] = $this->wpdb;
+		$this->assertTrue($o->maybe_install());
+		$this->assertSame('1.0.6', get_option('tpfw_db_version'));
+		$aCol = $this->wpdb->get_results("SHOW COLUMNS FROM `{$this->wpdb->prefix}tpfw_tickets` LIKE 'manual_cancelled_at'");
+		$this->assertNotSame(array(), $aCol);
+		$oRow = $this->wpdb->get_row($this->wpdb->prepare(
+			'SELECT nano_id, deleted, manual_cancelled_at FROM %i WHERE nano_id = %s',
+			$this->wpdb->prefix.'tpfw_tickets',
+			$sNano
+		));
+		$this->assertSame($sNano, $oRow->nano_id);
+		$this->assertNotNull($oRow->deleted);
+		$this->assertNull($oRow->manual_cancelled_at);
+	}
+
 	public function test_unique_index_false_fails_install(): void
 	{
 		$this->createLegacyPassTable();

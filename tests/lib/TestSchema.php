@@ -119,6 +119,7 @@ class TPFW_Test_Schema
 			`created` DATETIME NULL DEFAULT NULL,
 			`updated` DATETIME NULL DEFAULT NULL,
 			`deleted` DATETIME NULL DEFAULT NULL,
+			`manual_cancelled_at` DATETIME NULL DEFAULT NULL,
 			PRIMARY KEY (`id`),
 			UNIQUE KEY `nano_id` (`nano_id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
